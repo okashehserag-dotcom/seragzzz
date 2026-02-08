@@ -1261,9 +1261,21 @@ function initNav(){
 }
 
 function initDrawer(){
-  document.getElementById("btnMenu").addEventListener("click", openDrawer);
-  document.getElementById("btnCloseDrawer").addEventListener("click", closeDrawer);
-  document.getElementById("drawerBackdrop").addEventListener("click", closeDrawer);
+  const btnMenu = document.getElementById("btnMenu");
+  const btnClose = document.getElementById("btnCloseDrawer");
+  const backdrop = document.getElementById("drawerBackdrop");
+
+  if(btnMenu) btnMenu.addEventListener("click", openDrawer);
+  if(btnClose) btnClose.addEventListener("click", closeDrawer);
+  if(backdrop) backdrop.addEventListener("click", closeDrawer);
+
+  // إغلاق بـ ESC
+  document.addEventListener("keydown", (e)=>{
+    if(e.key === "Escape") closeDrawer();
+  });
+
+  // (مهم) ضمان أن زر X قابل للضغط
+  if(btnClose) btnClose.style.pointerEvents = "auto";
 }
 
 function initLang(){
