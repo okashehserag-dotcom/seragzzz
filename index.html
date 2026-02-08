@@ -3,83 +3,95 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>توجيهي 2009 | لوحة الدراسة</title>
-  <meta name="description" content="موقع بسيط ومرتب يساعدك تذاكر للتوجيهي: مؤقت، مهام، تتبع إنجاز." />
-  <link rel="stylesheet" href="style.css" />
+  <title>لوحة التوجيهي 2009 — احترافي</title>
+  <meta name="description" content="لوحة دراسة احترافية: مواد، أهداف، جلسات، بنك أسئلة، إحصائيات، خطة أسبوعية، PWA." />
+  <meta name="theme-color" content="#0b1020" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="styles.css" />
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 </head>
-
 <body>
-  <header class="header">
-    <div class="wrap">
-      <h1>لوحة التوجيهي 2009</h1>
-      <p>مؤقت + مهام + تتبع إنجاز… وبشكل مرتب 😎</p>
+  <header class="topbar">
+    <div class="wrap row">
+      <div class="brand">
+        <div class="logo">T09</div>
+        <div>
+          <h1>لوحة التوجيهي 2009</h1>
+          <p id="subtitle">رتّب يومك… وخلّي الإنجاز واضح.</p>
+        </div>
+      </div>
+
+      <div class="row gap">
+        <div class="search">
+          <input id="globalSearch" type="search" placeholder="ابحث عن مادة / درس / سؤال..." />
+          <div id="searchResults" class="searchResults hidden"></div>
+        </div>
+
+        <button class="btn" id="themeToggle" title="تبديل الثيم">🌙/☀️</button>
+        <button class="btn primary" id="quickAdd" title="إضافة مهمة سريعة">+ مهمة</button>
+      </div>
     </div>
   </header>
 
-  <main class="wrap grid">
-    <!-- Pomodoro -->
-    <section class="card">
-      <h2>⏱️ مؤقت المذاكرة</h2>
-      <div class="timer">
-        <div class="time" id="time">25:00</div>
-        <div class="modes">
-          <button class="chip active" data-mode="focus">تركيز 25</button>
-          <button class="chip" data-mode="short">راحة 5</button>
-          <button class="chip" data-mode="long">راحة طويلة 15</button>
-        </div>
-        <div class="actions">
-          <button class="btn primary" id="startPause">ابدأ</button>
-          <button class="btn" id="reset">إعادة</button>
-        </div>
-        <p class="hint" id="hint">ركّز 25 دقيقة… بعدين خذ 5 دقايق راحة.</p>
+  <aside class="sidebar">
+    <nav class="nav">
+      <a href="#/" data-route="/" class="navItem active">🏠 الرئيسية</a>
+      <a href="#/subjects" data-route="/subjects" class="navItem">📚 المواد</a>
+      <a href="#/plan" data-route="/plan" class="navItem">🗓️ الخطة</a>
+      <a href="#/questions" data-route="/questions" class="navItem">🧠 بنك الأسئلة</a>
+      <a href="#/stats" data-route="/stats" class="navItem">📈 الإحصائيات</a>
+      <a href="#/settings" data-route="/settings" class="navItem">⚙️ الإعدادات</a>
+    </nav>
+
+    <div class="sideCard">
+      <div class="kpi">
+        <div class="kpiLabel">ستريك</div>
+        <div class="kpiValue"><span id="streakDays">0</span> يوم</div>
       </div>
-    </section>
-
-    <!-- Tasks -->
-    <section class="card">
-      <h2>✅ مهام اليوم</h2>
-      <form id="taskForm" class="taskForm">
-        <input id="taskInput" type="text" placeholder="مثال: حل 30 سؤال رياضيات" maxlength="80" required />
-        <button class="btn primary" type="submit">إضافة</button>
-      </form>
-
-      <ul class="tasks" id="tasks"></ul>
-
-      <div class="stats">
-        <div class="pill">منجَز: <span id="doneCount">0</span></div>
-        <div class="pill">المجموع: <span id="totalCount">0</span></div>
-        <div class="pill">النسبة: <span id="percent">0%</span></div>
+      <div class="kpi">
+        <div class="kpiLabel">ساعات هذا الأسبوع</div>
+        <div class="kpiValue"><span id="weekHours">0</span> ساعة</div>
       </div>
-    </section>
+      <button class="btn primary full" id="finishDay">أنهيت اليوم ✅</button>
+      <p class="muted tiny">يحفظ تلقائيًا على جهازك.</p>
+    </div>
+  </aside>
 
-    <!-- Progress -->
-    <section class="card">
-      <h2>📈 إنجاز اليوم</h2>
-      <div class="progressBox">
-        <div class="bar">
-          <div class="barFill" id="barFill" style="width:0%"></div>
-        </div>
-        <p class="big" id="progressText">0% 🔥</p>
-        <p class="hint">كل ما تكمّل مهام… الشريط بيمتلئ. خليها 100% اليوم!</p>
-      </div>
+  <main class="main">
+    <div class="wrap mainGrid">
+      <!-- ROUTES -->
+      <section id="routeHome" class="route"></section>
+      <section id="routeSubjects" class="route hidden"></section>
+      <section id="routePlan" class="route hidden"></section>
+      <section id="routeQuestions" class="route hidden"></section>
+      <section id="routeStats" class="route hidden"></section>
+      <section id="routeSettings" class="route hidden"></section>
+    </div>
 
-      <div class="streak">
-        <h3>⭐ ستريك بسيط</h3>
-        <p class="hint">اضغط “أنهيت اليوم” مرة واحدة بنهاية اليوم.</p>
-        <div class="actions">
-          <button class="btn primary" id="finishDay">أنهيت اليوم</button>
-          <button class="btn danger" id="resetStreak">تصفير</button>
-        </div>
-        <p class="big">ستريك: <span id="streak">0</span> يوم</p>
+    <footer class="footer">
+      <div class="wrap row between">
+        <small class="muted">GitHub Pages • PWA • Offline</small>
+        <small class="muted">نسخة: 1.0</small>
       </div>
-    </section>
+    </footer>
   </main>
 
-  <footer class="footer">
-    <div class="wrap">
-      <small>موقعك على GitHub Pages — جاهز للتعديل كيف ما بدك.</small>
+  <!-- Modals -->
+  <div class="modal hidden" id="modal">
+    <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="row between">
+        <h2 id="modalTitle">عنوان</h2>
+        <button class="btn" id="modalClose" title="إغلاق">✕</button>
+      </div>
+      <div id="modalBody"></div>
     </div>
-  </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
 
   <script src="app.js"></script>
 </body>
