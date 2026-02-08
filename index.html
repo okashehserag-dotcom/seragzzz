@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>توجيهي 2009 | لوحة الدراسة</title>
+  <meta name="description" content="موقع بسيط ومرتب يساعدك تذاكر للتوجيهي: مؤقت، مهام، تتبع إنجاز." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <header class="header">
+    <div class="wrap">
+      <h1>لوحة التوجيهي 2009</h1>
+      <p>مؤقت + مهام + تتبع إنجاز… وبشكل مرتب 😎</p>
+    </div>
+  </header>
+
+  <main class="wrap grid">
+    <!-- Pomodoro -->
+    <section class="card">
+      <h2>⏱️ مؤقت المذاكرة</h2>
+      <div class="timer">
+        <div class="time" id="time">25:00</div>
+        <div class="modes">
+          <button class="chip active" data-mode="focus">تركيز 25</button>
+          <button class="chip" data-mode="short">راحة 5</button>
+          <button class="chip" data-mode="long">راحة طويلة 15</button>
+        </div>
+        <div class="actions">
+          <button class="btn primary" id="startPause">ابدأ</button>
+          <button class="btn" id="reset">إعادة</button>
+        </div>
+        <p class="hint" id="hint">ركّز 25 دقيقة… بعدين خذ 5 دقايق راحة.</p>
+      </div>
+    </section>
+
+    <!-- Tasks -->
+    <section class="card">
+      <h2>✅ مهام اليوم</h2>
+      <form id="taskForm" class="taskForm">
+        <input id="taskInput" type="text" placeholder="مثال: حل 30 سؤال رياضيات" maxlength="80" required />
+        <button class="btn primary" type="submit">إضافة</button>
+      </form>
+
+      <ul class="tasks" id="tasks"></ul>
+
+      <div class="stats">
+        <div class="pill">منجَز: <span id="doneCount">0</span></div>
+        <div class="pill">المجموع: <span id="totalCount">0</span></div>
+        <div class="pill">النسبة: <span id="percent">0%</span></div>
+      </div>
+    </section>
+
+    <!-- Progress -->
+    <section class="card">
+      <h2>📈 إنجاز اليوم</h2>
+      <div class="progressBox">
+        <div class="bar">
+          <div class="barFill" id="barFill" style="width:0%"></div>
+        </div>
+        <p class="big" id="progressText">0% 🔥</p>
+        <p class="hint">كل ما تكمّل مهام… الشريط بيمتلئ. خليها 100% اليوم!</p>
+      </div>
+
+      <div class="streak">
+        <h3>⭐ ستريك بسيط</h3>
+        <p class="hint">اضغط “أنهيت اليوم” مرة واحدة بنهاية اليوم.</p>
+        <div class="actions">
+          <button class="btn primary" id="finishDay">أنهيت اليوم</button>
+          <button class="btn danger" id="resetStreak">تصفير</button>
+        </div>
+        <p class="big">ستريك: <span id="streak">0</span> يوم</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap">
+      <small>موقعك على GitHub Pages — جاهز للتعديل كيف ما بدك.</small>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
