@@ -1,12 +1,32 @@
 {
-  "name": "لوحة التوجيهي 2009",
-  "short_name": "Tawjihi09",
-  "start_url": "./",
+  "name": "T09 — Tawjihi Dashboard",
+  "short_name": "T09",
+  "description": "Jordan Tawjihi (2009) student dashboard: sessions, weekly plan, stats, and question bank.",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#0b1020",
-  "theme_color": "#0b1020",
+  "background_color": "#0B1020",
+  "theme_color": "#6D28D9",
   "icons": [
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }
