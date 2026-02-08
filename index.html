@@ -3,46 +3,44 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>لوحة التوجيهي 2009 — احترافي</title>
-  <meta name="description" content="لوحة دراسة احترافية: مواد، أهداف، جلسات، بنك أسئلة، إحصائيات، خطة أسبوعية، PWA." />
+  <title>لوحة توجيهي 2009</title>
+  <meta name="description" content="لوحة دراسة احترافية: مواد، مؤقّت، خطة، بنك أسئلة بالذكاء الاصطناعي، إحصائيات." />
   <meta name="theme-color" content="#0b1020" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icons/icon-192.png" />
   <link rel="stylesheet" href="styles.css" />
-  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 </head>
+
 <body>
   <header class="topbar">
-    <div class="wrap row">
+    <div class="wrap row between gap">
       <div class="brand">
         <div class="logo">T09</div>
         <div>
           <h1>لوحة التوجيهي 2009</h1>
-          <p id="subtitle">رتّب يومك… وخلّي الإنجاز واضح.</p>
+          <p class="muted tiny">عربي • إنجليزي • تاريخ الأردن • دين</p>
         </div>
       </div>
 
-      <div class="row gap">
+      <div class="row gap" style="flex-wrap:wrap">
         <div class="search">
-          <input id="globalSearch" type="search" placeholder="ابحث عن مادة / درس / سؤال..." />
+          <input id="globalSearch" type="search" placeholder="بحث سريع (مادة / درس / سؤال)..." />
           <div id="searchResults" class="searchResults hidden"></div>
         </div>
-
-        <button class="btn" id="themeToggle" title="تبديل الثيم">🌙/☀️</button>
-        <button class="btn primary" id="quickAdd" title="إضافة مهمة سريعة">+ مهمة</button>
+        <button class="btn" id="themeToggle" title="ثيم">🌙/☀️</button>
+        <button class="btn primary" id="quickAdd" title="مهمة سريعة">+ مهمة</button>
       </div>
     </div>
   </header>
 
   <aside class="sidebar">
     <nav class="nav">
-      <a href="#/" data-route="/" class="navItem active">🏠 الرئيسية</a>
-      <a href="#/subjects" data-route="/subjects" class="navItem">📚 المواد</a>
-      <a href="#/plan" data-route="/plan" class="navItem">🗓️ الخطة</a>
-      <a href="#/questions" data-route="/questions" class="navItem">🧠 بنك الأسئلة</a>
-      <a href="#/stats" data-route="/stats" class="navItem">📈 الإحصائيات</a>
-      <a href="#/settings" data-route="/settings" class="navItem">⚙️ الإعدادات</a>
+      <a class="navItem active" href="#/" data-route="/">🏠 الرئيسية</a>
+      <a class="navItem" href="#/plan" data-route="/plan">🗓️ الخطة</a>
+      <a class="navItem" href="#/questions" data-route="/questions">🧠 بنك الأسئلة</a>
+      <a class="navItem" href="#/stats" data-route="/stats">📈 الإحصائيات</a>
+      <a class="navItem" href="#/settings" data-route="/settings">⚙️ الإعدادات</a>
     </nav>
 
     <div class="sideCard">
@@ -54,16 +52,17 @@
         <div class="kpiLabel">ساعات هذا الأسبوع</div>
         <div class="kpiValue"><span id="weekHours">0</span> ساعة</div>
       </div>
+
       <button class="btn primary full" id="finishDay">أنهيت اليوم ✅</button>
-      <p class="muted tiny">يحفظ تلقائيًا على جهازك.</p>
+      <p class="muted tiny" style="margin:10px 0 0">
+        حفظ تلقائي + Offline + تثبيت كتطبيق.
+      </p>
     </div>
   </aside>
 
   <main class="main">
     <div class="wrap mainGrid">
-      <!-- ROUTES -->
       <section id="routeHome" class="route"></section>
-      <section id="routeSubjects" class="route hidden"></section>
       <section id="routePlan" class="route hidden"></section>
       <section id="routeQuestions" class="route hidden"></section>
       <section id="routeStats" class="route hidden"></section>
@@ -73,21 +72,24 @@
     <footer class="footer">
       <div class="wrap row between">
         <small class="muted">GitHub Pages • PWA • Offline</small>
-        <small class="muted">نسخة: 1.0</small>
+        <small class="muted">v1</small>
       </div>
     </footer>
   </main>
 
-  <!-- Modals -->
+  <!-- Modal -->
   <div class="modal hidden" id="modal">
     <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
       <div class="row between">
         <h2 id="modalTitle">عنوان</h2>
-        <button class="btn" id="modalClose" title="إغلاق">✕</button>
+        <button class="btn" id="modalClose">✕</button>
       </div>
       <div id="modalBody"></div>
     </div>
   </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast hidden"></div>
 
   <script src="app.js"></script>
 </body>
