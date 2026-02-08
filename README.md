@@ -1,60 +1,20 @@
-# seragzzz # T09 — Tawjihi Jordan (2009) Static Dashboard (AR/EN)
+# seragzzz # T09 Tawjihi Dashboard (Jordan 2009)
 
-A bilingual (Arabic/English) **static** web app designed specifically for **Jordan Tawjihi** students:
-- Home (today’s focus)
-- Sessions Timer (Tawjihi Pomodoro)
-- Weekly Plan (Sun–Sat, 4 subjects)
-- Statistics (streak + chart)
-- **Question Bank** (Sample Tawjihi-style placeholders + Sources panel)
+Static bilingual (AR/EN) web app for Jordan Tawjihi students:
+- Sessions timer (Pomodoro)
+- Finish plan (based on your checklist structure)
+- Statistics + weekly chart
+- PWA offline support
 
-> مهم: بنك الأسئلة يحتوي **أسئلة عيّنة (Sample)** فقط. لا يوجد أي ادعاء بجلب “أسئلة وزارية 2026” من الإنترنت.  
-> لاحقاً يمكنك استبدال الأسئلة العيّنة بأسئلة حقيقية عبر تعديل **JSON واحد** داخل `app.js` (`questionBank`).
+## Run locally (VS Code Live Server)
+1. Open the folder in VS Code
+2. Install **Live Server** extension
+3. Right click `index.html` → **Open with Live Server**
 
----
+> Important: Service Worker works best on HTTPS or localhost.
 
-## ملفات المشروع (Exact names)
-- `index.html`
-- `style.css`
-- `app.js`
-- `manifest.webmanifest`
-- `sw.js`
-- `README.md`
+## Deploy on GitHub Pages
+Because your URL is:
+`https://okashehserag-dotcom.github.io/seragzzz/`
 
----
-
-## تشغيل محلياً (VS Code Live Server)
-1. افتح المجلد في VS Code
-2. ثبّت إضافة **Live Server**
-3. اضغط يمين على `index.html` → **Open with Live Server**
-
-> ملاحظة: الـ Service Worker يعمل بشكل صحيح مع خادم محلي (مثل Live Server)، وليس من خلال فتح الملف مباشرة (file://).
-
----
-
-## النشر على GitHub Pages
-1. ارفع الملفات إلى Repo على GitHub (مثلاً branch: `main`)
-2. من **Settings → Pages**
-3. اختر:
-   - Source: `Deploy from a branch`
-   - Branch: `main`
-   - Folder: `/ (root)`
-4. احفظ، وراح يعطيك رابط GitHub Pages.
-
----
-
-## مسح كاش الـ Service Worker أثناء التطوير
-لأن التطبيق PWA وبيستخدم Cache، أحياناً بتشوف نسخة قديمة. للحل:
-
-### الطريقة 1 (Chrome / Edge)
-1. افتح DevTools → Application
-2. Service Workers → فعل **Update on reload**
-3. Cache Storage → احذف `t09-v1` (أو أي نسخة موجودة)
-
-### الطريقة 2
-- اعمل Hard Reload:
-  - Windows: `Ctrl + Shift + R`
-
-### الطريقة 3 (تغيير نسخة الكاش)
-- في `sw.js` غيّر:
-  ```js
-  const CACHE_VERSION = "t09-v2";
+Make sure your repo structure is:
