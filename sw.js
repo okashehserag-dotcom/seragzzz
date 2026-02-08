@@ -1,4 +1,4 @@
-const CACHE = "tawjihi09-v1";
+const CACHE = "tawjihi09-v2";
 const ASSETS = [
   "./",
   "./index.html",
@@ -24,11 +24,10 @@ self.addEventListener("activate", (e) => {
 });
 
 self.addEventListener("fetch", (e) => {
-  const req = e.request;
   e.respondWith(
-    caches.match(req).then(cached => cached || fetch(req).then(res => {
+    caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {
       const copy = res.clone();
-      caches.open(CACHE).then(c => c.put(req, copy));
+      caches.open(CACHE).then(c => c.put(e.request, copy));
       return res;
     }).catch(() => caches.match("./")))
   );
