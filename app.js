@@ -381,14 +381,28 @@ function setActiveTab(tabId){
 const drawer = ()=>document.getElementById("drawer");
 const drawerBackdrop = ()=>document.getElementById("drawerBackdrop");
 
+const drawerEl = () => document.getElementById("drawer");
+const backdropEl = () => document.getElementById("drawerBackdrop");
+
 function openDrawer(){
-  drawer().hidden = false;
-  drawerBackdrop().hidden = false;
+  const d = drawerEl();
+  const b = backdropEl();
+  if(!d || !b) return;
+
+  d.hidden = false;
+  b.hidden = false;
+  d.setAttribute("aria-hidden","false");
   document.body.style.overflow = "hidden";
 }
+
 function closeDrawer(){
-  drawer().hidden = true;
-  drawerBackdrop().hidden = true;
+  const d = drawerEl();
+  const b = backdropEl();
+  if(!d || !b) return;
+
+  d.hidden = true;
+  b.hidden = true;
+  d.setAttribute("aria-hidden","true");
   document.body.style.overflow = "";
 }
 
