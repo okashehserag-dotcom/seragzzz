@@ -2,574 +2,483 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#6D28D9" />
-  <meta name="color-scheme" content="light dark" />
-  <meta name="description" content="Tawjihi 2009 Dashboard — Study sessions, weekly plan, stats, and question bank." />
+  <meta name="color-scheme" content="dark light" />
 
-  <title>T09 — Tawjihi Dashboard</title>
+  <title>T09 | Tawjihi Dashboard</title>
+  <meta name="description" content="لوحة توجيهي الأردن 2009: جلسات، خطة ختمة، إحصائيات — تعمل أوفلاين." />
 
-  <!-- Fonts (CDN) -->
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
-  <!-- Icons (CDN) -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" referrerpolicy="no-referrer" />
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 
-  <!-- PWA -->
   <link rel="manifest" href="manifest.webmanifest" />
-
   <link rel="stylesheet" href="style.css" />
+  <script src="app.js" defer></script>
 </head>
 
 <body>
-  <a class="skip" href="#main">Skip</a>
-
   <div class="app-shell">
-    <!-- Sidebar (desktop) -->
-    <aside class="sidebar" aria-label="Navigation">
-      <div class="brand">
-        <div class="brand-mark" aria-hidden="true">T09</div>
-        <div class="brand-text">
-          <div class="brand-title" data-i18n="app.name">لوحة التوجيهي</div>
-          <div class="brand-sub" data-i18n="app.subtitle">مصممة لتوجيهي الأردن — نظام 2009</div>
+    <!-- Top Bar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="icon-btn" id="btnMenu" aria-label="Menu">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+
+        <div class="brand">
+          <div class="brand-badge">T09</div>
+          <div class="brand-text">
+            <div class="brand-title" data-i18n="appTitle">لوحة توجيهي 2009</div>
+            <div class="brand-sub" data-i18n="appSub">جلسات • خطة ختمة • إحصائيات • Offline</div>
+          </div>
         </div>
       </div>
 
+      <div class="topbar-right">
+        <div class="pill" role="group" aria-label="Language toggle">
+          <button class="pill-btn" id="langAR" type="button">AR</button>
+          <button class="pill-btn" id="langEN" type="button">EN</button>
+        </div>
+
+        <button class="icon-btn" id="btnMute" aria-label="Mute">
+          <i class="fa-solid fa-volume-high"></i>
+        </button>
+
+        <a class="icon-btn" id="btnInstall" href="#" aria-label="Install" title="Install" hidden>
+          <i class="fa-solid fa-download"></i>
+        </a>
+      </div>
+    </header>
+
+    <!-- Sidebar (Desktop) -->
+    <aside class="sidebar" id="sidebar">
       <nav class="nav">
-        <button class="nav-item is-active" data-tab="home" aria-current="page">
-          <i class="fa-solid fa-house"></i><span data-i18n="tabs.home">الرئيسية</span>
+        <button class="nav-item is-active" data-tab="home">
+          <i class="fa-solid fa-house"></i>
+          <span data-i18n="tabHome">الرئيسية</span>
         </button>
+
         <button class="nav-item" data-tab="sessions">
-          <i class="fa-solid fa-hourglass-half"></i><span data-i18n="tabs.sessions">جلسات</span>
+          <i class="fa-solid fa-hourglass-half"></i>
+          <span data-i18n="tabSessions">جلسات</span>
         </button>
+
         <button class="nav-item" data-tab="plan">
-          <i class="fa-solid fa-calendar-week"></i><span data-i18n="tabs.plan">الخطة الأسبوعية</span>
+          <i class="fa-solid fa-calendar-check"></i>
+          <span data-i18n="tabPlan">خطة الختمة</span>
         </button>
+
         <button class="nav-item" data-tab="stats">
-          <i class="fa-solid fa-chart-line"></i><span data-i18n="tabs.stats">الإحصائيات</span>
-        </button>
-        <button class="nav-item" data-tab="bank">
-          <i class="fa-solid fa-layer-group"></i><span data-i18n="tabs.bank">بنك الأسئلة</span>
+          <i class="fa-solid fa-chart-line"></i>
+          <span data-i18n="tabStats">الإحصائيات</span>
         </button>
       </nav>
 
       <div class="sidebar-footer">
-        <div class="mini-pill" title="Offline / PWA">
-          <i class="fa-solid fa-wifi"></i>
-          <span id="offlineBadge" data-i18n="pwa.ready">جاهز للأوفلاين</span>
-        </div>
-        <div class="tiny" data-i18n="app.footerNote">حفظ تلقائي + Offline + تثبيت كتطبيق.</div>
+        <div class="tiny" data-i18n="footerNote">حفظ تلقائي • Offline • تثبيت كتطبيق</div>
+        <div class="tiny muted">GitHub Pages • PWA</div>
       </div>
     </aside>
 
-    <!-- Main -->
-    <div class="main-col">
-      <header class="topbar">
-        <div class="topbar-left">
-          <button class="icon-btn mobile-nav-btn" id="mobileMenuBtn" aria-label="Menu">
-            <i class="fa-solid fa-bars"></i>
-          </button>
-          <div class="topbar-title">
-            <div class="h1" data-i18n="app.headerTitle">لوحة التوجيهي 2009</div>
-            <div class="h2" data-i18n="app.headerSubtitle">عربي • إنجليزي • تاريخ • دين</div>
-          </div>
-        </div>
-
-        <div class="topbar-actions">
-          <button class="pill-btn" id="langToggle" title="Language">
-            <i class="fa-solid fa-language"></i>
-            <span id="langToggleText">AR</span>
-          </button>
-
-          <button class="pill-btn" id="muteToggle" title="Mute">
-            <i class="fa-solid fa-volume-high" id="muteIcon"></i>
-            <span data-i18n="common.sound">الصوت</span>
-          </button>
-
-          <button class="icon-btn" id="copyAppStateBtn" title="Copy (debug export)">
-            <i class="fa-solid fa-copy"></i>
-          </button>
-        </div>
-      </header>
-
-      <!-- Mobile bottom nav -->
-      <nav class="bottom-nav" aria-label="Bottom Navigation">
-        <button class="bn-item is-active" data-tab="home" aria-current="page"><i class="fa-solid fa-house"></i><span data-i18n="tabs.home">الرئيسية</span></button>
-        <button class="bn-item" data-tab="sessions"><i class="fa-solid fa-hourglass-half"></i><span data-i18n="tabs.sessions">جلسات</span></button>
-        <button class="bn-item" data-tab="plan"><i class="fa-solid fa-calendar-week"></i><span data-i18n="tabs.plan">الخطة</span></button>
-        <button class="bn-item" data-tab="stats"><i class="fa-solid fa-chart-line"></i><span data-i18n="tabs.stats">إحصاء</span></button>
-        <button class="bn-item" data-tab="bank"><i class="fa-solid fa-layer-group"></i><span data-i18n="tabs.bank">أسئلة</span></button>
-      </nav>
-
-      <main id="main" class="content" role="main">
-        <!-- HOME -->
-        <section class="tab is-active" id="tab-home" aria-labelledby="homeTitle">
-          <div class="hero">
-            <div class="hero-card">
-              <div class="hero-top">
-                <div>
-                  <div class="hero-title" id="homeTitle" data-i18n="home.title">جاهز ترفع معدلك بالتوجيهي؟</div>
-                  <div class="hero-sub" data-i18n="home.subtitle">
-                    هاي لوحة دراسة لتوجيهي الأردن (2009): جلسات منضبطة + خطة أسبوعية + بنك أسئلة بنمط وزاري + إحصائيات واضحة.
-                  </div>
-                </div>
-                <div class="hero-badge">
-                  <i class="fa-solid fa-bolt"></i>
-                  <span data-i18n="home.badge">نمط توجيهي • وزاري • مراجعة</span>
-                </div>
-              </div>
-
-              <div class="hero-grid">
-                <div class="kpi">
-                  <div class="kpi-label" data-i18n="stats.streak">ستريك</div>
-                  <div class="kpi-value" id="kpiStreak">0</div>
-                  <div class="kpi-hint" data-i18n="stats.days">يوم</div>
-                </div>
-                <div class="kpi">
-                  <div class="kpi-label" data-i18n="stats.weekHours">ساعات هذا الأسبوع</div>
-                  <div class="kpi-value" id="kpiWeekHours">0</div>
-                  <div class="kpi-hint" data-i18n="stats.hours">ساعة</div>
-                </div>
-                <div class="kpi">
-                  <div class="kpi-label" data-i18n="home.todayDone">أنهيت اليوم ✅</div>
-                  <div class="kpi-value" id="kpiTodayDone">0%</div>
-                  <div class="kpi-hint" data-i18n="home.planCompletion">من الخطة</div>
-                </div>
-              </div>
-            </div>
-
-            <div class="hero-side">
-              <div class="card">
-                <div class="card-head">
-                  <div class="card-title" data-i18n="home.todayFocus">تركيز اليوم</div>
-                  <div class="chip" id="todayChip"><i class="fa-solid fa-calendar-day"></i><span id="todayLabel">—</span></div>
-                </div>
-                <div class="focus-box" id="todayFocusBox">
-                  <div class="focus-title" id="focusTitle">—</div>
-                  <div class="focus-meta" id="focusMeta">—</div>
-                  <div class="focus-actions">
-                    <button class="btn primary" data-jump="sessions">
-                      <i class="fa-solid fa-play"></i>
-                      <span data-i18n="home.startSession">ابدأ جلسة</span>
-                    </button>
-                    <button class="btn ghost" data-jump="plan">
-                      <i class="fa-solid fa-check"></i>
-                      <span data-i18n="home.openPlan">افتح الخطة</span>
-                    </button>
-                  </div>
-                </div>
-                <div class="note" data-i18n="home.focusHint">
-                  ملاحظة: “تركيز اليوم” يتولد تلقائياً من أول بلوك غير منجز بالخطة.
-                </div>
-              </div>
-
-              <div class="card">
-                <div class="card-head">
-                  <div class="card-title" data-i18n="home.quickActions">إجراءات سريعة</div>
-                </div>
-                <div class="quick-grid">
-                  <button class="qa" data-jump="sessions">
-                    <i class="fa-solid fa-hourglass-half"></i>
-                    <div>
-                      <div class="qa-title" data-i18n="home.qa.sessions">جلسة توجيهي</div>
-                      <div class="qa-sub" data-i18n="home.qa.sessionsSub">مؤقت + تتبع دقائق</div>
-                    </div>
-                  </button>
-                  <button class="qa" data-jump="plan">
-                    <i class="fa-solid fa-calendar-week"></i>
-                    <div>
-                      <div class="qa-title" data-i18n="home.qa.plan">خطة أسبوعية</div>
-                      <div class="qa-sub" data-i18n="home.qa.planSub">مراجعة + وزاري</div>
-                    </div>
-                  </button>
-                  <button class="qa" data-jump="bank">
-                    <i class="fa-solid fa-layer-group"></i>
-                    <div>
-                      <div class="qa-title" data-i18n="home.qa.bank">بنك الأسئلة</div>
-                      <div class="qa-sub" data-i18n="home.qa.bankSub">MCQ + قصير</div>
-                    </div>
-                  </button>
-                  <button class="qa" data-jump="stats">
-                    <i class="fa-solid fa-chart-line"></i>
-                    <div>
-                      <div class="qa-title" data-i18n="home.qa.stats">تقدمك</div>
-                      <div class="qa-sub" data-i18n="home.qa.statsSub">ستريك + مخطط</div>
-                    </div>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- SESSIONS -->
-        <section class="tab" id="tab-sessions" aria-labelledby="sessionsTitle">
-          <div class="grid-2">
-            <div class="card">
-              <div class="card-head">
-                <div>
-                  <div class="card-title" id="sessionsTitle" data-i18n="sessions.title">جلسات توجيهي (Pomodoro)</div>
-                  <div class="card-sub" data-i18n="sessions.subtitle">نمط 25/5 — عدّل المدة حسبك، وخليها جلسات وزاري/مراجعة.</div>
-                </div>
-                <div class="chip">
-                  <i class="fa-solid fa-rotate"></i>
-                  <span data-i18n="sessions.mode">الوضع:</span>
-                  <strong id="timerModeLabel">Study</strong>
-                </div>
-              </div>
-
-              <div class="timer-wrap">
-                <div class="ring" id="progressRing" aria-label="Progress">
-                  <div class="ring-inner">
-                    <div class="timer-time" id="timerTime">25:00</div>
-                    <div class="timer-hint" id="timerHint" data-i18n="sessions.hintStudy">جلسة دراسة: ركّز على نمط الأسئلة</div>
-                  </div>
-                </div>
-
-                <div class="timer-controls">
-                  <button class="btn primary" id="btnStart">
-                    <i class="fa-solid fa-play"></i><span data-i18n="common.start">ابدأ</span>
-                  </button>
-                  <button class="btn" id="btnPause">
-                    <i class="fa-solid fa-pause"></i><span data-i18n="common.pause">إيقاف</span>
-                  </button>
-                  <button class="btn" id="btnReset">
-                    <i class="fa-solid fa-rotate-left"></i><span data-i18n="common.reset">إعادة</span>
-                  </button>
-                  <button class="btn ghost" id="btnNext">
-                    <i class="fa-solid fa-forward-step"></i><span data-i18n="common.next">التالي</span>
-                  </button>
-                </div>
-
-                <div class="row">
-                  <label class="switch">
-                    <input type="checkbox" id="autoSwitch" />
-                    <span class="slider"></span>
-                  </label>
-                  <span data-i18n="sessions.autoSwitch">تبديل تلقائي بين دراسة/استراحة</span>
-                </div>
-              </div>
-
-              <div class="divider"></div>
-
-              <div class="form-grid">
-                <div class="field">
-                  <label for="studyMinutes" data-i18n="sessions.studyMin">دقائق الدراسة</label>
-                  <input id="studyMinutes" inputmode="numeric" type="number" min="10" max="90" step="1" />
-                  <div class="field-hint" data-i18n="sessions.studyHint">مقترح توجيهي: 25–45 دقيقة حسب المادة.</div>
-                </div>
-                <div class="field">
-                  <label for="breakMinutes" data-i18n="sessions.breakMin">دقائق الاستراحة</label>
-                  <input id="breakMinutes" inputmode="numeric" type="number" min="3" max="30" step="1" />
-                  <div class="field-hint" data-i18n="sessions.breakHint">استراحة قصيرة لتجنب الإرهاق.</div>
-                </div>
-
-                <button class="btn" id="saveDurationsBtn">
-                  <i class="fa-solid fa-floppy-disk"></i>
-                  <span data-i18n="common.save">حفظ</span>
-                </button>
-              </div>
-            </div>
-
-            <div class="card">
-              <div class="card-head">
-                <div>
-                  <div class="card-title" data-i18n="sessions.metricsTitle">مقاييس الجلسات</div>
-                  <div class="card-sub" data-i18n="sessions.metricsSub">بتساعدك تشوف التزامك وتوازن بين المواد.</div>
-                </div>
-              </div>
-
-              <div class="metrics">
-                <div class="metric">
-                  <div class="metric-icon"><i class="fa-solid fa-circle-check"></i></div>
-                  <div class="metric-body">
-                    <div class="metric-label" data-i18n="sessions.completedStudy">جلسات دراسة منجزة</div>
-                    <div class="metric-value" id="mStudySessions">0</div>
-                  </div>
-                </div>
-                <div class="metric">
-                  <div class="metric-icon"><i class="fa-solid fa-clock"></i></div>
-                  <div class="metric-body">
-                    <div class="metric-label" data-i18n="sessions.totalStudyMin">مجموع دقائق الدراسة</div>
-                    <div class="metric-value" id="mStudyMinutes">0</div>
-                  </div>
-                </div>
-                <div class="metric">
-                  <div class="metric-icon"><i class="fa-solid fa-mug-hot"></i></div>
-                  <div class="metric-body">
-                    <div class="metric-label" data-i18n="sessions.completedBreaks">استراحات منجزة</div>
-                    <div class="metric-value" id="mBreakSessions">0</div>
-                  </div>
-                </div>
-                <div class="metric">
-                  <div class="metric-icon"><i class="fa-solid fa-hourglass"></i></div>
-                  <div class="metric-body">
-                    <div class="metric-label" data-i18n="sessions.totalBreakMin">مجموع دقائق الاستراحة</div>
-                    <div class="metric-value" id="mBreakMinutes">0</div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="note" data-i18n="sessions.metricsHint">
-                نصيحة توجيهي: خلي آخر جلسة باليوم “تحليل أخطاء” من الوزاري اللي حلّيته.
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- WEEKLY PLAN -->
-        <section class="tab" id="tab-plan" aria-labelledby="planTitle">
-          <div class="card">
-            <div class="card-head">
-              <div>
-                <div class="card-title" id="planTitle" data-i18n="plan.title">الخطة الأسبوعية — توجيهي الأردن 2009</div>
-                <div class="card-sub" data-i18n="plan.subtitle">
-                  خطة متوازنة لـ (إنجليزي / عربي / تاريخ / دين) — تعلم + مراجعة + نمط أسئلة وزاري + يوم مراجعة أسبوعي.
-                </div>
-              </div>
-
-              <div class="plan-actions">
-                <button class="btn" id="regenPlanBtn">
-                  <i class="fa-solid fa-wand-magic-sparkles"></i>
-                  <span data-i18n="plan.regen">إعادة توليد الخطة</span>
-                </button>
-                <button class="btn" id="copyPlanBtn">
-                  <i class="fa-solid fa-copy"></i>
-                  <span data-i18n="plan.copy">نسخ الخطة</span>
-                </button>
-              </div>
-            </div>
-
-            <div class="plan-legend">
-              <span class="pill learn" data-i18n="plan.types.learn">تعلم</span>
-              <span class="pill revise" data-i18n="plan.types.revise">مراجعة</span>
-              <span class="pill practice" data-i18n="plan.types.practice">نمط وزاري</span>
-              <span class="pill review" data-i18n="plan.types.review">مراجعة أسبوعية</span>
-            </div>
-
-            <div class="weekly-grid" id="weeklyGrid" aria-label="Weekly Plan Grid"></div>
-          </div>
-        </section>
-
-        <!-- STATS -->
-        <section class="tab" id="tab-stats" aria-labelledby="statsTitle">
-          <div class="grid-2">
-            <div class="card">
-              <div class="card-head">
-                <div>
-                  <div class="card-title" id="statsTitle" data-i18n="stats.title">الإحصائيات والتقدم</div>
-                  <div class="card-sub" data-i18n="stats.subtitle">ملخص توجيهي واضح: دقائق، ستريك، أفضل يوم، وتوزيع مواد.</div>
-                </div>
-                <button class="btn danger" id="resetStatsBtn">
-                  <i class="fa-solid fa-trash"></i>
-                  <span data-i18n="stats.reset">تصفير الإحصائيات</span>
-                </button>
-              </div>
-
-              <div class="stats-grid">
-                <div class="stat-card">
-                  <div class="stat-title" data-i18n="sessions.completedStudy">جلسات دراسة منجزة</div>
-                  <div class="stat-value" id="sStudySessions">0</div>
-                </div>
-                <div class="stat-card">
-                  <div class="stat-title" data-i18n="stats.totalStudyTime">إجمالي وقت الدراسة</div>
-                  <div class="stat-value" id="sStudyTime">0</div>
-                </div>
-                <div class="stat-card">
-                  <div class="stat-title" data-i18n="stats.planCompletion">إنجاز الخطة</div>
-                  <div class="stat-value" id="sPlanCompletion">0%</div>
-                </div>
-                <div class="stat-card">
-                  <div class="stat-title" data-i18n="stats.streak">ستريك</div>
-                  <div class="stat-value" id="sStreak">0</div>
-                </div>
-                <div class="stat-card">
-                  <div class="stat-title" data-i18n="stats.bestDay">أفضل يوم</div>
-                  <div class="stat-value" id="sBestDay">—</div>
-                </div>
-                <div class="stat-card">
-                  <div class="stat-title" data-i18n="stats.subjectMix">توزيع المواد</div>
-                  <div class="stat-value small" id="sSubjectMix">—</div>
-                </div>
-              </div>
-
-              <div class="note" data-i18n="stats.note">
-                الستريك: يوم فيه ≥ جلسة دراسة واحدة أو ≥ بلوك منجز من الخطة.
-              </div>
-            </div>
-
-            <div class="card">
-              <div class="card-head">
-                <div>
-                  <div class="card-title" data-i18n="stats.chartTitle">مخطط تقدم الأسبوع</div>
-                  <div class="card-sub" data-i18n="stats.chartSub">دقائق الدراسة اليومية (أو ما يقابلها من إنجاز الخطة).</div>
-                </div>
-              </div>
-
-              <div class="chart-wrap">
-                <canvas id="progressChart" width="900" height="420" aria-label="Weekly chart"></canvas>
-              </div>
-
-              <div class="chart-legend">
-                <div class="legend-item">
-                  <span class="dot"></span>
-                  <span data-i18n="stats.chartLegend">دقائق الدراسة</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- QUESTION BANK -->
-        <section class="tab" id="tab-bank" aria-labelledby="bankTitle">
-          <div class="card">
-            <div class="card-head">
-              <div>
-                <div class="card-title" id="bankTitle">
-                  <span data-i18n="bank.title.en">Question Bank</span> / <span data-i18n="bank.title.ar">بنك الأسئلة</span>
-                </div>
-                <div class="card-sub" data-i18n="bank.subtitle">
-                  أسئلة “Sample Tawjihi-style” فقط (للتجربة). ضع روابط المصادر الرسمية لاحقاً داخل قسم “المصادر”.
-                </div>
-              </div>
-            </div>
-
-            <div class="bank-controls">
-              <div class="segmented" role="tablist" aria-label="Subjects">
-                <button class="seg is-active" data-subject="english" role="tab" aria-selected="true">
-                  <span data-i18n="subjects.english">إنجليزي</span>
-                </button>
-                <button class="seg" data-subject="arabic" role="tab" aria-selected="false">
-                  <span data-i18n="subjects.arabic">عربي</span>
-                </button>
-                <button class="seg" data-subject="history" role="tab" aria-selected="false">
-                  <span data-i18n="subjects.history">تاريخ</span>
-                </button>
-                <button class="seg" data-subject="religion" role="tab" aria-selected="false">
-                  <span data-i18n="subjects.religion">دين</span>
-                </button>
-              </div>
-
-              <div class="filters">
-                <div class="field inline">
-                  <label for="bankSearch" data-i18n="bank.search">بحث</label>
-                  <input id="bankSearch" type="search" placeholder="..." />
-                </div>
-
-                <div class="field inline">
-                  <label for="difficultyFilter" data-i18n="bank.difficulty">الصعوبة</label>
-                  <select id="difficultyFilter">
-                    <option value="all" data-i18n="bank.all">الكل</option>
-                    <option value="easy" data-i18n="difficulty.easy">سهل</option>
-                    <option value="medium" data-i18n="difficulty.medium">متوسط</option>
-                    <option value="hard" data-i18n="difficulty.hard">صعب</option>
-                  </select>
-                </div>
-
-                <div class="field inline">
-                  <label for="typeFilter" data-i18n="bank.type">النوع</label>
-                  <select id="typeFilter">
-                    <option value="all" data-i18n="bank.all">الكل</option>
-                    <option value="mcq" data-i18n="qtype.mcq">اختيار من متعدد</option>
-                    <option value="short" data-i18n="qtype.short">سؤال قصير</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div class="bank-grid">
-              <div class="bank-list" id="bankList" aria-live="polite"></div>
-
-              <aside class="sources card subtle">
-                <div class="card-head">
-                  <div>
-                    <div class="card-title" data-i18n="bank.sourcesTitle">المصادر (Sources)</div>
-                    <div class="card-sub" data-i18n="bank.sourcesSub">
-                      أضف لاحقاً روابط الوزارة/الأسئلة الوزارية الرسمية. لا يوجد ادعاء بجلب “2026” حالياً.
-                    </div>
-                  </div>
-                </div>
-
-                <div id="sourcesList" class="sources-list"></div>
-
-                <div class="divider"></div>
-
-                <form id="addSourceForm" class="source-form">
-                  <div class="field">
-                    <label for="srcTitle" data-i18n="bank.srcTitle">العنوان</label>
-                    <input id="srcTitle" type="text" maxlength="60" required />
-                  </div>
-                  <div class="field">
-                    <label for="srcYear" data-i18n="bank.srcYear">السنة</label>
-                    <input id="srcYear" type="number" min="2000" max="2100" required />
-                  </div>
-                  <div class="field">
-                    <label for="srcLink" data-i18n="bank.srcLink">الرابط</label>
-                    <input id="srcLink" type="url" placeholder="https://..." required />
-                  </div>
-                  <button class="btn" type="submit">
-                    <i class="fa-solid fa-plus"></i>
-                    <span data-i18n="bank.addSource">إضافة مصدر</span>
-                  </button>
-
-                  <div class="note" data-i18n="bank.sourcesHint">
-                    بإمكانك تعديل الأسئلة بسهولة من ملف app.js عبر JSON واحد: questionBank.
-                  </div>
-                </form>
-              </aside>
-            </div>
-          </div>
-        </section>
-      </main>
-
-      <footer class="footer">
-        <div class="tiny">
-          <span>GitHub Pages • PWA • Offline</span>
-          <span class="sep">•</span>
-          <span id="buildTag">v1</span>
-        </div>
-      </footer>
-    </div>
-  </div>
-
-  <!-- Mobile Drawer -->
-  <div class="drawer-backdrop" id="drawerBackdrop" hidden></div>
-  <div class="drawer" id="drawer" hidden>
-    <div class="drawer-head">
-      <div class="drawer-title">T09</div>
-      <button class="icon-btn" id="drawerCloseBtn" aria-label="Close">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-    </div>
-    <div class="drawer-body">
-      <button class="nav-item" data-tab="home"><i class="fa-solid fa-house"></i><span data-i18n="tabs.home">الرئيسية</span></button>
-      <button class="nav-item" data-tab="sessions"><i class="fa-solid fa-hourglass-half"></i><span data-i18n="tabs.sessions">جلسات</span></button>
-      <button class="nav-item" data-tab="plan"><i class="fa-solid fa-calendar-week"></i><span data-i18n="tabs.plan">الخطة الأسبوعية</span></button>
-      <button class="nav-item" data-tab="stats"><i class="fa-solid fa-chart-line"></i><span data-i18n="tabs.stats">الإحصائيات</span></button>
-      <button class="nav-item" data-tab="bank"><i class="fa-solid fa-layer-group"></i><span data-i18n="tabs.bank">بنك الأسئلة</span></button>
-    </div>
-  </div>
-
-  <!-- Confirm Modal -->
-  <div class="modal-backdrop" id="modalBackdrop" hidden></div>
-  <div class="modal" id="confirmModal" hidden role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
-    <div class="modal-head">
-      <div class="modal-title" id="confirmTitle" data-i18n="modal.confirmTitle">تأكيد</div>
-      <button class="icon-btn" id="modalCloseBtn" aria-label="Close">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-    </div>
-    <div class="modal-body">
-      <p id="confirmText" class="modal-text">—</p>
-      <div class="modal-actions">
-        <button class="btn" id="confirmCancel" data-i18n="common.cancel">إلغاء</button>
-        <button class="btn danger" id="confirmOk" data-i18n="common.confirm">تأكيد</button>
+    <!-- Drawer (Mobile) -->
+    <div class="backdrop" id="drawerBackdrop" hidden></div>
+    <aside class="drawer" id="drawer" hidden>
+      <div class="drawer-head">
+        <button class="icon-btn" id="btnCloseDrawer" aria-label="Close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+        <div class="drawer-title">T09</div>
       </div>
-    </div>
-  </div>
 
-  <script src="app.js" defer></script>
+      <nav class="drawer-nav">
+        <button class="nav-item is-active" data-tab="home">
+          <i class="fa-solid fa-house"></i>
+          <span data-i18n="tabHome">الرئيسية</span>
+        </button>
+
+        <button class="nav-item" data-tab="sessions">
+          <i class="fa-solid fa-hourglass-half"></i>
+          <span data-i18n="tabSessions">جلسات</span>
+        </button>
+
+        <button class="nav-item" data-tab="plan">
+          <i class="fa-solid fa-calendar-check"></i>
+          <span data-i18n="tabPlan">خطة الختمة</span>
+        </button>
+
+        <button class="nav-item" data-tab="stats">
+          <i class="fa-solid fa-chart-line"></i>
+          <span data-i18n="tabStats">الإحصائيات</span>
+        </button>
+      </nav>
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+      <!-- HOME -->
+      <section class="tab is-active" id="tab-home">
+        <div class="grid hero">
+          <div class="card hero-card">
+            <div class="hero-top">
+              <div>
+                <div class="kicker" data-i18n="homeKicker">جاهز تختم الفصل الثاني؟</div>
+                <h1 class="h1" data-i18n="homeTitle">خطة توجيهي الأردن (2009) — ختمة منظمة</h1>
+                <p class="sub" data-i18n="homeDesc">
+                  اختار موعد الختمة (1 أيار أو 15 أيار) وخلي الخطة تتقسم أيامياً حسب وقتك.
+                </p>
+              </div>
+              <div class="chip chip-purple">
+                <i class="fa-solid fa-bolt"></i>
+                <span data-i18n="homeChip">نمط وزاري + مراجعة أخطاء</span>
+              </div>
+            </div>
+
+            <div class="today-focus">
+              <div class="today-label" data-i18n="todayFocus">تركيز اليوم</div>
+              <div class="today-text" id="todayFocusText">—</div>
+              <div class="today-hint" data-i18n="todayHint">مأخوذ تلقائياً من خطة الختمة.</div>
+            </div>
+
+            <div class="actions">
+              <button class="btn primary" data-go="plan">
+                <i class="fa-solid fa-calendar-check"></i>
+                <span data-i18n="goPlan">افتح خطة الختمة</span>
+              </button>
+              <button class="btn ghost" data-go="sessions">
+                <i class="fa-solid fa-hourglass-half"></i>
+                <span data-i18n="goSessions">ابدأ جلسة دراسة</span>
+              </button>
+              <button class="btn ghost" data-go="stats">
+                <i class="fa-solid fa-chart-line"></i>
+                <span data-i18n="goStats">شوف التقدم</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="card side-card">
+            <div class="side-title" data-i18n="quickTipsTitle">نصائح سريعة (توجيهي)</div>
+            <ul class="bullets">
+              <li data-i18n="tip1">بعد كل مهمة: 10–15 دقيقة “تحليل أخطاء”</li>
+              <li data-i18n="tip2">خصص كل 3 أيام “مراجعة سريعة” قبل النوم</li>
+              <li data-i18n="tip3">التزام بسيط يومياً أحسن من ضغط يومين وترك أسبوع</li>
+            </ul>
+
+            <div class="mini-stats">
+              <div class="mini">
+                <div class="mini-num" id="miniSessions">0</div>
+                <div class="mini-label" data-i18n="miniSessions">جلسات</div>
+              </div>
+              <div class="mini">
+                <div class="mini-num" id="miniMinutes">0</div>
+                <div class="mini-label" data-i18n="miniMinutes">دقائق دراسة</div>
+              </div>
+              <div class="mini">
+                <div class="mini-num" id="miniPlanPct">0%</div>
+                <div class="mini-label" data-i18n="miniPlan">الخطة</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SESSIONS -->
+      <section class="tab" id="tab-sessions">
+        <div class="tab-head">
+          <div>
+            <h2 class="h2" data-i18n="sessionsTitle">جلسات (بومودورو توجيهي)</h2>
+            <p class="sub" data-i18n="sessionsDesc">جلسة دراسة + استراحة. احفظ إعداداتك وتابع تقدمك.</p>
+          </div>
+          <div class="tab-actions">
+            <button class="btn ghost" id="btnResetStatsFromSessions">
+              <i class="fa-solid fa-rotate"></i>
+              <span data-i18n="resetStats">تصفير الإحصائيات</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="grid two">
+          <div class="card">
+            <div class="timer-top">
+              <div class="timer-mode" id="timerMode" data-i18n="modeStudy">دراسة</div>
+              <div class="timer-meta">
+                <span class="tag" id="cycleTag">1</span>
+                <span class="muted" data-i18n="cycle">دورة</span>
+              </div>
+            </div>
+
+            <div class="timer-wrap">
+              <canvas id="ring" width="220" height="220"></canvas>
+              <div class="timer-time" id="timeText">25:00</div>
+              <div class="timer-hint" id="timerHint" data-i18n="hintStudy">ركز: هدف اليوم من الخطة</div>
+            </div>
+
+            <div class="timer-controls">
+              <button class="btn primary" id="btnStart">
+                <i class="fa-solid fa-play"></i>
+                <span data-i18n="start">ابدأ</span>
+              </button>
+              <button class="btn ghost" id="btnPause">
+                <i class="fa-solid fa-pause"></i>
+                <span data-i18n="pause">إيقاف</span>
+              </button>
+              <button class="btn ghost" id="btnNext">
+                <i class="fa-solid fa-forward-step"></i>
+                <span data-i18n="next">التالي</span>
+              </button>
+              <button class="btn danger" id="btnReset">
+                <i class="fa-solid fa-rotate-left"></i>
+                <span data-i18n="reset">إعادة</span>
+              </button>
+            </div>
+
+            <div class="row">
+              <label class="toggle">
+                <input type="checkbox" id="autoSwitch" />
+                <span data-i18n="autoSwitch">تبديل تلقائي (دراسة/استراحة)</span>
+              </label>
+            </div>
+
+            <div class="row">
+              <label class="toggle">
+                <input type="checkbox" id="soundOn" />
+                <span data-i18n="soundOn">صوت تنبيه</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title" data-i18n="settings">الإعدادات</div>
+
+            <div class="form-grid">
+              <div class="field">
+                <label data-i18n="studyMin">دقائق الدراسة</label>
+                <input id="studyMin" type="number" min="10" max="90" step="1" />
+                <div class="hint" data-i18n="studyHint">مقترح: 25–40 دقيقة حسب تركيزك</div>
+              </div>
+
+              <div class="field">
+                <label data-i18n="breakMin">دقائق الاستراحة</label>
+                <input id="breakMin" type="number" min="3" max="30" step="1" />
+                <div class="hint" data-i18n="breakHint">مقترح: 5–10 دقائق</div>
+              </div>
+            </div>
+
+            <button class="btn primary" id="btnSaveDurations">
+              <i class="fa-solid fa-floppy-disk"></i>
+              <span data-i18n="save">حفظ</span>
+            </button>
+
+            <hr class="sep" />
+
+            <div class="card-title" data-i18n="sessionMetrics">مؤشرات</div>
+            <div class="metric-grid">
+              <div class="metric">
+                <div class="metric-num" id="mStudySessions">0</div>
+                <div class="metric-label" data-i18n="mStudySessions">جلسات دراسة</div>
+              </div>
+              <div class="metric">
+                <div class="metric-num" id="mStudyMinutes">0</div>
+                <div class="metric-label" data-i18n="mStudyMinutes">دقائق دراسة</div>
+              </div>
+              <div class="metric">
+                <div class="metric-num" id="mBreaks">0</div>
+                <div class="metric-label" data-i18n="mBreaks">استراحات</div>
+              </div>
+              <div class="metric">
+                <div class="metric-num" id="mBreakMinutes">0</div>
+                <div class="metric-label" data-i18n="mBreakMinutes">دقائق استراحة</div>
+              </div>
+            </div>
+
+            <div class="note">
+              <i class="fa-solid fa-circle-info"></i>
+              <span data-i18n="noteLocal">كل شي محفوظ تلقائياً على جهازك (LocalStorage).</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PLAN -->
+      <section class="tab" id="tab-plan">
+        <div class="tab-head">
+          <div>
+            <h2 class="h2" data-i18n="planTitle">خطة الختمة (حسب الورقة)</h2>
+            <p class="sub" data-i18n="planDesc">
+              اختار موعد الختمة وطريقة تقسيم المهام. كل يوم مهام واضحة + تفعيل “تم” للتتبع.
+            </p>
+          </div>
+          <div class="tab-actions">
+            <button class="btn ghost" id="btnCopyPlan">
+              <i class="fa-solid fa-copy"></i>
+              <span data-i18n="copyPlan">نسخ الخطة</span>
+            </button>
+            <button class="btn primary" id="btnRegeneratePlan">
+              <i class="fa-solid fa-wand-magic-sparkles"></i>
+              <span data-i18n="regenPlan">إعادة توليد</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="grid two">
+          <div class="card">
+            <div class="card-title" data-i18n="planOptions">خيارات الخطة</div>
+
+            <div class="option-row">
+              <label class="label" data-i18n="targetDate">موعد الختمة</label>
+              <div class="seg" role="group">
+                <button class="seg-btn is-active" data-target="may1" id="targetMay1">
+                  <span data-i18n="may1">1 أيار</span>
+                </button>
+                <button class="seg-btn" data-target="may15" id="targetMay15">
+                  <span data-i18n="may15">15 أيار</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="option-row">
+              <label class="label" data-i18n="dailyMode">تقسيم اليوم</label>
+              <div class="seg" role="group">
+                <button class="seg-btn is-active" data-dailymode="two" id="dailyTwo">
+                  <span data-i18n="twoTasks">مهمتين/يوم</span>
+                </button>
+                <button class="seg-btn" data-dailymode="four" id="dailyFour">
+                  <span data-i18n="oneEach">مهمة من كل مادة</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="option-row">
+              <label class="toggle">
+                <input type="checkbox" id="includeReviewDays" checked />
+                <span data-i18n="reviewDays">أيام مراجعة/تحليل أخطاء أسبوعياً</span>
+              </label>
+            </div>
+
+            <div class="option-row">
+              <label class="toggle">
+                <input type="checkbox" id="lightDay" checked />
+                <span data-i18n="lightDay">يوم خفيف أسبوعياً (تخفيف ضغط)</span>
+              </label>
+            </div>
+
+            <div class="plan-summary" id="planSummary">
+              —
+            </div>
+
+            <div class="hint" data-i18n="planHint">
+              ملاحظة: المحتوى هنا “مبني على مجموعات” من البنود الظاهرة بالورقة (وحدات/مراجعات/نمط وزاري).
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title" data-i18n="todayFromPlan">مهام اليوم من الخطة</div>
+            <div class="today-box" id="todayTasks">
+              <div class="muted" data-i18n="noPlanYet">اختار الخيارات واضغط “إعادة توليد”.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title" data-i18n="calendarTitle">تقسيم الأيام</div>
+          <div class="calendar-tools">
+            <input id="planSearch" class="search" type="search" placeholder="بحث..." />
+            <div class="pill small">
+              <span class="muted" data-i18n="planProgress">تقدم الخطة</span>
+              <strong id="planProgressText">0%</strong>
+            </div>
+          </div>
+
+          <div class="day-list" id="dayList"></div>
+        </div>
+      </section>
+
+      <!-- STATS -->
+      <section class="tab" id="tab-stats">
+        <div class="tab-head">
+          <div>
+            <h2 class="h2" data-i18n="statsTitle">الإحصائيات والتقدم</h2>
+            <p class="sub" data-i18n="statsDesc">جلساتك + تقدم الخطة + ستريك + أفضل يوم.</p>
+          </div>
+          <div class="tab-actions">
+            <button class="btn danger" id="btnResetAll">
+              <i class="fa-solid fa-trash"></i>
+              <span data-i18n="resetAll">تصفير الكل</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="grid three">
+          <div class="card metric-card">
+            <div class="metric-num" id="sStudySessions">0</div>
+            <div class="metric-label" data-i18n="mStudySessions">جلسات دراسة</div>
+          </div>
+          <div class="card metric-card">
+            <div class="metric-num" id="sStudyMinutes">0</div>
+            <div class="metric-label" data-i18n="mStudyMinutes">دقائق دراسة</div>
+          </div>
+          <div class="card metric-card">
+            <div class="metric-num" id="sPlanPct">0%</div>
+            <div class="metric-label" data-i18n="planCompletion">نسبة إنجاز الخطة</div>
+          </div>
+        </div>
+
+        <div class="grid two">
+          <div class="card">
+            <div class="card-title" data-i18n="streakTitle">الستريك</div>
+            <div class="stat-row">
+              <div class="stat-item">
+                <div class="stat-num" id="streakNow">0</div>
+                <div class="stat-label" data-i18n="currentStreak">الحالي</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-num" id="bestDay">—</div>
+                <div class="stat-label" data-i18n="bestDay">أفضل يوم</div>
+              </div>
+            </div>
+
+            <div class="note">
+              <i class="fa-solid fa-fire"></i>
+              <span data-i18n="streakRule">اليوم محسوب إذا أنهيت ≥1 جلسة دراسة أو ≥1 مهمة من الخطة.</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title" data-i18n="chartTitle">مخطط الدراسة للأسبوع</div>
+            <canvas id="weekChart" width="800" height="320" class="chart"></canvas>
+            <div class="hint" data-i18n="chartHint">يعرض دقائق الدراسة اليومية (آخر 7 أيام).</div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Bottom Nav (Mobile) -->
+    <nav class="bottom-nav">
+      <button class="bnav is-active" data-tab="home">
+        <i class="fa-solid fa-house"></i>
+        <span data-i18n="tabHome">الرئيسية</span>
+      </button>
+      <button class="bnav" data-tab="sessions">
+        <i class="fa-solid fa-hourglass-half"></i>
+        <span data-i18n="tabSessions">جلسات</span>
+      </button>
+      <button class="bnav" data-tab="plan">
+        <i class="fa-solid fa-calendar-check"></i>
+        <span data-i18n="tabPlan">خطة الختمة</span>
+      </button>
+      <button class="bnav" data-tab="stats">
+        <i class="fa-solid fa-chart-line"></i>
+        <span data-i18n="tabStats">الإحصائيات</span>
+      </button>
+    </nav>
+
+    <!-- Toast -->
+    <div class="toast" id="toast" hidden></div>
+  </div>
 </body>
 </html>
