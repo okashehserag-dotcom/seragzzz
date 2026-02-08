@@ -3,94 +3,573 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>لوحة توجيهي 2009</title>
-  <meta name="description" content="لوحة دراسة احترافية: مواد، مؤقّت، خطة، بنك أسئلة بالذكاء الاصطناعي، إحصائيات." />
-  <meta name="theme-color" content="#0b1020" />
+  <meta name="theme-color" content="#6D28D9" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="description" content="Tawjihi 2009 Dashboard — Study sessions, weekly plan, stats, and question bank." />
+
+  <title>T09 — Tawjihi Dashboard</title>
+
+  <!-- Fonts (CDN) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <!-- Icons (CDN) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" referrerpolicy="no-referrer" />
+
+  <!-- PWA -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="icon" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="styles.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
+  <link rel="stylesheet" href="style.css" />
 </head>
 
 <body>
-  <header class="topbar">
-    <div class="wrap row between gap">
+  <a class="skip" href="#main">Skip</a>
+
+  <div class="app-shell">
+    <!-- Sidebar (desktop) -->
+    <aside class="sidebar" aria-label="Navigation">
       <div class="brand">
-        <div class="logo">T09</div>
-        <div>
-          <h1>لوحة التوجيهي 2009</h1>
-          <p class="muted tiny">عربي • إنجليزي • تاريخ الأردن • دين</p>
+        <div class="brand-mark" aria-hidden="true">T09</div>
+        <div class="brand-text">
+          <div class="brand-title" data-i18n="app.name">لوحة التوجيهي</div>
+          <div class="brand-sub" data-i18n="app.subtitle">مصممة لتوجيهي الأردن — نظام 2009</div>
         </div>
       </div>
 
-      <div class="row gap" style="flex-wrap:wrap">
-        <div class="search">
-          <input id="globalSearch" type="search" placeholder="بحث سريع (مادة / درس / سؤال)..." />
-          <div id="searchResults" class="searchResults hidden"></div>
+      <nav class="nav">
+        <button class="nav-item is-active" data-tab="home" aria-current="page">
+          <i class="fa-solid fa-house"></i><span data-i18n="tabs.home">الرئيسية</span>
+        </button>
+        <button class="nav-item" data-tab="sessions">
+          <i class="fa-solid fa-hourglass-half"></i><span data-i18n="tabs.sessions">جلسات</span>
+        </button>
+        <button class="nav-item" data-tab="plan">
+          <i class="fa-solid fa-calendar-week"></i><span data-i18n="tabs.plan">الخطة الأسبوعية</span>
+        </button>
+        <button class="nav-item" data-tab="stats">
+          <i class="fa-solid fa-chart-line"></i><span data-i18n="tabs.stats">الإحصائيات</span>
+        </button>
+        <button class="nav-item" data-tab="bank">
+          <i class="fa-solid fa-layer-group"></i><span data-i18n="tabs.bank">بنك الأسئلة</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="mini-pill" title="Offline / PWA">
+          <i class="fa-solid fa-wifi"></i>
+          <span id="offlineBadge" data-i18n="pwa.ready">جاهز للأوفلاين</span>
         </div>
-        <button class="btn" id="themeToggle" title="ثيم">🌙/☀️</button>
-        <button class="btn primary" id="quickAdd" title="مهمة سريعة">+ مهمة</button>
+        <div class="tiny" data-i18n="app.footerNote">حفظ تلقائي + Offline + تثبيت كتطبيق.</div>
       </div>
-    </div>
-  </header>
+    </aside>
 
-  <aside class="sidebar">
-    <nav class="nav">
-      <a class="navItem active" href="#/" data-route="/">🏠 الرئيسية</a>
-      <a class="navItem" href="#/plan" data-route="/plan">🗓️ الخطة</a>
-      <a class="navItem" href="#/questions" data-route="/questions">🧠 بنك الأسئلة</a>
-      <a class="navItem" href="#/stats" data-route="/stats">📈 الإحصائيات</a>
-      <a class="navItem" href="#/settings" data-route="/settings">⚙️ الإعدادات</a>
-    </nav>
+    <!-- Main -->
+    <div class="main-col">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="icon-btn mobile-nav-btn" id="mobileMenuBtn" aria-label="Menu">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <div class="topbar-title">
+            <div class="h1" data-i18n="app.headerTitle">لوحة التوجيهي 2009</div>
+            <div class="h2" data-i18n="app.headerSubtitle">عربي • إنجليزي • تاريخ • دين</div>
+          </div>
+        </div>
 
-    <div class="sideCard">
-      <div class="kpi">
-        <div class="kpiLabel">ستريك</div>
-        <div class="kpiValue"><span id="streakDays">0</span> يوم</div>
-      </div>
-      <div class="kpi">
-        <div class="kpiLabel">ساعات هذا الأسبوع</div>
-        <div class="kpiValue"><span id="weekHours">0</span> ساعة</div>
-      </div>
+        <div class="topbar-actions">
+          <button class="pill-btn" id="langToggle" title="Language">
+            <i class="fa-solid fa-language"></i>
+            <span id="langToggleText">AR</span>
+          </button>
 
-      <button class="btn primary full" id="finishDay">أنهيت اليوم ✅</button>
-      <p class="muted tiny" style="margin:10px 0 0">
-        حفظ تلقائي + Offline + تثبيت كتطبيق.
-      </p>
-    </div>
-  </aside>
+          <button class="pill-btn" id="muteToggle" title="Mute">
+            <i class="fa-solid fa-volume-high" id="muteIcon"></i>
+            <span data-i18n="common.sound">الصوت</span>
+          </button>
 
-  <main class="main">
-    <div class="wrap mainGrid">
-      <section id="routeHome" class="route"></section>
-      <section id="routePlan" class="route hidden"></section>
-      <section id="routeQuestions" class="route hidden"></section>
-      <section id="routeStats" class="route hidden"></section>
-      <section id="routeSettings" class="route hidden"></section>
-    </div>
+          <button class="icon-btn" id="copyAppStateBtn" title="Copy (debug export)">
+            <i class="fa-solid fa-copy"></i>
+          </button>
+        </div>
+      </header>
 
-    <footer class="footer">
-      <div class="wrap row between">
-        <small class="muted">GitHub Pages • PWA • Offline</small>
-        <small class="muted">v1</small>
-      </div>
-    </footer>
-  </main>
+      <!-- Mobile bottom nav -->
+      <nav class="bottom-nav" aria-label="Bottom Navigation">
+        <button class="bn-item is-active" data-tab="home" aria-current="page"><i class="fa-solid fa-house"></i><span data-i18n="tabs.home">الرئيسية</span></button>
+        <button class="bn-item" data-tab="sessions"><i class="fa-solid fa-hourglass-half"></i><span data-i18n="tabs.sessions">جلسات</span></button>
+        <button class="bn-item" data-tab="plan"><i class="fa-solid fa-calendar-week"></i><span data-i18n="tabs.plan">الخطة</span></button>
+        <button class="bn-item" data-tab="stats"><i class="fa-solid fa-chart-line"></i><span data-i18n="tabs.stats">إحصاء</span></button>
+        <button class="bn-item" data-tab="bank"><i class="fa-solid fa-layer-group"></i><span data-i18n="tabs.bank">أسئلة</span></button>
+      </nav>
 
-  <!-- Modal -->
-  <div class="modal hidden" id="modal">
-    <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-      <div class="row between">
-        <h2 id="modalTitle">عنوان</h2>
-        <button class="btn" id="modalClose">✕</button>
-      </div>
-      <div id="modalBody"></div>
+      <main id="main" class="content" role="main">
+        <!-- HOME -->
+        <section class="tab is-active" id="tab-home" aria-labelledby="homeTitle">
+          <div class="hero">
+            <div class="hero-card">
+              <div class="hero-top">
+                <div>
+                  <div class="hero-title" id="homeTitle" data-i18n="home.title">جاهز ترفع معدلك بالتوجيهي؟</div>
+                  <div class="hero-sub" data-i18n="home.subtitle">
+                    هاي لوحة دراسة لتوجيهي الأردن (2009): جلسات منضبطة + خطة أسبوعية + بنك أسئلة بنمط وزاري + إحصائيات واضحة.
+                  </div>
+                </div>
+                <div class="hero-badge">
+                  <i class="fa-solid fa-bolt"></i>
+                  <span data-i18n="home.badge">نمط توجيهي • وزاري • مراجعة</span>
+                </div>
+              </div>
+
+              <div class="hero-grid">
+                <div class="kpi">
+                  <div class="kpi-label" data-i18n="stats.streak">ستريك</div>
+                  <div class="kpi-value" id="kpiStreak">0</div>
+                  <div class="kpi-hint" data-i18n="stats.days">يوم</div>
+                </div>
+                <div class="kpi">
+                  <div class="kpi-label" data-i18n="stats.weekHours">ساعات هذا الأسبوع</div>
+                  <div class="kpi-value" id="kpiWeekHours">0</div>
+                  <div class="kpi-hint" data-i18n="stats.hours">ساعة</div>
+                </div>
+                <div class="kpi">
+                  <div class="kpi-label" data-i18n="home.todayDone">أنهيت اليوم ✅</div>
+                  <div class="kpi-value" id="kpiTodayDone">0%</div>
+                  <div class="kpi-hint" data-i18n="home.planCompletion">من الخطة</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="hero-side">
+              <div class="card">
+                <div class="card-head">
+                  <div class="card-title" data-i18n="home.todayFocus">تركيز اليوم</div>
+                  <div class="chip" id="todayChip"><i class="fa-solid fa-calendar-day"></i><span id="todayLabel">—</span></div>
+                </div>
+                <div class="focus-box" id="todayFocusBox">
+                  <div class="focus-title" id="focusTitle">—</div>
+                  <div class="focus-meta" id="focusMeta">—</div>
+                  <div class="focus-actions">
+                    <button class="btn primary" data-jump="sessions">
+                      <i class="fa-solid fa-play"></i>
+                      <span data-i18n="home.startSession">ابدأ جلسة</span>
+                    </button>
+                    <button class="btn ghost" data-jump="plan">
+                      <i class="fa-solid fa-check"></i>
+                      <span data-i18n="home.openPlan">افتح الخطة</span>
+                    </button>
+                  </div>
+                </div>
+                <div class="note" data-i18n="home.focusHint">
+                  ملاحظة: “تركيز اليوم” يتولد تلقائياً من أول بلوك غير منجز بالخطة.
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-head">
+                  <div class="card-title" data-i18n="home.quickActions">إجراءات سريعة</div>
+                </div>
+                <div class="quick-grid">
+                  <button class="qa" data-jump="sessions">
+                    <i class="fa-solid fa-hourglass-half"></i>
+                    <div>
+                      <div class="qa-title" data-i18n="home.qa.sessions">جلسة توجيهي</div>
+                      <div class="qa-sub" data-i18n="home.qa.sessionsSub">مؤقت + تتبع دقائق</div>
+                    </div>
+                  </button>
+                  <button class="qa" data-jump="plan">
+                    <i class="fa-solid fa-calendar-week"></i>
+                    <div>
+                      <div class="qa-title" data-i18n="home.qa.plan">خطة أسبوعية</div>
+                      <div class="qa-sub" data-i18n="home.qa.planSub">مراجعة + وزاري</div>
+                    </div>
+                  </button>
+                  <button class="qa" data-jump="bank">
+                    <i class="fa-solid fa-layer-group"></i>
+                    <div>
+                      <div class="qa-title" data-i18n="home.qa.bank">بنك الأسئلة</div>
+                      <div class="qa-sub" data-i18n="home.qa.bankSub">MCQ + قصير</div>
+                    </div>
+                  </button>
+                  <button class="qa" data-jump="stats">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <div>
+                      <div class="qa-title" data-i18n="home.qa.stats">تقدمك</div>
+                      <div class="qa-sub" data-i18n="home.qa.statsSub">ستريك + مخطط</div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- SESSIONS -->
+        <section class="tab" id="tab-sessions" aria-labelledby="sessionsTitle">
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-head">
+                <div>
+                  <div class="card-title" id="sessionsTitle" data-i18n="sessions.title">جلسات توجيهي (Pomodoro)</div>
+                  <div class="card-sub" data-i18n="sessions.subtitle">نمط 25/5 — عدّل المدة حسبك، وخليها جلسات وزاري/مراجعة.</div>
+                </div>
+                <div class="chip">
+                  <i class="fa-solid fa-rotate"></i>
+                  <span data-i18n="sessions.mode">الوضع:</span>
+                  <strong id="timerModeLabel">Study</strong>
+                </div>
+              </div>
+
+              <div class="timer-wrap">
+                <div class="ring" id="progressRing" aria-label="Progress">
+                  <div class="ring-inner">
+                    <div class="timer-time" id="timerTime">25:00</div>
+                    <div class="timer-hint" id="timerHint" data-i18n="sessions.hintStudy">جلسة دراسة: ركّز على نمط الأسئلة</div>
+                  </div>
+                </div>
+
+                <div class="timer-controls">
+                  <button class="btn primary" id="btnStart">
+                    <i class="fa-solid fa-play"></i><span data-i18n="common.start">ابدأ</span>
+                  </button>
+                  <button class="btn" id="btnPause">
+                    <i class="fa-solid fa-pause"></i><span data-i18n="common.pause">إيقاف</span>
+                  </button>
+                  <button class="btn" id="btnReset">
+                    <i class="fa-solid fa-rotate-left"></i><span data-i18n="common.reset">إعادة</span>
+                  </button>
+                  <button class="btn ghost" id="btnNext">
+                    <i class="fa-solid fa-forward-step"></i><span data-i18n="common.next">التالي</span>
+                  </button>
+                </div>
+
+                <div class="row">
+                  <label class="switch">
+                    <input type="checkbox" id="autoSwitch" />
+                    <span class="slider"></span>
+                  </label>
+                  <span data-i18n="sessions.autoSwitch">تبديل تلقائي بين دراسة/استراحة</span>
+                </div>
+              </div>
+
+              <div class="divider"></div>
+
+              <div class="form-grid">
+                <div class="field">
+                  <label for="studyMinutes" data-i18n="sessions.studyMin">دقائق الدراسة</label>
+                  <input id="studyMinutes" inputmode="numeric" type="number" min="10" max="90" step="1" />
+                  <div class="field-hint" data-i18n="sessions.studyHint">مقترح توجيهي: 25–45 دقيقة حسب المادة.</div>
+                </div>
+                <div class="field">
+                  <label for="breakMinutes" data-i18n="sessions.breakMin">دقائق الاستراحة</label>
+                  <input id="breakMinutes" inputmode="numeric" type="number" min="3" max="30" step="1" />
+                  <div class="field-hint" data-i18n="sessions.breakHint">استراحة قصيرة لتجنب الإرهاق.</div>
+                </div>
+
+                <button class="btn" id="saveDurationsBtn">
+                  <i class="fa-solid fa-floppy-disk"></i>
+                  <span data-i18n="common.save">حفظ</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <div>
+                  <div class="card-title" data-i18n="sessions.metricsTitle">مقاييس الجلسات</div>
+                  <div class="card-sub" data-i18n="sessions.metricsSub">بتساعدك تشوف التزامك وتوازن بين المواد.</div>
+                </div>
+              </div>
+
+              <div class="metrics">
+                <div class="metric">
+                  <div class="metric-icon"><i class="fa-solid fa-circle-check"></i></div>
+                  <div class="metric-body">
+                    <div class="metric-label" data-i18n="sessions.completedStudy">جلسات دراسة منجزة</div>
+                    <div class="metric-value" id="mStudySessions">0</div>
+                  </div>
+                </div>
+                <div class="metric">
+                  <div class="metric-icon"><i class="fa-solid fa-clock"></i></div>
+                  <div class="metric-body">
+                    <div class="metric-label" data-i18n="sessions.totalStudyMin">مجموع دقائق الدراسة</div>
+                    <div class="metric-value" id="mStudyMinutes">0</div>
+                  </div>
+                </div>
+                <div class="metric">
+                  <div class="metric-icon"><i class="fa-solid fa-mug-hot"></i></div>
+                  <div class="metric-body">
+                    <div class="metric-label" data-i18n="sessions.completedBreaks">استراحات منجزة</div>
+                    <div class="metric-value" id="mBreakSessions">0</div>
+                  </div>
+                </div>
+                <div class="metric">
+                  <div class="metric-icon"><i class="fa-solid fa-hourglass"></i></div>
+                  <div class="metric-body">
+                    <div class="metric-label" data-i18n="sessions.totalBreakMin">مجموع دقائق الاستراحة</div>
+                    <div class="metric-value" id="mBreakMinutes">0</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="note" data-i18n="sessions.metricsHint">
+                نصيحة توجيهي: خلي آخر جلسة باليوم “تحليل أخطاء” من الوزاري اللي حلّيته.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- WEEKLY PLAN -->
+        <section class="tab" id="tab-plan" aria-labelledby="planTitle">
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <div class="card-title" id="planTitle" data-i18n="plan.title">الخطة الأسبوعية — توجيهي الأردن 2009</div>
+                <div class="card-sub" data-i18n="plan.subtitle">
+                  خطة متوازنة لـ (إنجليزي / عربي / تاريخ / دين) — تعلم + مراجعة + نمط أسئلة وزاري + يوم مراجعة أسبوعي.
+                </div>
+              </div>
+
+              <div class="plan-actions">
+                <button class="btn" id="regenPlanBtn">
+                  <i class="fa-solid fa-wand-magic-sparkles"></i>
+                  <span data-i18n="plan.regen">إعادة توليد الخطة</span>
+                </button>
+                <button class="btn" id="copyPlanBtn">
+                  <i class="fa-solid fa-copy"></i>
+                  <span data-i18n="plan.copy">نسخ الخطة</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="plan-legend">
+              <span class="pill learn" data-i18n="plan.types.learn">تعلم</span>
+              <span class="pill revise" data-i18n="plan.types.revise">مراجعة</span>
+              <span class="pill practice" data-i18n="plan.types.practice">نمط وزاري</span>
+              <span class="pill review" data-i18n="plan.types.review">مراجعة أسبوعية</span>
+            </div>
+
+            <div class="weekly-grid" id="weeklyGrid" aria-label="Weekly Plan Grid"></div>
+          </div>
+        </section>
+
+        <!-- STATS -->
+        <section class="tab" id="tab-stats" aria-labelledby="statsTitle">
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-head">
+                <div>
+                  <div class="card-title" id="statsTitle" data-i18n="stats.title">الإحصائيات والتقدم</div>
+                  <div class="card-sub" data-i18n="stats.subtitle">ملخص توجيهي واضح: دقائق، ستريك، أفضل يوم، وتوزيع مواد.</div>
+                </div>
+                <button class="btn danger" id="resetStatsBtn">
+                  <i class="fa-solid fa-trash"></i>
+                  <span data-i18n="stats.reset">تصفير الإحصائيات</span>
+                </button>
+              </div>
+
+              <div class="stats-grid">
+                <div class="stat-card">
+                  <div class="stat-title" data-i18n="sessions.completedStudy">جلسات دراسة منجزة</div>
+                  <div class="stat-value" id="sStudySessions">0</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-title" data-i18n="stats.totalStudyTime">إجمالي وقت الدراسة</div>
+                  <div class="stat-value" id="sStudyTime">0</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-title" data-i18n="stats.planCompletion">إنجاز الخطة</div>
+                  <div class="stat-value" id="sPlanCompletion">0%</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-title" data-i18n="stats.streak">ستريك</div>
+                  <div class="stat-value" id="sStreak">0</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-title" data-i18n="stats.bestDay">أفضل يوم</div>
+                  <div class="stat-value" id="sBestDay">—</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-title" data-i18n="stats.subjectMix">توزيع المواد</div>
+                  <div class="stat-value small" id="sSubjectMix">—</div>
+                </div>
+              </div>
+
+              <div class="note" data-i18n="stats.note">
+                الستريك: يوم فيه ≥ جلسة دراسة واحدة أو ≥ بلوك منجز من الخطة.
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <div>
+                  <div class="card-title" data-i18n="stats.chartTitle">مخطط تقدم الأسبوع</div>
+                  <div class="card-sub" data-i18n="stats.chartSub">دقائق الدراسة اليومية (أو ما يقابلها من إنجاز الخطة).</div>
+                </div>
+              </div>
+
+              <div class="chart-wrap">
+                <canvas id="progressChart" width="900" height="420" aria-label="Weekly chart"></canvas>
+              </div>
+
+              <div class="chart-legend">
+                <div class="legend-item">
+                  <span class="dot"></span>
+                  <span data-i18n="stats.chartLegend">دقائق الدراسة</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- QUESTION BANK -->
+        <section class="tab" id="tab-bank" aria-labelledby="bankTitle">
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <div class="card-title" id="bankTitle">
+                  <span data-i18n="bank.title.en">Question Bank</span> / <span data-i18n="bank.title.ar">بنك الأسئلة</span>
+                </div>
+                <div class="card-sub" data-i18n="bank.subtitle">
+                  أسئلة “Sample Tawjihi-style” فقط (للتجربة). ضع روابط المصادر الرسمية لاحقاً داخل قسم “المصادر”.
+                </div>
+              </div>
+            </div>
+
+            <div class="bank-controls">
+              <div class="segmented" role="tablist" aria-label="Subjects">
+                <button class="seg is-active" data-subject="english" role="tab" aria-selected="true">
+                  <span data-i18n="subjects.english">إنجليزي</span>
+                </button>
+                <button class="seg" data-subject="arabic" role="tab" aria-selected="false">
+                  <span data-i18n="subjects.arabic">عربي</span>
+                </button>
+                <button class="seg" data-subject="history" role="tab" aria-selected="false">
+                  <span data-i18n="subjects.history">تاريخ</span>
+                </button>
+                <button class="seg" data-subject="religion" role="tab" aria-selected="false">
+                  <span data-i18n="subjects.religion">دين</span>
+                </button>
+              </div>
+
+              <div class="filters">
+                <div class="field inline">
+                  <label for="bankSearch" data-i18n="bank.search">بحث</label>
+                  <input id="bankSearch" type="search" placeholder="..." />
+                </div>
+
+                <div class="field inline">
+                  <label for="difficultyFilter" data-i18n="bank.difficulty">الصعوبة</label>
+                  <select id="difficultyFilter">
+                    <option value="all" data-i18n="bank.all">الكل</option>
+                    <option value="easy" data-i18n="difficulty.easy">سهل</option>
+                    <option value="medium" data-i18n="difficulty.medium">متوسط</option>
+                    <option value="hard" data-i18n="difficulty.hard">صعب</option>
+                  </select>
+                </div>
+
+                <div class="field inline">
+                  <label for="typeFilter" data-i18n="bank.type">النوع</label>
+                  <select id="typeFilter">
+                    <option value="all" data-i18n="bank.all">الكل</option>
+                    <option value="mcq" data-i18n="qtype.mcq">اختيار من متعدد</option>
+                    <option value="short" data-i18n="qtype.short">سؤال قصير</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="bank-grid">
+              <div class="bank-list" id="bankList" aria-live="polite"></div>
+
+              <aside class="sources card subtle">
+                <div class="card-head">
+                  <div>
+                    <div class="card-title" data-i18n="bank.sourcesTitle">المصادر (Sources)</div>
+                    <div class="card-sub" data-i18n="bank.sourcesSub">
+                      أضف لاحقاً روابط الوزارة/الأسئلة الوزارية الرسمية. لا يوجد ادعاء بجلب “2026” حالياً.
+                    </div>
+                  </div>
+                </div>
+
+                <div id="sourcesList" class="sources-list"></div>
+
+                <div class="divider"></div>
+
+                <form id="addSourceForm" class="source-form">
+                  <div class="field">
+                    <label for="srcTitle" data-i18n="bank.srcTitle">العنوان</label>
+                    <input id="srcTitle" type="text" maxlength="60" required />
+                  </div>
+                  <div class="field">
+                    <label for="srcYear" data-i18n="bank.srcYear">السنة</label>
+                    <input id="srcYear" type="number" min="2000" max="2100" required />
+                  </div>
+                  <div class="field">
+                    <label for="srcLink" data-i18n="bank.srcLink">الرابط</label>
+                    <input id="srcLink" type="url" placeholder="https://..." required />
+                  </div>
+                  <button class="btn" type="submit">
+                    <i class="fa-solid fa-plus"></i>
+                    <span data-i18n="bank.addSource">إضافة مصدر</span>
+                  </button>
+
+                  <div class="note" data-i18n="bank.sourcesHint">
+                    بإمكانك تعديل الأسئلة بسهولة من ملف app.js عبر JSON واحد: questionBank.
+                  </div>
+                </form>
+              </aside>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <div class="tiny">
+          <span>GitHub Pages • PWA • Offline</span>
+          <span class="sep">•</span>
+          <span id="buildTag">v1</span>
+        </div>
+      </footer>
     </div>
   </div>
 
-  <!-- Toast -->
-  <div id="toast" class="toast hidden"></div>
+  <!-- Mobile Drawer -->
+  <div class="drawer-backdrop" id="drawerBackdrop" hidden></div>
+  <div class="drawer" id="drawer" hidden>
+    <div class="drawer-head">
+      <div class="drawer-title">T09</div>
+      <button class="icon-btn" id="drawerCloseBtn" aria-label="Close">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="drawer-body">
+      <button class="nav-item" data-tab="home"><i class="fa-solid fa-house"></i><span data-i18n="tabs.home">الرئيسية</span></button>
+      <button class="nav-item" data-tab="sessions"><i class="fa-solid fa-hourglass-half"></i><span data-i18n="tabs.sessions">جلسات</span></button>
+      <button class="nav-item" data-tab="plan"><i class="fa-solid fa-calendar-week"></i><span data-i18n="tabs.plan">الخطة الأسبوعية</span></button>
+      <button class="nav-item" data-tab="stats"><i class="fa-solid fa-chart-line"></i><span data-i18n="tabs.stats">الإحصائيات</span></button>
+      <button class="nav-item" data-tab="bank"><i class="fa-solid fa-layer-group"></i><span data-i18n="tabs.bank">بنك الأسئلة</span></button>
+    </div>
+  </div>
 
-  <script src="app.js"></script>
+  <!-- Confirm Modal -->
+  <div class="modal-backdrop" id="modalBackdrop" hidden></div>
+  <div class="modal" id="confirmModal" hidden role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="modal-head">
+      <div class="modal-title" id="confirmTitle" data-i18n="modal.confirmTitle">تأكيد</div>
+      <button class="icon-btn" id="modalCloseBtn" aria-label="Close">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p id="confirmText" class="modal-text">—</p>
+      <div class="modal-actions">
+        <button class="btn" id="confirmCancel" data-i18n="common.cancel">إلغاء</button>
+        <button class="btn danger" id="confirmOk" data-i18n="common.confirm">تأكيد</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js" defer></script>
 </body>
 </html>
