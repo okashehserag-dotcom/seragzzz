@@ -1,1980 +1,1467 @@
-/* =========================================================
-   T09 — Tawjihi Jordan (2009) Static Web App
-   Vanilla JS / RTL+LTR / LocalStorage / PWA
-   ========================================================= */
+/* ===========================
+   T09 Tawjihi Dashboard (No Question Bank)
+   Plan = Finish Plan based on checklist groups (History/Islamic/English/Arabic)
+   =========================== */
 
-/* -----------------------------
-   Storage Keys
------------------------------ */
 const LS = {
-  lang: "t09.lang",
-  timer: "t09.timer",
-  stats: "t09.stats",
-  plan: "t09.plan",
-  sources: "t09.sources",
-  mute: "t09.mute",
+  lang: "t09_lang",
+  mute: "t09_mute",
+  durations: "t09_durations",
+  metrics: "t09_metrics",
+  timerState: "t09_timer_state",
+  planState: "t09_finish_plan_state",
+  dailyLog: "t09_daily_log"
 };
 
-/* -----------------------------
-   i18n (All UI strings)
------------------------------ */
+// ---------- i18n ----------
 const i18n = {
   ar: {
-    "app.name": "لوحة التوجيهي",
-    "app.subtitle": "مصممة لتوجيهي الأردن — نظام 2009",
-    "app.headerTitle": "لوحة التوجيهي 2009",
-    "app.headerSubtitle": "عربي • إنجليزي • تاريخ • دين",
-    "app.footerNote": "حفظ تلقائي + Offline + تثبيت كتطبيق.",
-    "pwa.ready": "جاهز للأوفلاين",
+    appTitle: "لوحة توجيهي 2009",
+    appSub: "جلسات • خطة ختمة • إحصائيات • Offline",
+    tabHome: "الرئيسية",
+    tabSessions: "جلسات",
+    tabPlan: "خطة الختمة",
+    tabStats: "الإحصائيات",
+    footerNote: "حفظ تلقائي • Offline • تثبيت كتطبيق",
 
-    "tabs.home": "الرئيسية",
-    "tabs.sessions": "جلسات",
-    "tabs.plan": "الخطة الأسبوعية",
-    "tabs.stats": "الإحصائيات",
-    "tabs.bank": "بنك الأسئلة",
+    homeKicker: "جاهز تختم الفصل الثاني؟",
+    homeTitle: "خطة توجيهي الأردن (2009) — ختمة منظمة",
+    homeDesc: "اختار موعد الختمة (1 أيار أو 15 أيار) وخلي الخطة تتقسم أيامياً حسب وقتك.",
+    homeChip: "نمط وزاري + مراجعة أخطاء",
+    todayFocus: "تركيز اليوم",
+    todayHint: "مأخوذ تلقائياً من خطة الختمة.",
+    goPlan: "افتح خطة الختمة",
+    goSessions: "ابدأ جلسة دراسة",
+    goStats: "شوف التقدم",
 
-    "common.start": "ابدأ",
-    "common.pause": "إيقاف",
-    "common.reset": "إعادة",
-    "common.next": "التالي",
-    "common.save": "حفظ",
-    "common.cancel": "إلغاء",
-    "common.confirm": "تأكيد",
-    "common.sound": "الصوت",
+    quickTipsTitle: "نصائح سريعة (توجيهي)",
+    tip1: "بعد كل مهمة: 10–15 دقيقة “تحليل أخطاء”",
+    tip2: "خصص كل 3 أيام “مراجعة سريعة” قبل النوم",
+    tip3: "التزام بسيط يومياً أحسن من ضغط يومين وترك أسبوع",
+    miniSessions: "جلسات",
+    miniMinutes: "دقائق دراسة",
+    miniPlan: "الخطة",
 
-    "home.title": "جاهز ترفع معدلك بالتوجيهي؟",
-    "home.subtitle": "هاي لوحة دراسة لتوجيهي الأردن (2009): جلسات منضبطة + خطة أسبوعية + بنك أسئلة بنمط وزاري + إحصائيات واضحة.",
-    "home.badge": "نمط توجيهي • وزاري • مراجعة",
-    "home.todayDone": "أنهيت اليوم ✅",
-    "home.planCompletion": "من الخطة",
-    "home.todayFocus": "تركيز اليوم",
-    "home.startSession": "ابدأ جلسة",
-    "home.openPlan": "افتح الخطة",
-    "home.focusHint": "ملاحظة: “تركيز اليوم” يتولد تلقائياً من أول بلوك غير منجز بالخطة.",
-    "home.quickActions": "إجراءات سريعة",
-    "home.qa.sessions": "جلسة توجيهي",
-    "home.qa.sessionsSub": "مؤقت + تتبع دقائق",
-    "home.qa.plan": "خطة أسبوعية",
-    "home.qa.planSub": "مراجعة + وزاري",
-    "home.qa.bank": "بنك الأسئلة",
-    "home.qa.bankSub": "MCQ + قصير",
-    "home.qa.stats": "تقدمك",
-    "home.qa.statsSub": "ستريك + مخطط",
+    sessionsTitle: "جلسات (بومودورو توجيهي)",
+    sessionsDesc: "جلسة دراسة + استراحة. احفظ إعداداتك وتابع تقدمك.",
+    resetStats: "تصفير الإحصائيات",
 
-    "sessions.title": "جلسات توجيهي (Pomodoro)",
-    "sessions.subtitle": "نمط 25/5 — عدّل المدة حسبك، وخليها جلسات وزاري/مراجعة.",
-    "sessions.mode": "الوضع:",
-    "sessions.hintStudy": "جلسة دراسة: ركّز على نمط الأسئلة",
-    "sessions.hintBreak": "استراحة: اشرب مي وتحرك شوي",
-    "sessions.autoSwitch": "تبديل تلقائي بين دراسة/استراحة",
-    "sessions.studyMin": "دقائق الدراسة",
-    "sessions.breakMin": "دقائق الاستراحة",
-    "sessions.studyHint": "مقترح توجيهي: 25–45 دقيقة حسب المادة.",
-    "sessions.breakHint": "استراحة قصيرة لتجنب الإرهاق.",
-    "sessions.metricsTitle": "مقاييس الجلسات",
-    "sessions.metricsSub": "بتساعدك تشوف التزامك وتوازن بين المواد.",
-    "sessions.completedStudy": "جلسات دراسة منجزة",
-    "sessions.totalStudyMin": "مجموع دقائق الدراسة",
-    "sessions.completedBreaks": "استراحات منجزة",
-    "sessions.totalBreakMin": "مجموع دقائق الاستراحة",
-    "sessions.metricsHint": "نصيحة توجيهي: خلي آخر جلسة باليوم “تحليل أخطاء” من الوزاري اللي حلّيته.",
+    modeStudy: "دراسة",
+    modeBreak: "استراحة",
+    cycle: "دورة",
+    hintStudy: "ركز: هدف اليوم من الخطة",
+    hintBreak: "استراحة قصيرة — رجّع تركيزك",
+    start: "ابدأ",
+    pause: "إيقاف",
+    next: "التالي",
+    reset: "إعادة",
+    autoSwitch: "تبديل تلقائي (دراسة/استراحة)",
+    soundOn: "صوت تنبيه",
 
-    "plan.title": "الخطة الأسبوعية — توجيهي الأردن 2009",
-    "plan.subtitle": "خطة متوازنة لـ (إنجليزي / عربي / تاريخ / دين) — تعلم + مراجعة + نمط أسئلة وزاري + يوم مراجعة أسبوعي.",
-    "plan.regen": "إعادة توليد الخطة",
-    "plan.copy": "نسخ الخطة",
-    "plan.types.learn": "تعلم",
-    "plan.types.revise": "مراجعة",
-    "plan.types.practice": "نمط وزاري",
-    "plan.types.review": "مراجعة أسبوعية",
-    "plan.markDone": "تم ✅",
-    "plan.undo": "تراجع",
-    "plan.min": "دقيقة",
-    "plan.goal": "الهدف",
-    "plan.break": "استراحة قصيرة",
-    "plan.lightDay": "يوم أخف لتجنب الاحتراق",
-    "plan.reviewDay": "مراجعة أسبوعية + تجريبي",
+    settings: "الإعدادات",
+    studyMin: "دقائق الدراسة",
+    breakMin: "دقائق الاستراحة",
+    studyHint: "مقترح: 25–40 دقيقة حسب تركيزك",
+    breakHint: "مقترح: 5–10 دقائق",
+    save: "حفظ",
 
-    "stats.title": "الإحصائيات والتقدم",
-    "stats.subtitle": "ملخص توجيهي واضح: دقائق، ستريك، أفضل يوم، وتوزيع مواد.",
-    "stats.reset": "تصفير الإحصائيات",
-    "stats.totalStudyTime": "إجمالي وقت الدراسة",
-    "stats.planCompletion": "إنجاز الخطة",
-    "stats.streak": "ستريك",
-    "stats.weekHours": "ساعات هذا الأسبوع",
-    "stats.days": "يوم",
-    "stats.hours": "ساعة",
-    "stats.bestDay": "أفضل يوم",
-    "stats.subjectMix": "توزيع المواد",
-    "stats.note": "الستريك: يوم فيه ≥ جلسة دراسة واحدة أو ≥ بلوك منجز من الخطة.",
-    "stats.chartTitle": "مخطط تقدم الأسبوع",
-    "stats.chartSub": "دقائق الدراسة اليومية (أو ما يقابلها من إنجاز الخطة).",
-    "stats.chartLegend": "دقائق الدراسة",
+    sessionMetrics: "مؤشرات",
+    mStudySessions: "جلسات دراسة",
+    mStudyMinutes: "دقائق دراسة",
+    mBreaks: "استراحات",
+    mBreakMinutes: "دقائق استراحة",
+    noteLocal: "كل شي محفوظ تلقائياً على جهازك (LocalStorage).",
 
-    "bank.title.en": "Question Bank",
-    "bank.title.ar": "بنك الأسئلة",
-    "bank.subtitle": "أسئلة “Sample Tawjihi-style” فقط (للتجربة). ضع روابط المصادر الرسمية لاحقاً داخل قسم “المصادر”.",
-    "bank.search": "بحث",
-    "bank.difficulty": "الصعوبة",
-    "bank.type": "النوع",
-    "bank.all": "الكل",
-    "bank.sourcesTitle": "المصادر (Sources)",
-    "bank.sourcesSub": "أضف لاحقاً روابط الوزارة/الأسئلة الوزارية الرسمية. لا يوجد ادعاء بجلب “2026” حالياً.",
-    "bank.srcTitle": "العنوان",
-    "bank.srcYear": "السنة",
-    "bank.srcLink": "الرابط",
-    "bank.addSource": "إضافة مصدر",
-    "bank.sourcesHint": "بإمكانك تعديل الأسئلة بسهولة من ملف app.js عبر JSON واحد: questionBank.",
-    "bank.showAnswer": "عرض الإجابة",
-    "bank.hideAnswer": "إخفاء الإجابة",
-    "bank.noResults": "ما في نتائج حسب الفلاتر الحالية.",
+    planTitle: "خطة الختمة (حسب الورقة)",
+    planDesc: "اختار موعد الختمة وطريقة تقسيم المهام. كل يوم مهام واضحة + تفعيل “تم” للتتبع.",
+    copyPlan: "نسخ الخطة",
+    regenPlan: "إعادة توليد",
+    planOptions: "خيارات الخطة",
+    targetDate: "موعد الختمة",
+    may1: "1 أيار",
+    may15: "15 أيار",
+    dailyMode: "تقسيم اليوم",
+    twoTasks: "مهمتين/يوم",
+    oneEach: "مهمة من كل مادة",
+    reviewDays: "أيام مراجعة/تحليل أخطاء أسبوعياً",
+    lightDay: "يوم خفيف أسبوعياً (تخفيف ضغط)",
+    todayFromPlan: "مهام اليوم من الخطة",
+    noPlanYet: "اختار الخيارات واضغط “إعادة توليد”.",
+    calendarTitle: "تقسيم الأيام",
+    planProgress: "تقدم الخطة",
+    planCompletion: "نسبة إنجاز الخطة",
+    planHint: "ملاحظة: المحتوى هنا مبني على مجموعات من البنود الظاهرة بالورقة (وحدات/مراجعات/نمط وزاري).",
 
-    "difficulty.easy": "سهل",
-    "difficulty.medium": "متوسط",
-    "difficulty.hard": "صعب",
-    "qtype.mcq": "اختيار من متعدد",
-    "qtype.short": "سؤال قصير",
+    statsTitle: "الإحصائيات والتقدم",
+    statsDesc: "جلساتك + تقدم الخطة + ستريك + أفضل يوم.",
+    resetAll: "تصفير الكل",
+    streakTitle: "الستريك",
+    currentStreak: "الحالي",
+    bestDay: "أفضل يوم",
+    streakRule: "اليوم محسوب إذا أنهيت ≥1 جلسة دراسة أو ≥1 مهمة من الخطة.",
+    chartTitle: "مخطط الدراسة للأسبوع",
+    chartHint: "يعرض دقائق الدراسة اليومية (آخر 7 أيام).",
 
-    "subjects.english": "إنجليزي",
-    "subjects.arabic": "عربي",
-    "subjects.history": "تاريخ",
-    "subjects.religion": "دين",
-
-    "modal.confirmTitle": "تأكيد",
-    "modal.resetStats": "هل أنت متأكد بدك تصفّر الإحصائيات؟ هذا الإجراء ما بنرجع.",
-    "toast.copied": "تم النسخ ✅",
-    "toast.saved": "تم الحفظ ✅",
-    "toast.invalid": "تأكد من المدخلات (أرقام ضمن الحدود).",
-    "toast.done": "تم تسجيل الإنجاز ✅",
-    "toast.undone": "تم التراجع.",
-    "toast.planCopied": "الخطة اننسخت ✅",
-    "toast.exportCopied": "تم نسخ بيانات التطبيق (JSON) ✅",
+    toastCopied: "تم النسخ ✅",
+    toastSaved: "تم الحفظ ✅",
+    toastRegenerated: "تم توليد الخطة ✅",
+    toastReset: "تم تصفير البيانات ✅",
+    confirmReset: "متأكد بدك تصفر كل شي؟ ما بترجع.",
+    invalidNumber: "أدخل رقم صحيح ضمن الحدود.",
+    done: "تم",
+    notDone: "غير مكتمل",
+    subjectHistory: "تاريخ",
+    subjectIslamic: "دين",
+    subjectEnglish: "إنجليزي",
+    subjectArabic: "عربي",
+    reviewLabel: "مراجعة/تحليل أخطاء",
+    lightLabel: "يوم خفيف",
+    minutes: "دقيقة",
+    tasks: "مهام",
+    until: "حتى"
   },
 
   en: {
-    "app.name": "Tawjihi Dashboard",
-    "app.subtitle": "Built for Jordan Tawjihi — 2009 track",
-    "app.headerTitle": "Tawjihi 2009 Dashboard",
-    "app.headerSubtitle": "Arabic • English • History • Religion",
-    "app.footerNote": "Auto-save + Offline + Installable.",
-    "pwa.ready": "Offline-ready",
+    appTitle: "Tawjihi 2009 Dashboard",
+    appSub: "Sessions • Finish Plan • Stats • Offline",
+    tabHome: "Home",
+    tabSessions: "Sessions",
+    tabPlan: "Finish Plan",
+    tabStats: "Statistics",
+    footerNote: "Auto-save • Offline • Installable",
 
-    "tabs.home": "Home",
-    "tabs.sessions": "Sessions",
-    "tabs.plan": "Weekly Plan",
-    "tabs.stats": "Statistics",
-    "tabs.bank": "Question Bank",
+    homeKicker: "Ready to finish the semester?",
+    homeTitle: "Jordan Tawjihi (2009) — A structured finish plan",
+    homeDesc: "Pick a target finish date (May 1 or May 15) and get a daily split that fits your pace.",
+    homeChip: "Ministerial-style + error review",
+    todayFocus: "Today’s Focus",
+    todayHint: "Auto-generated from your finish plan.",
+    goPlan: "Open Finish Plan",
+    goSessions: "Start a Study Session",
+    goStats: "View Progress",
 
-    "common.start": "Start",
-    "common.pause": "Pause",
-    "common.reset": "Reset",
-    "common.next": "Next",
-    "common.save": "Save",
-    "common.cancel": "Cancel",
-    "common.confirm": "Confirm",
-    "common.sound": "Sound",
+    quickTipsTitle: "Quick tips (Tawjihi)",
+    tip1: "After each task: 10–15 min “error review”",
+    tip2: "Every 3 days: a quick recap before sleep",
+    tip3: "Small daily consistency beats 2-day bursts then a week off",
+    miniSessions: "Sessions",
+    miniMinutes: "Study minutes",
+    miniPlan: "Plan",
 
-    "home.title": "Ready to boost your Tawjihi score?",
-    "home.subtitle": "A Jordan Tawjihi (2009) study dashboard: focused sessions + weekly plan + ministerial-style question bank + clear stats.",
-    "home.badge": "Tawjihi style • Wazari • Revision",
-    "home.todayDone": "Done today ✅",
-    "home.planCompletion": "from the plan",
-    "home.todayFocus": "Today’s Focus",
-    "home.startSession": "Start session",
-    "home.openPlan": "Open plan",
-    "home.focusHint": "Note: “Today’s Focus” is generated from the first unfinished block in your plan.",
-    "home.quickActions": "Quick actions",
-    "home.qa.sessions": "Tawjihi Session",
-    "home.qa.sessionsSub": "Timer + tracking",
-    "home.qa.plan": "Weekly Plan",
-    "home.qa.planSub": "Revision + Wazari practice",
-    "home.qa.bank": "Question Bank",
-    "home.qa.bankSub": "MCQ + Short answer",
-    "home.qa.stats": "Your progress",
-    "home.qa.statsSub": "Streak + chart",
+    sessionsTitle: "Sessions (Tawjihi Pomodoro)",
+    sessionsDesc: "Study + break. Save your durations and track progress.",
+    resetStats: "Reset stats",
 
-    "sessions.title": "Tawjihi Sessions (Pomodoro)",
-    "sessions.subtitle": "25/5 by default — customize for each subject and Wazari practice.",
-    "sessions.mode": "Mode:",
-    "sessions.hintStudy": "Study: focus on exam-style practice",
-    "sessions.hintBreak": "Break: hydrate and reset",
-    "sessions.autoSwitch": "Auto-switch between Study/Break",
-    "sessions.studyMin": "Study minutes",
-    "sessions.breakMin": "Break minutes",
-    "sessions.studyHint": "Tawjihi tip: 25–45 minutes per block.",
-    "sessions.breakHint": "Short breaks prevent burnout.",
-    "sessions.metricsTitle": "Session metrics",
-    "sessions.metricsSub": "See consistency and balance across subjects.",
-    "sessions.completedStudy": "Completed study sessions",
-    "sessions.totalStudyMin": "Total study minutes",
-    "sessions.completedBreaks": "Completed breaks",
-    "sessions.totalBreakMin": "Total break minutes",
-    "sessions.metricsHint": "Tawjihi tip: end your day with “error analysis” from past-paper practice.",
+    modeStudy: "Study",
+    modeBreak: "Break",
+    cycle: "Cycle",
+    hintStudy: "Focus: today’s plan goal",
+    hintBreak: "Short break — reset your focus",
+    start: "Start",
+    pause: "Pause",
+    next: "Next",
+    reset: "Reset",
+    autoSwitch: "Auto switch (Study/Break)",
+    soundOn: "Sound alerts",
 
-    "plan.title": "Weekly Plan — Jordan Tawjihi 2009",
-    "plan.subtitle": "Balanced plan for (English / Arabic / History / Religion) — Learn + Revise + Wazari-style practice + weekly review day.",
-    "plan.regen": "Regenerate plan",
-    "plan.copy": "Copy plan",
-    "plan.types.learn": "Learn",
-    "plan.types.revise": "Revise",
-    "plan.types.practice": "Wazari practice",
-    "plan.types.review": "Weekly review",
-    "plan.markDone": "Done ✅",
-    "plan.undo": "Undo",
-    "plan.min": "min",
-    "plan.goal": "Goal",
-    "plan.break": "Short break",
-    "plan.lightDay": "Lighter day (avoid burnout)",
-    "plan.reviewDay": "Weekly review + mini mock",
+    settings: "Settings",
+    studyMin: "Study minutes",
+    breakMin: "Break minutes",
+    studyHint: "Suggested: 25–40 minutes",
+    breakHint: "Suggested: 5–10 minutes",
+    save: "Save",
 
-    "stats.title": "Statistics & Progress",
-    "stats.subtitle": "A clear Tawjihi summary: minutes, streak, best day, and subject mix.",
-    "stats.reset": "Reset stats",
-    "stats.totalStudyTime": "Total study time",
-    "stats.planCompletion": "Plan completion",
-    "stats.streak": "Streak",
-    "stats.weekHours": "This week hours",
-    "stats.days": "days",
-    "stats.hours": "hours",
-    "stats.bestDay": "Best day",
-    "stats.subjectMix": "Subject mix",
-    "stats.note": "Streak: a day with ≥1 study session OR ≥1 completed plan block.",
-    "stats.chartTitle": "Weekly progress chart",
-    "stats.chartSub": "Daily study minutes (and plan completion impact).",
-    "stats.chartLegend": "Study minutes",
+    sessionMetrics: "Metrics",
+    mStudySessions: "Study sessions",
+    mStudyMinutes: "Study minutes",
+    mBreaks: "Breaks",
+    mBreakMinutes: "Break minutes",
+    noteLocal: "Everything is saved locally on your device (LocalStorage).",
 
-    "bank.title.en": "Question Bank",
-    "bank.title.ar": "بنك الأسئلة",
-    "bank.subtitle": "These are “Sample Tawjihi-style” placeholders only. Add official ministry links later in “Sources”.",
-    "bank.search": "Search",
-    "bank.difficulty": "Difficulty",
-    "bank.type": "Type",
-    "bank.all": "All",
-    "bank.sourcesTitle": "Sources",
-    "bank.sourcesSub": "Add official ministry/past-paper links later. No claims of fetching “2026”.",
-    "bank.srcTitle": "Title",
-    "bank.srcYear": "Year",
-    "bank.srcLink": "Link",
-    "bank.addSource": "Add source",
-    "bank.sourcesHint": "Replace samples easily by editing one JSON object in app.js: questionBank.",
-    "bank.showAnswer": "Show answer",
-    "bank.hideAnswer": "Hide answer",
-    "bank.noResults": "No results for current filters.",
+    planTitle: "Finish Plan (based on checklist)",
+    planDesc: "Choose a finish date and daily split. Mark tasks done to track progress.",
+    copyPlan: "Copy plan",
+    regenPlan: "Regenerate",
+    planOptions: "Plan options",
+    targetDate: "Finish by",
+    may1: "May 1",
+    may15: "May 15",
+    dailyMode: "Daily split",
+    twoTasks: "2 tasks/day",
+    oneEach: "1 task per subject",
+    reviewDays: "Weekly review/error-analysis days",
+    lightDay: "One lighter day per week",
+    todayFromPlan: "Today’s tasks",
+    noPlanYet: "Pick options and press “Regenerate”.",
+    calendarTitle: "Daily schedule",
+    planProgress: "Plan progress",
+    planCompletion: "Plan completion",
+    planHint: "Note: tasks are grouped to match the checklist structure (units/reviews/ministerial practice).",
 
-    "difficulty.easy": "Easy",
-    "difficulty.medium": "Medium",
-    "difficulty.hard": "Hard",
-    "qtype.mcq": "MCQ",
-    "qtype.short": "Short Answer",
+    statsTitle: "Statistics & progress",
+    statsDesc: "Sessions + plan progress + streak + best day.",
+    resetAll: "Reset everything",
+    streakTitle: "Streak",
+    currentStreak: "Current",
+    bestDay: "Best day",
+    streakRule: "A day counts if you completed ≥1 study session OR ≥1 plan task.",
+    chartTitle: "Weekly study chart",
+    chartHint: "Shows daily study minutes (last 7 days).",
 
-    "subjects.english": "English",
-    "subjects.arabic": "Arabic",
-    "subjects.history": "History",
-    "subjects.religion": "Religion",
-
-    "modal.confirmTitle": "Confirm",
-    "modal.resetStats": "Are you sure you want to reset stats? This can’t be undone.",
-    "toast.copied": "Copied ✅",
-    "toast.saved": "Saved ✅",
-    "toast.invalid": "Check inputs (numbers within limits).",
-    "toast.done": "Logged ✅",
-    "toast.undone": "Undone.",
-    "toast.planCopied": "Plan copied ✅",
-    "toast.exportCopied": "App data copied (JSON) ✅",
+    toastCopied: "Copied ✅",
+    toastSaved: "Saved ✅",
+    toastRegenerated: "Plan generated ✅",
+    toastReset: "Data reset ✅",
+    confirmReset: "Are you sure you want to reset everything? This cannot be undone.",
+    invalidNumber: "Enter a valid number within limits.",
+    done: "Done",
+    notDone: "Not done",
+    subjectHistory: "History",
+    subjectIslamic: "Religion",
+    subjectEnglish: "English",
+    subjectArabic: "Arabic",
+    reviewLabel: "Review / Error analysis",
+    lightLabel: "Light day",
+    minutes: "min",
+    tasks: "tasks",
+    until: "until"
   }
 };
 
-/* -----------------------------
-   Question Bank (Single JSON)
-   Replace sample questions later with real ministerial questions + sources.
------------------------------ */
-const questionBank = {
-  subjects: {
-    english: {
-      name: { ar: "إنجليزي", en: "English" },
-      questions: [
-        // 20 SAMPLE Tawjihi-style (EN)
-        q("en1","mcq","easy","Sample Tawjihi-style: Choose the correct word: I ______ to school every day.","go","english"),
-        q("en2","mcq","easy","Sample Tawjihi-style: Choose the correct form: She ______ TV الآن.","is watching","english"),
-        q("en3","mcq","easy","Sample Tawjihi-style: Pick the synonym of “important”.","significant","english"),
-        q("en4","mcq","easy","Sample Tawjihi-style: Choose the correct preposition: interested ____ science.","in","english"),
-        q("en5","mcq","medium","Sample Tawjihi-style: Identify the error: “He don’t like coffee.”","don’t → doesn’t","english"),
-        q("en6","short","easy","Sample Tawjihi-style: Write ONE sentence using (because).","Example: I studied because I have a Wazari exam.","english"),
-        q("en7","mcq","medium","Sample Tawjihi-style: Choose the best connector: I was tired; ______, I finished my homework.","however / nevertheless","english"),
-        q("en8","short","medium","Sample Tawjihi-style: Write a 25–30 word paragraph about a study plan.","Key idea: routine + revision + past papers.","english"),
-        q("en9","mcq","medium","Sample Tawjihi-style: Choose the correct passive: They built the bridge in 2010.","The bridge was built in 2010.","english"),
-        q("en10","mcq","medium","Sample Tawjihi-style: Choose the correct reported speech: He said, “I am ready.”","He said that he was ready.","english"),
-        q("en11","mcq","hard","Sample Tawjihi-style: Choose the correct meaning of “sustainable”.","able to continue without harm","english"),
-        q("en12","short","medium","Sample Tawjihi-style: Give two advantages of time management for Tawjihi students.","Focus + less stress (any two valid).","english"),
-        q("en13","mcq","hard","Sample Tawjihi-style: Choose the correct relative clause: The student ____ scored highest studied daily.","who","english"),
-        q("en14","mcq","medium","Sample Tawjihi-style: Choose the correct word: This exam was ______ than I expected.","easier","english"),
-        q("en15","short","hard","Sample Tawjihi-style: Summarize (in 1–2 sentences) why practice tests help.","They simulate timing and reveal weak points.","english"),
-        q("en16","mcq","easy","Sample Tawjihi-style: Choose the correct article: ____ honest student helps others.","An","english"),
-        q("en17","mcq","medium","Sample Tawjihi-style: Choose the correct modal: You ______ review mistakes after each mock.","should","english"),
-        q("en18","short","easy","Sample Tawjihi-style: Write one question using “How often…?”","Example: How often do you revise vocabulary?","english"),
-        q("en19","mcq","hard","Sample Tawjihi-style: Choose the correct conditional: If I ______ earlier, I would have revised more.","had started","english"),
-        q("en20","short","medium","Sample Tawjihi-style: Suggest two ways to improve reading comprehension.","Skim + scan / annotate / summarize (any two).","english"),
-      ]
-    },
+// ---------- Finish plan content (grouped from your checklist) ----------
+/*
+  This is intentionally structured so you can easily edit/expand it.
+  If you later want the exact 1..227 entries verbatim, we can replace each group with precise items.
+*/
+const syllabusGroups = {
+  history: [
+    { key:"hist-1", ar:"تاريخ الأردن: تأسيس الإمارة الأردنية (ملخص + أسئلة وزاري)", en:"Jordan History: Establishment of the Emirate (summary + ministerial practice)" , estMin: 70 },
+    { key:"hist-2", ar:"تاريخ الأردن: استقلال المملكة الأردنية الهاشمية (مراجعة + نمط امتحان)", en:"Independence of Jordan (review + exam-style)" , estMin: 70 },
+    { key:"hist-3", ar:"الحياة السياسية (1948–1957): فهم + تدريب وزاري", en:"Political life (1948–1957): learn + practice", estMin: 75 },
+    { key:"hist-4", ar:"الحياة السياسية (1957–1999): نقاط وزارية + تدريب", en:"Political life (1957–1999): key points + practice", estMin: 75 },
+    { key:"hist-5", ar:"الحياة السياسية منذ 1999: مراجعة + أسئلة", en:"Political life since 1999: review + questions", estMin: 65 },
+    { key:"hist-6", ar:"العلاقات العربية والدولية: حفظ نقاط + تطبيق", en:"Arab & international relations: key points + practice", estMin: 65 },
+    { key:"hist-7", ar:"القوات المسلحة والأمنية: مفاهيم + أسئلة", en:"Armed & security forces: concepts + questions", estMin: 60 },
+    { key:"hist-8", ar:"الحياة الاقتصادية (1921–1950): تلخيص + تدريب", en:"Economic life (1921–1950): summary + practice", estMin: 70 },
+    { key:"hist-9", ar:"الحياة الاقتصادية (1951–1967): مراجعة + تدريب", en:"Economic life (1951–1967): review + practice", estMin: 70 },
+    { key:"hist-10", ar:"الحياة الاقتصادية (1968–1999): نقاط + نمط وزاري", en:"Economic life (1968–1999): points + exam style", estMin: 70 },
+    { key:"hist-11", ar:"الحياة الاجتماعية (1921–1950): فهم + أسئلة", en:"Social life (1921–1950): learn + questions", estMin: 65 },
+    { key:"hist-12", ar:"الحياة الاجتماعية (1951–1999 + منذ 1999): تدريب وزاري", en:"Social life (1951–1999 + since 1999): practice", estMin: 70 },
+    { key:"hist-13", ar:"التعليم والثقافة (1921–2024): مراجعة + أسئلة", en:"Education & culture (1921–2024): review + questions", estMin: 75 },
+    { key:"hist-14", ar:"القضية الفلسطينية + الوصاية الهاشمية على المقدسات: نمط وزاري", en:"Palestine + Hashemite custodianship: exam style", estMin: 75 },
+    { key:"hist-15", ar:"مراجعة وحدات: (4–8) + تحليل أخطاء", en:"Units review (4–8) + error analysis", estMin: 60 }
+  ],
 
-    arabic: {
-      name: { ar: "عربي", en: "Arabic" },
-      questions: [
-        // 20 SAMPLE Tawjihi-style (AR)
-        q("ar1","mcq","easy","عينة بنمط توجيهي: اختر الكلمة التي تُكتب همزتها على الألف: (سؤال/سئل/مسؤول/مئذنة)","مسؤول","arabic"),
-        q("ar2","mcq","easy","عينة بنمط توجيهي: اختر جمع كلمة (كتاب): (كتابات/كتب/كتابون/كتابي)","كتب","arabic"),
-        q("ar3","short","easy","عينة بنمط توجيهي: اكتب جملة فعلية وحدد الفاعل.","مثال: حضرَ الطالبُ؛ الفاعل: الطالب.","arabic"),
-        q("ar4","mcq","medium","عينة بنمط توجيهي: حدّد نوع الأسلوب: (ما أجملَ الصدقَ!).","تعجب","arabic"),
-        q("ar5","mcq","medium","عينة بنمط توجيهي: اختر الإعراب الصحيح لكلمة (المجتهدُ) في: (المجتهدُ ناجحٌ).","مبتدأ مرفوع","arabic"),
-        q("ar6","short","medium","عينة بنمط توجيهي: بيّن الفكرة الرئيسة من نص قصير عن تنظيم الوقت (بجملة).","الفكرة: تنظيم الوقت يرفع الإنجاز ويقلل التوتر.","arabic"),
-        q("ar7","mcq","easy","عينة بنمط توجيهي: اختر المضاد لكلمة (شجاع).","جبان","arabic"),
-        q("ar8","mcq","hard","عينة بنمط توجيهي: حدّد الصورة البيانية في: (العلم نور).","استعارة","arabic"),
-        q("ar9","short","medium","عينة بنمط توجيهي: اذكر فائدتين للمراجعة الدورية قبل الوزاري.","تثبيت المعلومات + كشف نقاط الضعف.","arabic"),
-        q("ar10","mcq","medium","عينة بنمط توجيهي: حدّد نوع (لا) في: (لا تهملْ دروسك).","ناهية","arabic"),
-        q("ar11","mcq","medium","عينة بنمط توجيهي: اختر الصواب: (هؤلاءِ الطلابُ/هؤلاءُ الطلابُ).","هؤلاءِ الطلابُ","arabic"),
-        q("ar12","short","easy","عينة بنمط توجيهي: استخرج مفعولاً به من جملة: (قرأ الطالبُ الكتابَ).","الكتابَ","arabic"),
-        q("ar13","mcq","hard","عينة بنمط توجيهي: حدّد المحسن البديعي: (سالمٌ في السلم، صامدٌ في الحرب).","طباق","arabic"),
-        q("ar14","mcq","easy","عينة بنمط توجيهي: اختر التمييز الصحيح: (اشتريتُ ____ تفاحاً).","كيلوغراماً","arabic"),
-        q("ar15","short","hard","عينة بنمط توجيهي: اكتب فقرة قصيرة (40–50 كلمة) عن خطة دراسة توجيهي.","نقاط: أهداف + جدول + وزاري + تحليل أخطاء.","arabic"),
-        q("ar16","mcq","medium","عينة بنمط توجيهي: حدّد نوع الخبر: (الطالبُ مجتهدٌ).","مفرد","arabic"),
-        q("ar17","short","medium","عينة بنمط توجيهي: علّل: لماذا نحل أسئلة نمط وزاري بوقت محدد؟","لتعويد النفس على زمن الامتحان وتقليل الأخطاء.","arabic"),
-        q("ar18","mcq","easy","عينة بنمط توجيهي: اختر اسم الفاعل من (كتب).","كاتب","arabic"),
-        q("ar19","mcq","hard","عينة بنمط توجيهي: حدّد سبب منع الصرف في: (مساجدَ).","صيغة منتهى الجموع","arabic"),
-        q("ar20","short","easy","عينة بنمط توجيهي: حوّل الجملة إلى نهي: (تهملُ واجبك).","لا تهملْ واجبك.","arabic"),
-      ]
-    },
+  islamic: [
+    { key:"isl-1", ar:"التربية الإسلامية: سورة البقرة (آيات مختارة) — حفظ/فهم + أسئلة", en:"Islamic: Al-Baqarah selected verses — memorize/understand + Qs", estMin: 75 },
+    { key:"isl-2", ar:"دلائل وجود الله تعالى (مراجعة) + أسئلة قصيرة", en:"Proofs of God's existence (review) + short Qs", estMin: 55 },
+    { key:"isl-3", ar:"الاجتهاد في الإسلام + تطبيق وزاري", en:"Ijtihad in Islam + exam practice", estMin: 60 },
+    { key:"isl-4", ar:"مراجعة الوحدة الأولى كاملة + حل بنك أسئلة", en:"Unit 1 full review + question bank", estMin: 70 },
+    { key:"isl-5", ar:"سورة الأعراف (31–34): حفظ/تفسير + أسئلة", en:"Al-A'raf (31–34): memorize/tafsir + Qs", estMin: 70 },
+    { key:"isl-6", ar:"مراعاة المصالح في الشريعة الإسلامية + أمثلة", en:"Maslahah in Sharia + examples", estMin: 55 },
+    { key:"isl-7", ar:"جهود علماء المسلمين في الحفاظ على السنة النبوية + أسئلة", en:"Scholars' efforts preserving Sunnah + Qs", estMin: 60 },
+    { key:"isl-8", ar:"منهج الحديث الشريف + تطبيقات", en:"Hadith methodology + practice", estMin: 60 },
+    { key:"isl-9", ar:"منهج الإسلام في الحياة (1–2) + أسئلة", en:"Islamic way of life (1–2) + Qs", estMin: 60 },
+    { key:"isl-10", ar:"رسائل النبي (إلى الملوك والزعماء) + نقاط وزارية", en:"Prophetic letters + key points", estMin: 55 },
+    { key:"isl-11", ar:"فقه الأسرة: الحقوق المتبادلة للمرأة + أسئلة", en:"Family fiqh: women's rights + Qs", estMin: 55 },
+    { key:"isl-12", ar:"الوقف ودوره في التنمية (1–2) + أمثلة", en:"Waqf & development (1–2) + examples", estMin: 55 },
+    { key:"isl-13", ar:"مفاهيم: الإيمان/الدنيا/الآخرة + مراجعة الوحدة الثالثة", en:"Concepts: faith/dunya/akhirah + unit 3 review", estMin: 65 }
+  ],
 
-    history: {
-      name: { ar: "تاريخ", en: "History" },
-      questions: [
-        // 20 SAMPLE Tawjihi-style (History — neutral Jordan-focused wording)
-        q("his1","mcq","easy","عينة بنمط توجيهي: ما الهدف من حل أسئلة سنوات سابقة في التاريخ؟","معرفة نمط الأسئلة وتثبيت الأحداث","history"),
-        q("his2","short","easy","عينة بنمط توجيهي: اذكر سببين لأهمية ترتيب الأحداث زمنياً.","يساعد الفهم + يمنع الخلط (أي إجابتين).","history"),
-        q("his3","mcq","medium","عينة بنمط توجيهي: عند قراءة وثيقة تاريخية، أول خطوة؟","تحديد المصدر والزمن والسياق","history"),
-        q("his4","mcq","easy","عينة بنمط توجيهي: أفضل طريقة لمراجعة التاريخ قبل الوزاري؟","تلخيص + خرائط ذهنية + أسئلة نمط","history"),
-        q("his5","short","medium","عينة بنمط توجيهي: كيف يفيدك “تحليل الأخطاء” بعد امتحان تجريبي؟","يكشف نقاط الضعف ويثبت التصحيح.","history"),
-        q("his6","mcq","medium","عينة بنمط توجيهي: أسئلة “اختيار من متعدد” تقيس غالباً؟","فهم المصطلحات وربط السبب بالنتيجة","history"),
-        q("his7","short","easy","عينة بنمط توجيهي: عرّف مفهوم (السبب والنتيجة) في دراسة التاريخ.","ترابط حدث يؤدي لنتائج لاحقة.","history"),
-        q("his8","mcq","hard","عينة بنمط توجيهي: ما أفضل أسلوب لتثبيت أسماء الشخصيات والأماكن؟","بطاقات + تكرار متباعد + اختبار ذاتي","history"),
-        q("his9","short","medium","عينة بنمط توجيهي: اكتب سؤالين مراجعة لنفسك عن درس تاريخ.","مثال: ما الأسباب؟ ما النتائج؟","history"),
-        q("his10","mcq","easy","عينة بنمط توجيهي: عند الإجابة الوزارية، الأفضل؟","إجابة مباشرة مع كلمات مفتاحية","history"),
-        q("his11","mcq","medium","عينة بنمط توجيهي: “المقارنة” في التاريخ تعني؟","إبراز أوجه التشابه والاختلاف","history"),
-        q("his12","short","hard","عينة بنمط توجيهي: صِف خطة مراجعة 3 أيام قبل امتحان تاريخ.","ملخصات + نمط + اختبار 60 دقيقة + تحليل أخطاء.","history"),
-        q("his13","mcq","medium","عينة بنمط توجيهي: أي التالي يساعد على فهم الأحداث؟","ربط الحدث بخلفيته الاقتصادية/السياسية","history"),
-        q("his14","short","easy","عينة بنمط توجيهي: ما المقصود بالمصطلح التاريخي؟","كلمة لها معنى محدد في سياق تاريخي.","history"),
-        q("his15","mcq","hard","عينة بنمط توجيهي: أفضل طريقة لتقليل النسيان؟","مراجعات قصيرة متكررة (Spaced)","history"),
-        q("his16","short","medium","عينة بنمط توجيهي: لماذا نستخدم خرائط ذهنية في التاريخ؟","لتجميع المحاور وربط الأفكار.","history"),
-        q("his17","mcq","easy","عينة بنمط توجيهي: سؤال “رتّب الأحداث” يقيس؟","التسلسل الزمني","history"),
-        q("his18","mcq","medium","عينة بنمط توجيهي: في الامتحان، لو محتار بين خيارين؟","ارجع للكلمة المفتاحية في السؤال","history"),
-        q("his19","short","medium","عينة بنمط توجيهي: اذكر طريقتين لمراجعة درس طويل.","تلخيص + أسئلة ذاتية/نمط.","history"),
-        q("his20","mcq","easy","عينة بنمط توجيهي: وقت الحصة التجريبية الأفضل يكون؟","نفس وقت الامتحان لتعويد النفس","history"),
-      ]
-    },
+  english: [
+    { key:"eng-1", ar:"English: Living Small (Reading) + أسئلة", en:"Living Small (Reading) + questions", estMin: 55 },
+    { key:"eng-2", ar:"Modals & related verbs (1–2) + تطبيق وزاري", en:"Modals & related verbs (1–2) + practice", estMin: 60 },
+    { key:"eng-3", ar:"Articles (1–2) + أسئلة", en:"Articles (1–2) + questions", estMin: 55 },
+    { key:"eng-4", ar:"Writing: Report + تدريب كتابي", en:"Writing: Report + writing practice", estMin: 60 },
+    { key:"eng-5", ar:"Reporting Speech (1–2) + أسئلة", en:"Reporting Speech (1–2) + questions", estMin: 60 },
+    { key:"eng-6", ar:"Reporting Verbs + أمثلة وزارية", en:"Reporting Verbs + exam examples", estMin: 55 },
+    { key:"eng-7", ar:"Getting your message across + أسئلة", en:"Getting your message across + questions", estMin: 55 },
+    { key:"eng-8", ar:"Kindness (Reading) + مفردات", en:"Kindness (Reading) + vocab", estMin: 55 },
+    { key:"eng-9", ar:"Writing: Article + تدريب", en:"Writing: Article + practice", estMin: 60 },
+    { key:"eng-10", ar:"Passive Voice (1–2) + تمارين", en:"Passive Voice (1–2) + drills", estMin: 60 },
+    { key:"eng-11", ar:"Impersonal Passive (1–2) + تطبيق", en:"Impersonal Passive (1–2) + practice", estMin: 55 },
+    { key:"eng-12", ar:"Virtual reality (Reading) + أسئلة", en:"Virtual reality (Reading) + questions", estMin: 55 },
+    { key:"eng-13", ar:"Writing: For-and-against essay + نموذج", en:"For-and-against essay + model", estMin: 65 },
+    { key:"eng-14", ar:"If clauses (1–3) + أسئلة وزارية", en:"If clauses (1–3) + exam Qs", estMin: 70 },
+    { key:"eng-15", ar:"Wish & If only (1–2) + تمارين", en:"Wish & If only (1–2) + drills", estMin: 60 },
+    { key:"eng-16", ar:"Past modals (1–2) + تطبيق", en:"Past modals (1–2) + practice", estMin: 55 },
+    { key:"eng-17", ar:"Participle clauses (1–2) + أسئلة", en:"Participle clauses (1–2) + Qs", estMin: 55 },
+    { key:"eng-18", ar:"Spoilers: Love ’em or hate ’em (Reading) + أسئلة", en:"Spoilers: Love ’em or hate ’em + questions", estMin: 55 },
+    { key:"eng-19", ar:"مراجعة وحدات إنجليزي + نموذج امتحان تجريبي", en:"English review + mini mock test", estMin: 75 }
+  ],
 
-    religion: {
-      name: { ar: "دين", en: "Religion" },
-      questions: [
-        // 20 SAMPLE Tawjihi-style (Religion — general, non-sectarian)
-        q("rel1","mcq","easy","عينة بنمط توجيهي: الهدف من المراجعة قبل امتحان الدين؟","تثبيت المفاهيم والأدلة","religion"),
-        q("rel2","short","easy","عينة بنمط توجيهي: اذكر فائدتين لحسن الخلق في المجتمع.","تماسك + ثقة (أي إجابتين).","religion"),
-        q("rel3","mcq","medium","عينة بنمط توجيهي: أفضل أسلوب لحفظ التعاريف؟","فهم المعنى ثم تكرار واختبار ذاتي","religion"),
-        q("rel4","mcq","easy","عينة بنمط توجيهي: أسئلة “صح/خطأ” تعتمد على؟","الدقة في المفهوم والكلمة","religion"),
-        q("rel5","short","medium","عينة بنمط توجيهي: لماذا نحل أسئلة نمط وزاري بوقت محدد؟","لتعويد النفس على زمن الامتحان وتقليل التردد.","religion"),
-        q("rel6","mcq","hard","عينة بنمط توجيهي: أي التالي يساعد على فهم الدرس؟","تلخيص + أمثلة تطبيقية + مراجعة متباعدة","religion"),
-        q("rel7","short","easy","عينة بنمط توجيهي: اكتب تعريفاً مختصراً لمفهوم “النية”.","القصد بالقلب قبل العمل.","religion"),
-        q("rel8","mcq","medium","عينة بنمط توجيهي: عند سؤال دليل/تعليل، الأفضل؟","ذكر الفكرة + دليل مختصر + تطبيق","religion"),
-        q("rel9","short","medium","عينة بنمط توجيهي: اذكر طريقتين لتجنب الغلو والتطرف.","الوسطية + الرجوع للمصادر الموثوقة.","religion"),
-        q("rel10","mcq","easy","عينة بنمط توجيهي: “تحليل الأخطاء” بعد التجريبي يفيد لأنه؟","يمنع تكرار الخطأ ويقوي الفهم","religion"),
-        q("rel11","mcq","medium","عينة بنمط توجيهي: سؤال “اختر الإجابة الأدق” يقيس؟","الفهم العميق للمصطلح","religion"),
-        q("rel12","short","hard","عينة بنمط توجيهي: صِف خطة مراجعة أسبوعية لمادة الدين.","جلسات قصيرة + أسئلة نمط + مراجعة أدلة.","religion"),
-        q("rel13","mcq","easy","عينة بنمط توجيهي: أفضل وقت لمراجعة الحفظ؟","مراجعة سريعة يومياً","religion"),
-        q("rel14","short","easy","عينة بنمط توجيهي: أعط مثالاً واحداً على الصدق في الحياة.","أي مثال مناسب.","religion"),
-        q("rel15","mcq","hard","عينة بنمط توجيهي: لتثبيت أدلة الدرس، استخدم؟","بطاقات + اختبار ذاتي + تكرار متباعد","religion"),
-        q("rel16","mcq","medium","عينة بنمط توجيهي: عند سؤال “علّل”، الأفضل؟","جملة سبب مباشرة ثم توضيح مختصر","religion"),
-        q("rel17","short","medium","عينة بنمط توجيهي: اكتب سؤالين لمراجعة درس في الأخلاق.","مثال: عرف… اذكر أثر…","religion"),
-        q("rel18","mcq","easy","عينة بنمط توجيهي: من مهارات الامتحان؟","قراءة السؤال مرتين وتحديد الكلمات المفتاحية","religion"),
-        q("rel19","short","medium","عينة بنمط توجيهي: ما فائدة حل نماذج الوزاري؟","تعرف النمط + تثبيت المفاهيم.","religion"),
-        q("rel20","mcq","easy","عينة بنمط توجيهي: للاستفادة من المراجعة، الأفضل؟","مراجعة منتظمة بدل ليلة الامتحان فقط","religion"),
-      ]
-    }
-  },
-
-  // Sources UI: editable + stored to LocalStorage
-  sources: [
-    // Start empty-ish (placeholders); user can add official ministry links later
-    { title: "Placeholder — Official links can be added here", year: 2026, link: "https://example.com" }
+  arabic: [
+    { key:"ar-1", ar:"العربية: قصيدة فتح عمورية (1–3) + أسئلة", en:"Arabic: Poem (Fath Amuriyah) + questions", estMin: 70 },
+    { key:"ar-2", ar:"تثبيت/مراجعة وحدة فتح عمورية كاملة + حل أسئلة", en:"Unit review + question solving", estMin: 60 },
+    { key:"ar-3", ar:"من معاني حروف الجر + تطبيق وزاري", en:"Meanings of prepositions + practice", estMin: 55 },
+    { key:"ar-4", ar:"قصة حقد النمر (1–3) + فهم + أسئلة", en:"Story: Hatred of the Tiger + Qs", estMin: 65 },
+    { key:"ar-5", ar:"مراجعة معاني حروف الجر + حل أسئلة", en:"Prepositions review + Qs", estMin: 55 },
+    { key:"ar-6", ar:"اسم الفاعل واسم المفعول (1–2) + تدريبات", en:"Active/Passive participles + drills", estMin: 60 },
+    { key:"ar-7", ar:"الطباق والمقابلة + أمثلة وزارية", en:"Antithesis & contrast + exam examples", estMin: 55 },
+    { key:"ar-8", ar:"قصيدة الأسلحة والأطفال (1–4) + تحليل", en:"Poem: Weapons & Children + analysis", estMin: 70 },
+    { key:"ar-9", ar:"اسم الزمان واسم المكان (1–2) + تطبيق", en:"Nouns of time/place + practice", estMin: 60 },
+    { key:"ar-10", ar:"جمع التكسير + أسئلة", en:"Broken plural + questions", estMin: 55 },
+    { key:"ar-11", ar:"مفاعيل/متممات + تطبيق وزاري", en:"Objects/complements + practice", estMin: 60 },
+    { key:"ar-12", ar:"العروض: البحر المتدارك (1–2) + تدريبات", en:"Prosody: Al-Mutadarik + drills", estMin: 60 },
+    { key:"ar-13", ar:"نص: الذكاء الاصطناعي (أفكار/قيم/أسئلة) + كتابة", en:"Text: AI (ideas/values/Qs) + writing", estMin: 70 },
+    { key:"ar-14", ar:"اسم الآلة (1–2) + تطبيق", en:"Instrument noun + practice", estMin: 55 },
+    { key:"ar-15", ar:"العوض (بحر الرمل) + تدريبات", en:"Prosody: Ramal + drills", estMin: 55 },
+    { key:"ar-16", ar:"التعبير: خطة كتابة + موضوع تدريبي", en:"Writing: outline + practice topic", estMin: 65 },
+    { key:"ar-17", ar:"مراجعة عربية شاملة + نموذج امتحان تجريبي", en:"Arabic full review + mini mock", estMin: 80 }
   ]
 };
 
-/* Helper to create a question object (all samples are marked) */
-function q(id, type, difficulty, text, answer, subject){
-  return { id, subject, type, difficulty, text, answer, sample: true };
-}
-
-/* -----------------------------
-   App State
------------------------------ */
-const state = {
-  lang: loadLS(LS.lang, "ar"),
-  mute: loadLS(LS.mute, false),
-  timer: loadLS(LS.timer, {
-    studyMinutes: 25,
-    breakMinutes: 5,
-    autoSwitch: true,
-  }),
-  stats: loadLS(LS.stats, {
-    studySessions: 0,
-    studyMinutes: 0,
-    breakSessions: 0,
-    breakMinutes: 0,
-    dailyMinutes: {}, // { "YYYY-MM-DD": number }
-    subjectMinutes: { english: 0, arabic: 0, history: 0, religion: 0 },
-    lastActivityDate: null
-  }),
-  plan: loadLS(LS.plan, null),
-  sources: loadLS(LS.sources, questionBank.sources),
-  ui: {
-    activeTab: "home",
-    bankSubject: "english",
-    bankSearch: "",
-    bankDifficulty: "all",
-    bankType: "all"
-  }
-};
-
-/* -----------------------------
-   DOM
------------------------------ */
-const $ = (sel, root=document) => root.querySelector(sel);
-const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
-
-/* Top toggles */
-const langToggle = $("#langToggle");
-const langToggleText = $("#langToggleText");
-const muteToggle = $("#muteToggle");
-const muteIcon = $("#muteIcon");
-const copyAppStateBtn = $("#copyAppStateBtn");
-
-/* Tabs */
-const tabButtons = [...$$(".nav-item[data-tab]"), ...$$(".bn-item[data-tab]"), ...$$(".drawer .nav-item[data-tab]")];
-const tabs = {
-  home: $("#tab-home"),
-  sessions: $("#tab-sessions"),
-  plan: $("#tab-plan"),
-  stats: $("#tab-stats"),
-  bank: $("#tab-bank"),
-};
-
-/* Home KPIs */
-const kpiStreak = $("#kpiStreak");
-const kpiWeekHours = $("#kpiWeekHours");
-const kpiTodayDone = $("#kpiTodayDone");
-const todayLabel = $("#todayLabel");
-const focusTitle = $("#focusTitle");
-const focusMeta = $("#focusMeta");
-
-/* Drawer */
-const mobileMenuBtn = $("#mobileMenuBtn");
-const drawer = $("#drawer");
-const drawerBackdrop = $("#drawerBackdrop");
-const drawerCloseBtn = $("#drawerCloseBtn");
-
-/* Modal */
-const modalBackdrop = $("#modalBackdrop");
-const confirmModal = $("#confirmModal");
-const modalCloseBtn = $("#modalCloseBtn");
-const confirmText = $("#confirmText");
-const confirmCancel = $("#confirmCancel");
-const confirmOk = $("#confirmOk");
-
-/* Timer */
-const timerModeLabel = $("#timerModeLabel");
-const timerTime = $("#timerTime");
-const timerHint = $("#timerHint");
-const progressRing = $("#progressRing");
-
-const btnStart = $("#btnStart");
-const btnPause = $("#btnPause");
-const btnReset = $("#btnReset");
-const btnNext = $("#btnNext");
-
-const autoSwitch = $("#autoSwitch");
-const studyMinutesInput = $("#studyMinutes");
-const breakMinutesInput = $("#breakMinutes");
-const saveDurationsBtn = $("#saveDurationsBtn");
-
-/* Session metrics */
-const mStudySessions = $("#mStudySessions");
-const mStudyMinutes = $("#mStudyMinutes");
-const mBreakSessions = $("#mBreakSessions");
-const mBreakMinutes = $("#mBreakMinutes");
-
-/* Plan */
-const weeklyGrid = $("#weeklyGrid");
-const regenPlanBtn = $("#regenPlanBtn");
-const copyPlanBtn = $("#copyPlanBtn");
-
-/* Stats */
-const resetStatsBtn = $("#resetStatsBtn");
-const sStudySessions = $("#sStudySessions");
-const sStudyTime = $("#sStudyTime");
-const sPlanCompletion = $("#sPlanCompletion");
-const sStreak = $("#sStreak");
-const sBestDay = $("#sBestDay");
-const sSubjectMix = $("#sSubjectMix");
-const progressChart = $("#progressChart");
-
-/* Bank */
-const bankSearch = $("#bankSearch");
-const difficultyFilter = $("#difficultyFilter");
-const typeFilter = $("#typeFilter");
-const bankList = $("#bankList");
-const subjectSegs = $$(".segmented .seg");
-const sourcesList = $("#sourcesList");
-const addSourceForm = $("#addSourceForm");
-const srcTitle = $("#srcTitle");
-const srcYear = $("#srcYear");
-const srcLink = $("#srcLink");
-
-/* Buttons that jump tabs */
-$$("[data-jump]").forEach(btn => {
-  btn.addEventListener("click", () => setActiveTab(btn.dataset.jump));
-});
-
-/* -----------------------------
-   Timer Engine
------------------------------ */
-const timerEngine = {
-  mode: "study", // "study" | "break"
-  running: false,
-  remainingSec: 25 * 60,
-  totalSec: 25 * 60,
-  tickId: null,
-
-  setMode(mode){
-    this.mode = mode;
-    const mins = mode === "study" ? state.timer.studyMinutes : state.timer.breakMinutes;
-    this.remainingSec = mins * 60;
-    this.totalSec = mins * 60;
-    updateTimerUI();
-  },
-
-  start(){
-    if (this.running) return;
-    this.running = true;
-    this.tickId = setInterval(() => this.tick(), 1000);
-    updateTimerUI();
-  },
-
-  pause(){
-    this.running = false;
-    if (this.tickId) clearInterval(this.tickId);
-    this.tickId = null;
-    updateTimerUI();
-  },
-
-  reset(){
-    this.pause();
-    const mins = this.mode === "study" ? state.timer.studyMinutes : state.timer.breakMinutes;
-    this.remainingSec = mins * 60;
-    this.totalSec = mins * 60;
-    updateTimerUI();
-  },
-
-  next(){
-    this.pause();
-    this.setMode(this.mode === "study" ? "break" : "study");
-  },
-
-  finish(){
-    // Add metrics
-    const mins = this.mode === "study" ? state.timer.studyMinutes : state.timer.breakMinutes;
-
-    if (this.mode === "study"){
-      state.stats.studySessions += 1;
-      state.stats.studyMinutes += mins;
-      addDailyMinutes(todayKey(), mins);
-      // For subject minutes, we attribute study sessions to today's focus subject if available:
-      const subj = inferFocusSubject() || "english";
-      state.stats.subjectMinutes[subj] = (state.stats.subjectMinutes[subj] || 0) + mins;
-    } else {
-      state.stats.breakSessions += 1;
-      state.stats.breakMinutes += mins;
-    }
-
-    markActivity();
-    saveStats();
-    renderAllKPIs();
-    renderSessionMetrics();
-    renderStats();
-    drawChart();
-
-    // Alert
-    alertPulse();
-    playBeep();
-
-    // Auto switch
-    if (state.timer.autoSwitch){
-      this.setMode(this.mode === "study" ? "break" : "study");
-      this.start();
-    } else {
-      this.pause();
-    }
-  },
-
-  tick(){
-    if (!this.running) return;
-    this.remainingSec -= 1;
-    if (this.remainingSec <= 0){
-      this.remainingSec = 0;
-      updateTimerUI();
-      this.finish();
-      return;
-    }
-    updateTimerUI();
-  }
-};
-
-/* -----------------------------
-   Weekly Plan Generator
------------------------------ */
-const DAYS_SUN_SAT = [
-  { key: "sun", ar: "الأحد", en: "Sun" },
-  { key: "mon", ar: "الإثنين", en: "Mon" },
-  { key: "tue", ar: "الثلاثاء", en: "Tue" },
-  { key: "wed", ar: "الأربعاء", en: "Wed" },
-  { key: "thu", ar: "الخميس", en: "Thu" },
-  { key: "fri", ar: "الجمعة", en: "Fri" },
-  { key: "sat", ar: "السبت", en: "Sat" },
+const SUBJECTS = [
+  { id: "history", badge: "hist", ar: "تاريخ", en: "History" },
+  { id: "islamic", badge: "isl", ar: "دين", en: "Religion" },
+  { id: "english", badge: "eng", ar: "إنجليزي", en: "English" },
+  { id: "arabic", badge: "ar", ar: "عربي", en: "Arabic" }
 ];
 
-const SUBJECTS = ["english","arabic","history","religion"];
-
-const TASK_TYPES = {
-  learn: { ar: "تعلم", en: "Learn", css: "learn" },
-  revise: { ar: "مراجعة", en: "Revise", css: "revise" },
-  practice: { ar: "نمط وزاري", en: "Wazari practice", css: "practice" },
-  review: { ar: "مراجعة أسبوعية", en: "Weekly review", css: "review" },
-};
-
-function generateWeeklyPlan(seed = Date.now()){
-  // deterministic-ish using seeded pseudo-random
-  const rand = mulberry32(hashSeed(String(seed)));
-  const plan = {
-    createdAt: new Date().toISOString(),
-    seed,
-    days: {}
-  };
-
-  // Choose light day and review day (Jordan rhythm: Fri lighter, Sat weekly review)
-  const lightDayKey = "fri";
-  const reviewDayKey = "sat";
-
-  // Subject rotation with bias so each appears daily across the week
-  let rotation = SUBJECTS.slice();
-  shuffle(rotation, rand);
-
-  for (const d of DAYS_SUN_SAT){
-    const blocks = [];
-    const isLight = d.key === lightDayKey;
-    const isReview = d.key === reviewDayKey;
-
-    if (isReview){
-      // Weekly review: mini mock + error review + quick revise
-      const mockSubject = rotation[Math.floor(rand() * rotation.length)];
-      blocks.push(blockObj(d.key, mockSubject, "practice", 60, goalText(mockSubject, "practice", rand, true), rand));
-      blocks.push(blockObj(d.key, mockSubject, "review", 35, goalText(mockSubject, "review", rand, true), rand));
-      blocks.push(blockObj(d.key, pickAnother(mockSubject, rotation, rand), "revise", 30, goalText(pickAnother(mockSubject, rotation, rand), "revise", rand), rand));
-    } else {
-      // Normal day: 2–4 blocks, include at least 1 practice block
-      const blockCount = isLight ? 2 : (rand() < 0.45 ? 3 : 4);
-
-      // Ensure practice exists
-      const practiceIndex = Math.floor(rand() * blockCount);
-
-      for (let i=0;i<blockCount;i++){
-        const subj = rotation[(i + DAYS_SUN_SAT.indexOf(d)) % rotation.length];
-        let type;
-        if (i === practiceIndex) type = "practice";
-        else type = rand() < 0.55 ? "revise" : "learn";
-
-        const minutes = minutesFor(type, isLight, rand);
-        blocks.push(blockObj(d.key, subj, type, minutes, goalText(subj, type, rand), rand));
-      }
-    }
-
-    // Add a short break note between blocks (UI hint only)
-    plan.days[d.key] = {
-      dayKey: d.key,
-      isLight,
-      isReview,
-      blocks
-    };
-  }
-
-  return plan;
+function t(key){
+  const lang = getLang();
+  return (i18n[lang] && i18n[lang][key]) ? i18n[lang][key] : key;
 }
 
-function blockObj(dayKey, subject, type, minutes, goal, rand){
-  const id = `${dayKey}-${subject}-${type}-${Math.floor(rand()*1e9)}`;
-  return {
-    id,
-    subject,
-    type,
-    minutes,
-    goal,
-    done: false,
-    createdAt: new Date().toISOString()
-  };
+function getLang(){
+  return localStorage.getItem(LS.lang) || "ar";
 }
 
-function minutesFor(type, isLight, rand){
-  if (type === "practice") return isLight ? 35 : (rand() < 0.5 ? 45 : 50);
-  if (type === "learn") return isLight ? 30 : (rand() < 0.5 ? 35 : 40);
-  if (type === "revise") return isLight ? 25 : (rand() < 0.5 ? 30 : 35);
-  if (type === "review") return 35;
-  return 30;
-}
-
-function goalText(subject, type, rand, isReviewDay=false){
-  const s = subject;
-  const goalSets = {
-    english: {
-      learn: [
-        "Vocabulary set + examples",
-        "Reading: main idea + details",
-        "Grammar rule + 10 mini drills"
-      ],
-      revise: [
-        "Review mistakes from last quiz",
-        "Flashcards (10–15) + self-test",
-        "Rewrite weak grammar notes"
-      ],
-      practice: [
-        "Wazari-style MCQ timed set",
-        "Past-paper passage (timed) + corrections",
-        "Timed writing outline + checklist"
-      ],
-      review: [
-        "Mini mock + error log (weak points)",
-        "Summarize top 5 recurring mistakes"
-      ]
-    },
-    arabic: {
-      learn: [
-        "نحو: قاعدة + أمثلة",
-        "بلاغة: مصطلحات + تطبيق سريع",
-        "قراءة: فكرة عامة + مفردات"
-      ],
-      revise: [
-        "مراجعة إعراب + تدريبات قصيرة",
-        "بطاقات مصطلحات + اختبار ذاتي",
-        "تلخيص درس بصياغتك"
-      ],
-      practice: [
-        "نمط وزاري: إعراب/بلاغة بوقت محدد",
-        "أسئلة سنوات + تصحيح فوري",
-        "فقرة قصيرة + تدقيق"
-      ],
-      review: [
-        "امتحان تجريبي قصير + تحليل أخطاء",
-        "قائمة أخطاء متكررة + حلها"
-      ]
-    },
-    history: {
-      learn: [
-        "خريطة ذهنية للدرس",
-        "مصطلحات + تسلسل زمني",
-        "سبب/نتيجة: 3 نقاط لكل محور"
-      ],
-      revise: [
-        "مراجعة ملخص + كلمات مفتاحية",
-        "بطاقات تواريخ وأسماء + اختبار",
-        "تلخيص أحداث بترتيب زمني"
-      ],
-      practice: [
-        "نمط وزاري: اختيار/علّل بوقت محدد",
-        "أسئلة شاملة للدرس + تصحيح",
-        "خريطة أحداث + أسئلة ذاتية"
-      ],
-      review: [
-        "ميني موك 60 دقيقة + تحليل أخطاء",
-        "مراجعة نقاط الخلط"
-      ]
-    },
-    religion: {
-      learn: [
-        "تعريفات + أمثلة تطبيقية",
-        "مفاهيم الدرس + ربط بالحياة",
-        "حفظ نقاط أساسية + اختبار"
-      ],
-      revise: [
-        "مراجعة أدلة/تعليلات + أسئلة قصيرة",
-        "تلخيص صفحة واحدة",
-        "اختبار ذاتي (10 أسئلة)"
-      ],
-      practice: [
-        "نمط وزاري: صح/خطأ + علّل بوقت محدد",
-        "امتحان تجريبي قصير + تصحيح",
-        "تحليل أخطاء + إعادة حل"
-      ],
-      review: [
-        "ميني موك + مراجعة التعليلات",
-        "ورقة أخطاء ثابتة"
-      ]
-    }
-  };
-
-  const set = goalSets[s]?.[type] || ["Focus + practice"];
-  const pick = set[Math.floor(rand()*set.length)];
-  // Keep it bilingual-ready by returning Arabic if app in Arabic, otherwise English (handled in render)
-  // We'll store raw goal text, can be bilingual mix; that's okay for Tawjihi student audience.
-  return isReviewDay ? pick : pick;
-}
-
-function pickAnother(subject, list, rand){
-  const others = list.filter(x => x !== subject);
-  return others[Math.floor(rand()*others.length)] || subject;
-}
-
-/* -----------------------------
-   Rendering
------------------------------ */
 function setLang(lang){
-  state.lang = lang;
-  saveLS(LS.lang, lang);
+  localStorage.setItem(LS.lang, lang);
+  document.documentElement.lang = lang === "ar" ? "ar" : "en";
+  document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+  document.body.classList.toggle("ltr", lang === "en");
 
-  const isAr = lang === "ar";
-  document.documentElement.setAttribute("dir", isAr ? "rtl" : "ltr");
-  document.documentElement.setAttribute("lang", isAr ? "ar" : "en");
+  // Activate pill
+  document.getElementById("langAR").classList.toggle("is-active", lang === "ar");
+  document.getElementById("langEN").classList.toggle("is-active", lang === "en");
 
-  // Update all i18n nodes
-  $$("[data-i18n]").forEach(el => {
-    const key = el.getAttribute("data-i18n");
-    const str = i18n[lang][key];
-    if (typeof str === "string") el.textContent = str;
+  // Translate
+  document.querySelectorAll("[data-i18n]").forEach(el=>{
+    const k = el.getAttribute("data-i18n");
+    el.textContent = t(k);
   });
 
-  // Toggle label
-  langToggleText.textContent = isAr ? "AR" : "EN";
+  // Update placeholders
+  const ps = document.getElementById("planSearch");
+  if(ps) ps.placeholder = (lang === "ar") ? "بحث..." : "Search...";
 
-  // Update placeholders that are not data-i18n
-  bankSearch.placeholder = isAr ? "اكتب كلمة… (مثلاً: وزاري / إعراب / grammar)" : "Type a keyword… (e.g., wazari / grammar)";
-  srcTitle.placeholder = isAr ? "مثال: وزارة التربية — أسئلة سابقة" : "e.g., MoE — Past papers";
-  srcLink.placeholder = "https://...";
-
+  // Rerender UI pieces dependent on language
   renderAll();
 }
 
-function setActiveTab(tabKey){
-  state.ui.activeTab = tabKey;
+// ---------- Toast ----------
+let toastTimer = null;
+function toast(msg){
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>{ el.hidden = true; }, 1800);
+}
 
-  // Update tab buttons active states
-  tabButtons.forEach(btn => btn.classList.toggle("is-active", btn.dataset.tab === tabKey));
-  tabButtons.forEach(btn => {
-    if (btn.dataset.tab === tabKey) btn.setAttribute("aria-current","page");
-    else btn.removeAttribute("aria-current");
+// ---------- Tabs ----------
+function setActiveTab(tabId){
+  document.querySelectorAll(".tab").forEach(s=>s.classList.remove("is-active"));
+  document.getElementById(`tab-${tabId}`).classList.add("is-active");
+
+  document.querySelectorAll(".nav-item").forEach(b=>{
+    b.classList.toggle("is-active", b.dataset.tab === tabId);
+  });
+  document.querySelectorAll(".bnav").forEach(b=>{
+    b.classList.toggle("is-active", b.dataset.tab === tabId);
   });
 
-  Object.entries(tabs).forEach(([k, el]) => el.classList.toggle("is-active", k === tabKey));
-
-  // Close drawer on mobile
+  // close drawer
   closeDrawer();
-
-  // If navigating to stats, redraw chart for correct sizing
-  if (tabKey === "stats") requestAnimationFrame(() => drawChart());
 }
 
-function renderAll(){
-  renderTimerSettingsInputs();
-  renderSessionMetrics();
-  ensurePlan();
-  renderPlan();
-  renderAllKPIs();
-  renderStats();
-  drawChart();
-  renderQuestionBank();
-  renderSources();
-  renderMuteUI();
+// ---------- Drawer ----------
+const drawer = ()=>document.getElementById("drawer");
+const drawerBackdrop = ()=>document.getElementById("drawerBackdrop");
+
+function openDrawer(){
+  drawer().hidden = false;
+  drawerBackdrop().hidden = false;
+  document.body.style.overflow = "hidden";
+}
+function closeDrawer(){
+  drawer().hidden = true;
+  drawerBackdrop().hidden = true;
+  document.body.style.overflow = "";
 }
 
-function renderAllKPIs(){
-  // streak
-  const streak = computeStreak();
-  kpiStreak.textContent = String(streak);
+// ---------- Metrics ----------
+function defaultMetrics(){
+  return {
+    studySessions: 0,
+    studyMinutes: 0,
+    breaks: 0,
+    breakMinutes: 0
+  };
+}
+function loadMetrics(){
+  try{
+    return JSON.parse(localStorage.getItem(LS.metrics)) || defaultMetrics();
+  }catch{
+    return defaultMetrics();
+  }
+}
+function saveMetrics(m){
+  localStorage.setItem(LS.metrics, JSON.stringify(m));
+}
+function loadDailyLog(){
+  try{
+    return JSON.parse(localStorage.getItem(LS.dailyLog)) || {};
+  }catch{
+    return {};
+  }
+}
+function saveDailyLog(log){
+  localStorage.setItem(LS.dailyLog, JSON.stringify(log));
+}
+function isoDate(d){
+  const x = new Date(d);
+  x.setHours(0,0,0,0);
+  return x.toISOString().slice(0,10);
+}
 
-  // week hours
-  const weekMinutes = getWeekMinutesSum();
-  const weekHours = Math.floor(weekMinutes / 60);
-  kpiWeekHours.textContent = String(weekHours);
+// ---------- Timer ----------
+const audioCtx = (window.AudioContext || window.webkitAudioContext) ? new (window.AudioContext || window.webkitAudioContext)() : null;
+function beep(){
+  if(isMuted()) return;
+  const soundOn = document.getElementById("soundOn");
+  if(soundOn && !soundOn.checked) return;
+  if(!audioCtx) return;
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = "sine";
+  o.frequency.value = 880;
+  o.connect(g);
+  g.connect(audioCtx.destination);
+  g.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.2, audioCtx.currentTime + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.35);
+  o.start();
+  o.stop(audioCtx.currentTime + 0.4);
+}
 
-  // today's plan completion
-  const todayKeyName = dayKeyFromDate(new Date());
-  const todayPlan = state.plan?.days?.[todayKeyName];
-  const todayPct = todayPlan ? Math.round(computeDayCompletion(todayPlan) * 100) : 0;
-  kpiTodayDone.textContent = `${todayPct}%`;
+function isMuted(){
+  return localStorage.getItem(LS.mute) === "1";
+}
+function setMuted(val){
+  localStorage.setItem(LS.mute, val ? "1" : "0");
+  const btn = document.getElementById("btnMute");
+  const icon = btn.querySelector("i");
+  icon.className = val ? "fa-solid fa-volume-xmark" : "fa-solid fa-volume-high";
+}
 
-  // Today's label and focus
-  todayLabel.textContent = friendlyDateLabel(new Date());
-  const focus = getTodaysFocus();
-  if (focus){
-    const subjName = subjectLabel(focus.subject);
-    const typeName = taskTypeLabel(focus.type);
-    focusTitle.textContent = `${subjName} — ${typeName}`;
-    focusMeta.textContent = `${focus.minutes} ${t("plan.min")} • ${t("plan.goal")}: ${focus.goal}`;
-  } else {
-    focusTitle.textContent = state.lang === "ar" ? "ممتاز! خلصت بلوكات اليوم 👏" : "Nice! You finished today’s blocks 👏";
-    focusMeta.textContent = state.lang === "ar"
-      ? "إذا بدك، اعمل جلسة قصيرة تحليل أخطاء أو مراجعة خفيفة."
-      : "Optional: do a short error-analysis session or light revision.";
+function defaultDurations(){
+  return { studyMin: 25, breakMin: 5 };
+}
+function loadDurations(){
+  try{
+    return JSON.parse(localStorage.getItem(LS.durations)) || defaultDurations();
+  }catch{
+    return defaultDurations();
+  }
+}
+function saveDurations(d){
+  localStorage.setItem(LS.durations, JSON.stringify(d));
+}
+
+let timer = {
+  mode: "study", // study|break
+  running: false,
+  cycle: 1,
+  totalSec: 25*60,
+  leftSec: 25*60,
+  tickHandle: null
+};
+
+function loadTimerState(){
+  try{
+    const s = JSON.parse(localStorage.getItem(LS.timerState));
+    if(!s) return;
+    timer = { ...timer, ...s };
+  }catch{}
+}
+function saveTimerState(){
+  localStorage.setItem(LS.timerState, JSON.stringify({
+    mode: timer.mode,
+    running: timer.running,
+    cycle: timer.cycle,
+    totalSec: timer.totalSec,
+    leftSec: timer.leftSec
+  }));
+}
+
+function setTimerMode(mode){
+  const d = loadDurations();
+  timer.mode = mode;
+  timer.totalSec = (mode === "study" ? d.studyMin : d.breakMin) * 60;
+  timer.leftSec = timer.totalSec;
+  timer.running = false;
+  stopTick();
+
+  document.getElementById("timerMode").textContent = t(mode === "study" ? "modeStudy" : "modeBreak");
+  document.getElementById("timerHint").textContent = t(mode === "study" ? "hintStudy" : "hintBreak");
+  document.getElementById("cycleTag").textContent = String(timer.cycle);
+  updateTimeText();
+  drawRing();
+  saveTimerState();
+}
+
+function stopTick(){
+  if(timer.tickHandle){
+    clearInterval(timer.tickHandle);
+    timer.tickHandle = null;
   }
 }
 
-function renderTimerSettingsInputs(){
-  studyMinutesInput.value = state.timer.studyMinutes;
-  breakMinutesInput.value = state.timer.breakMinutes;
-  autoSwitch.checked = !!state.timer.autoSwitch;
+function startTick(){
+  if(timer.running) return;
+  timer.running = true;
+  timer.tickHandle = setInterval(()=>{
+    timer.leftSec = Math.max(0, timer.leftSec - 1);
+    updateTimeText();
+    drawRing();
+    saveTimerState();
 
-  // Sync timer engine to settings (only if not running)
-  if (!timerEngine.running){
-    timerEngine.setMode(timerEngine.mode);
+    if(timer.leftSec <= 0){
+      stopTick();
+      timer.running = false;
+      beep();
+      flashTitle();
+
+      // metrics
+      const m = loadMetrics();
+      const durs = loadDurations();
+      const today = isoDate(new Date());
+      const log = loadDailyLog();
+      log[today] = log[today] || { studyMin:0, planDone:0 };
+
+      if(timer.mode === "study"){
+        m.studySessions += 1;
+        m.studyMinutes += durs.studyMin;
+        log[today].studyMin += durs.studyMin;
+      }else{
+        m.breaks += 1;
+        m.breakMinutes += durs.breakMin;
+      }
+      saveMetrics(m);
+      saveDailyLog(log);
+
+      const auto = document.getElementById("autoSwitch");
+      if(auto && auto.checked){
+        nextMode();
+      }else{
+        // stay but show reset
+      }
+      renderStats();
+      renderHomeMini();
+    }
+  }, 1000);
+}
+
+function flashTitle(){
+  const original = document.title;
+  let n = 0;
+  const id = setInterval(()=>{
+    document.title = (n % 2 === 0) ? "⏰ T09" : original;
+    n++;
+    if(n > 6){
+      clearInterval(id);
+      document.title = original;
+    }
+  }, 400);
+}
+
+function updateTimeText(){
+  const m = Math.floor(timer.leftSec / 60);
+  const s = timer.leftSec % 60;
+  const txt = `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+  document.getElementById("timeText").textContent = txt;
+}
+
+function nextMode(){
+  if(timer.mode === "study"){
+    setTimerMode("break");
+  }else{
+    timer.cycle += 1;
+    setTimerMode("study");
   }
 }
 
-function updateTimerUI(){
-  timerModeLabel.textContent = timerEngine.mode === "study" ? "Study" : "Break";
-  if (state.lang === "ar"){
-    timerModeLabel.textContent = timerEngine.mode === "study" ? "دراسة" : "استراحة";
+function resetTimer(){
+  setTimerMode(timer.mode);
+}
+
+function drawRing(){
+  const canvas = document.getElementById("ring");
+  const ctx = canvas.getContext("2d");
+  const W = canvas.width, H = canvas.height;
+  const cx = W/2, cy = H/2;
+  const r = 90;
+
+  ctx.clearRect(0,0,W,H);
+
+  // bg ring
+  ctx.beginPath();
+  ctx.lineWidth = 14;
+  ctx.strokeStyle = "rgba(255,255,255,.10)";
+  ctx.arc(cx, cy, r, 0, Math.PI*2);
+  ctx.stroke();
+
+  const progress = (timer.totalSec === 0) ? 0 : (timer.totalSec - timer.leftSec) / timer.totalSec;
+  const start = -Math.PI/2;
+  const end = start + progress * Math.PI*2;
+
+  ctx.beginPath();
+  ctx.lineWidth = 14;
+  ctx.lineCap = "round";
+  ctx.strokeStyle = (timer.mode === "study") ? "rgba(139,92,246,.95)" : "rgba(34,197,94,.95)";
+  ctx.arc(cx, cy, r, start, end);
+  ctx.stroke();
+
+  // subtle inner glow
+  ctx.beginPath();
+  ctx.fillStyle = "rgba(109,40,217,.08)";
+  ctx.arc(cx, cy, 68, 0, Math.PI*2);
+  ctx.fill();
+}
+
+// ---------- Finish Plan Generator ----------
+function defaultPlanState(){
+  return {
+    target: "may1",       // may1|may15
+    dailyMode: "two",     // two|four
+    includeReviewDays: true,
+    lightDay: true,
+    plan: null            // generated days
+  };
+}
+
+function loadPlanState(){
+  try{
+    return JSON.parse(localStorage.getItem(LS.planState)) || defaultPlanState();
+  }catch{
+    return defaultPlanState();
+  }
+}
+function savePlanState(s){
+  localStorage.setItem(LS.planState, JSON.stringify(s));
+}
+
+function dateForTarget(target){
+  const now = new Date();
+  const year = now.getFullYear();
+  // target: May 1 / May 15 of current year (if already passed, next year)
+  let d = new Date(year, 4, target === "may1" ? 1 : 15);
+  if(d < now){
+    d = new Date(year + 1, 4, target === "may1" ? 1 : 15);
+  }
+  d.setHours(0,0,0,0);
+  return d;
+}
+
+function daysBetween(a,b){
+  const ms = 24*60*60*1000;
+  const A = new Date(a); A.setHours(0,0,0,0);
+  const B = new Date(b); B.setHours(0,0,0,0);
+  return Math.max(1, Math.ceil((B - A)/ms) + 1); // include today
+}
+
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+function buildTaskPool(){
+  const pool = [];
+  for(const s of SUBJECTS){
+    const g = syllabusGroups[s.id];
+    for(const item of g){
+      pool.push({
+        id: `${s.id}:${item.key}`,
+        subject: s.id,
+        ar: item.ar,
+        en: item.en,
+        estMin: item.estMin
+      });
+    }
+  }
+  return pool;
+}
+
+function generateFinishPlan(state){
+  const now = new Date();
+  const target = dateForTarget(state.target);
+  const totalDays = daysBetween(now, target);
+
+  // build shuffled pool per subject
+  const pools = {};
+  SUBJECTS.forEach(s=>{
+    pools[s.id] = shuffle(syllabusGroups[s.id].map(it=>({
+      id:`${s.id}:${it.key}`,
+      subject:s.id,
+      ar:it.ar,
+      en:it.en,
+      estMin:it.estMin
+    })));
+  });
+
+  // Determine daily slots
+  const slotsPerDay = (state.dailyMode === "four") ? 4 : 2;
+
+  // Weekly pattern: optional review day + optional light day
+  // We'll treat: Friday as review day if enabled; Tuesday as light day if enabled (Jordan week: Sun..Sat)
+  const planDays = [];
+  const start = new Date(now); start.setHours(0,0,0,0);
+
+  let counters = { history:0, islamic:0, english:0, arabic:0 };
+
+  function nextFromSubject(sub){
+    const arr = pools[sub];
+    const idx = counters[sub] % arr.length;
+    counters[sub] += 1;
+    return arr[idx];
   }
 
-  const m = Math.floor(timerEngine.remainingSec / 60);
-  const s = timerEngine.remainingSec % 60;
-  timerTime.textContent = `${pad2(m)}:${pad2(s)}`;
+  for(let i=0;i<totalDays;i++){
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
 
-  timerHint.textContent = timerEngine.mode === "study" ? t("sessions.hintStudy") : t("sessions.hintBreak");
+    const dow = d.getDay(); // 0 Sun ... 6 Sat
+    const isReview = state.includeReviewDays && (dow === 5); // Fri
+    const isLight = state.lightDay && (dow === 2); // Tue
 
-  const ratio = timerEngine.totalSec > 0 ? (1 - (timerEngine.remainingSec / timerEngine.totalSec)) : 0;
-  const deg = Math.max(0, Math.min(1, ratio)) * 360;
-  progressRing.style.background = `conic-gradient(rgba(109,40,217,.95) ${deg}deg, rgba(255,255,255,.08) 0deg)`;
-}
+    let tasks = [];
 
-function renderSessionMetrics(){
-  mStudySessions.textContent = state.stats.studySessions;
-  mStudyMinutes.textContent = state.stats.studyMinutes;
-  mBreakSessions.textContent = state.stats.breakSessions;
-  mBreakMinutes.textContent = state.stats.breakMinutes;
-}
+    if(isReview){
+      tasks = [{
+        id:`review:${isoDate(d)}`,
+        subject:"review",
+        ar: "مراجعة أسبوعية: تحليل أخطاء + أسئلة نمط وزاري (مختلط)",
+        en: "Weekly review: error analysis + mixed ministerial-style questions",
+        estMin: 70
+      }];
+      // optionally add one subject task if dailyMode is four
+      if(slotsPerDay === 4){
+        tasks.push(nextFromSubject("history"));
+        tasks.push(nextFromSubject("english"));
+        tasks.push(nextFromSubject("arabic"));
+      }
+    } else if(isLight){
+      // light day: fewer/shorter tasks
+      if(state.dailyMode === "four"){
+        tasks = [
+          nextFromSubject("english"),
+          nextFromSubject("arabic"),
+          {
+            id:`light:${isoDate(d)}`,
+            subject:"light",
+            ar:"يوم خفيف: مراجعة سريعة/بطاقات + ترتيب ملاحظات",
+            en:"Light day: quick recap/flashcards + organize notes",
+            estMin: 35
+          },
+          nextFromSubject("islamic")
+        ];
+      } else {
+        tasks = [
+          nextFromSubject("english"),
+          {
+            id:`light:${isoDate(d)}`,
+            subject:"light",
+            ar:"يوم خفيف: مراجعة سريعة/تصحيح أخطاء",
+            en:"Light day: quick recap / fix mistakes",
+            estMin: 35
+          }
+        ];
+      }
+    } else {
+      if(state.dailyMode === "four"){
+        tasks = [
+          nextFromSubject("history"),
+          nextFromSubject("islamic"),
+          nextFromSubject("english"),
+          nextFromSubject("arabic")
+        ];
+      } else {
+        // 2 tasks/day: rotate subjects evenly
+        const order = ["history","islamic","english","arabic"];
+        const base = i % 4;
+        tasks = [
+          nextFromSubject(order[base]),
+          nextFromSubject(order[(base+1)%4])
+        ];
+      }
+    }
 
-/* Plan */
-function ensurePlan(){
-  if (!state.plan || !state.plan.days){
-    state.plan = generateWeeklyPlan();
-    savePlan();
+    planDays.push({
+      date: isoDate(d),
+      dow,
+      tasks: tasks.map(x=>({
+        ...x,
+        done:false
+      }))
+    });
   }
+
+  return planDays;
 }
 
-function renderPlan(){
-  weeklyGrid.innerHTML = "";
+function computePlanProgress(planDays){
+  let total = 0, done = 0;
+  for(const day of planDays){
+    for(const task of day.tasks){
+      total++;
+      if(task.done) done++;
+    }
+  }
+  return { total, done, pct: total ? Math.round((done/total)*100) : 0 };
+}
 
-  for (const d of DAYS_SUN_SAT){
-    const day = state.plan.days[d.key];
-    const col = document.createElement("div");
-    col.className = "day-col";
+// ---------- UI Render ----------
+function renderHomeMini(){
+  const m = loadMetrics();
+  document.getElementById("miniSessions").textContent = String(m.studySessions);
+  document.getElementById("miniMinutes").textContent = String(m.studyMinutes);
+
+  const st = loadPlanState();
+  const pct = st.plan ? computePlanProgress(st.plan).pct : 0;
+  document.getElementById("miniPlanPct").textContent = `${pct}%`;
+}
+
+function renderTodayFocus(){
+  const st = loadPlanState();
+  const txt = document.getElementById("todayFocusText");
+  if(!st.plan){
+    txt.textContent = (getLang()==="ar") ? "ابدأ بتوليد خطة الختمة" : "Generate your finish plan";
+    return;
+  }
+  const today = isoDate(new Date());
+  const day = st.plan.find(x=>x.date===today) || st.plan[0];
+  const lang = getLang();
+  const first = day.tasks.find(tk=>!tk.done) || day.tasks[0];
+  txt.textContent = first ? (lang==="ar" ? first.ar : first.en) : "—";
+}
+
+function renderPlanOptions(){
+  const st = loadPlanState();
+
+  document.getElementById("targetMay1").classList.toggle("is-active", st.target === "may1");
+  document.getElementById("targetMay15").classList.toggle("is-active", st.target === "may15");
+  document.getElementById("dailyTwo").classList.toggle("is-active", st.dailyMode === "two");
+  document.getElementById("dailyFour").classList.toggle("is-active", st.dailyMode === "four");
+
+  document.getElementById("includeReviewDays").checked = !!st.includeReviewDays;
+  document.getElementById("lightDay").checked = !!st.lightDay;
+
+  const targetDate = dateForTarget(st.target);
+  const days = daysBetween(new Date(), targetDate);
+
+  const slots = st.dailyMode === "four" ? 4 : 2;
+  const sum = document.getElementById("planSummary");
+  const lang = getLang();
+  sum.textContent =
+    (lang==="ar")
+      ? `الخطة: ${slots} مهام/يوم • ${days} يوم ${t("until")} ${st.target==="may1" ? "1 أيار" : "15 أيار"}`
+      : `Plan: ${slots} tasks/day • ${days} days until ${st.target==="may1" ? "May 1" : "May 15"}`;
+}
+
+function dowLabel(dow){
+  const lang = getLang();
+  const ar = ["الأحد","الإثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
+  const en = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  return (lang==="ar") ? ar[dow] : en[dow];
+}
+
+function badgeForSubject(sub){
+  const s = SUBJECTS.find(x=>x.id===sub);
+  if(!s) return { cls:"", name:"" };
+  return { cls: s.badge, name: (getLang()==="ar") ? s.ar : s.en };
+}
+
+function renderTodayTasksBox(){
+  const st = loadPlanState();
+  const box = document.getElementById("todayTasks");
+  box.innerHTML = "";
+
+  if(!st.plan){
+    const div = document.createElement("div");
+    div.className = "muted";
+    div.textContent = t("noPlanYet");
+    box.appendChild(div);
+    return;
+  }
+  const today = isoDate(new Date());
+  const day = st.plan.find(x=>x.date===today) || st.plan[0];
+  const lang = getLang();
+
+  day.tasks.forEach(task=>{
+    const row = document.createElement("div");
+    row.className = "todo";
+    const left = document.createElement("div");
+    const title = document.createElement("strong");
+    title.textContent = (lang==="ar") ? task.ar : task.en;
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    meta.textContent = `${dowLabel(day.dow)} • ${task.estMin} ${t("minutes")}`;
+    left.appendChild(title);
+    left.appendChild(meta);
+
+    const badge = document.createElement("span");
+    badge.className = "badge";
+    if(task.subject==="review"){
+      badge.textContent = t("reviewLabel");
+    }else if(task.subject==="light"){
+      badge.textContent = t("lightLabel");
+    }else{
+      const b = badgeForSubject(task.subject);
+      badge.classList.add(b.cls);
+      badge.textContent = b.name;
+    }
+
+    row.appendChild(left);
+    row.appendChild(badge);
+    box.appendChild(row);
+  });
+}
+
+function renderDayList(){
+  const st = loadPlanState();
+  const wrap = document.getElementById("dayList");
+  wrap.innerHTML = "";
+
+  if(!st.plan){
+    return;
+  }
+
+  const q = (document.getElementById("planSearch").value || "").trim().toLowerCase();
+  const lang = getLang();
+
+  const prog = computePlanProgress(st.plan);
+  document.getElementById("planProgressText").textContent = `${prog.pct}%`;
+
+  for(const day of st.plan){
+    // filter
+    if(q){
+      const hit = day.tasks.some(task=>{
+        const text = (lang==="ar" ? task.ar : task.en).toLowerCase();
+        return text.includes(q);
+      });
+      if(!hit) continue;
+    }
+
+    const card = document.createElement("div");
+    card.className = "day-card";
 
     const head = document.createElement("div");
     head.className = "day-head";
 
-    const name = document.createElement("div");
-    name.className = "day-name";
-    name.textContent = state.lang === "ar" ? d.ar : d.en;
+    const title = document.createElement("div");
+    title.className = "day-title";
+    title.textContent = `${dowLabel(day.dow)} — ${day.date}`;
 
-    const meta = document.createElement("div");
-    meta.className = "day-meta";
-    const pct = Math.round(computeDayCompletion(day) * 100);
-    meta.textContent = `${pct}%`;
+    const date = document.createElement("div");
+    date.className = "day-date";
+    const dayDone = day.tasks.filter(tk=>tk.done).length;
+    date.textContent = `${dayDone}/${day.tasks.length} ${t("tasks")}`;
 
-    head.appendChild(name);
-    head.appendChild(meta);
-    col.appendChild(head);
+    head.appendChild(title);
+    head.appendChild(date);
 
-    if (day.isLight){
-      const badge = document.createElement("div");
-      badge.className = "note";
-      badge.style.marginTop = "6px";
-      badge.textContent = t("plan.lightDay");
-      col.appendChild(badge);
-    }
-    if (day.isReview){
-      const badge = document.createElement("div");
-      badge.className = "note";
-      badge.style.marginTop = "6px";
-      badge.textContent = t("plan.reviewDay");
-      col.appendChild(badge);
-    }
+    const tasks = document.createElement("div");
+    tasks.className = "tasks";
 
-    day.blocks.forEach((b, idx) => {
-      const block = document.createElement("div");
-      block.className = "block" + (b.done ? " is-done" : "");
+    day.tasks.forEach((task, idx)=>{
+      const row = document.createElement("div");
+      row.className = "task";
 
-      const top = document.createElement("div");
-      top.className = "block-top";
+      const left = document.createElement("div");
+      left.className = "task-left";
 
-      const title = document.createElement("div");
-      title.className = "block-title";
-      title.textContent = `${subjectLabel(b.subject)} — ${tTypeShort(b.type)}`;
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = !!task.done;
+      cb.addEventListener("change", ()=>{
+        const st2 = loadPlanState();
+        const d2 = st2.plan.find(x=>x.date===day.date);
+        d2.tasks[idx].done = cb.checked;
+        savePlanState(st2);
 
-      const badges = document.createElement("div");
-      badges.className = "badges";
+        // streak log update
+        const log = loadDailyLog();
+        log[day.date] = log[day.date] || { studyMin:0, planDone:0 };
+        // recalc planDone for this day
+        log[day.date].planDone = d2.tasks.filter(x=>x.done).length;
+        saveDailyLog(log);
 
-      const tagType = document.createElement("span");
-      tagType.className = `badge ${TASK_TYPES[b.type]?.css || ""}`;
-      tagType.textContent = taskTypeLabel(b.type);
+        renderDayList();
+        renderTodayTasksBox();
+        renderTodayFocus();
+        renderStats();
+        renderHomeMini();
+      });
 
-      const tagDur = document.createElement("span");
-      tagDur.className = "badge";
-      tagDur.textContent = `${b.minutes} ${t("plan.min")}`;
+      const textWrap = document.createElement("div");
+      const tt = document.createElement("div");
+      tt.className = "task-title";
+      tt.textContent = (lang==="ar") ? task.ar : task.en;
+      const sub = document.createElement("div");
+      sub.className = "task-sub";
+      sub.textContent = `${task.estMin} ${t("minutes")}`;
+      textWrap.appendChild(tt);
+      textWrap.appendChild(sub);
 
-      badges.appendChild(tagType);
-      badges.appendChild(tagDur);
+      left.appendChild(cb);
+      left.appendChild(textWrap);
 
-      top.appendChild(title);
-      top.appendChild(badges);
+      const badge = document.createElement("span");
+      badge.className = "badge";
+      if(task.subject==="review"){
+        badge.textContent = t("reviewLabel");
+      }else if(task.subject==="light"){
+        badge.textContent = t("lightLabel");
+      }else{
+        const b = badgeForSubject(task.subject);
+        badge.classList.add(b.cls);
+        badge.textContent = b.name;
+      }
 
-      const meta2 = document.createElement("div");
-      meta2.className = "block-meta";
-      meta2.textContent = `${t("plan.goal")}: ${b.goal}`;
-
-      const actions = document.createElement("div");
-      actions.className = "block-actions";
-
-      const breakHint = document.createElement("div");
-      breakHint.className = "badge";
-      breakHint.textContent = t("plan.break");
-
-      const btn = document.createElement("button");
-      btn.className = "btn" + (b.done ? " ghost" : " primary");
-      btn.innerHTML = b.done
-        ? `<i class="fa-solid fa-rotate-left"></i><span>${t("plan.undo")}</span>`
-        : `<i class="fa-solid fa-check"></i><span>${t("plan.markDone")}</span>`;
-
-      btn.addEventListener("click", () => toggleBlockDone(d.key, b.id));
-
-      actions.appendChild(breakHint);
-      actions.appendChild(btn);
-
-      block.appendChild(top);
-      block.appendChild(meta2);
-      block.appendChild(actions);
-
-      col.appendChild(block);
+      row.appendChild(left);
+      row.appendChild(badge);
+      tasks.appendChild(row);
     });
 
-    weeklyGrid.appendChild(col);
+    card.appendChild(head);
+    card.appendChild(tasks);
+    wrap.appendChild(card);
   }
-
-  // Refresh related sections
-  renderAllKPIs();
-  renderStats();
-  drawChart();
 }
 
-function toggleBlockDone(dayKey, blockId){
-  const day = state.plan.days[dayKey];
-  const block = day.blocks.find(b => b.id === blockId);
-  if (!block) return;
+function regeneratePlan(){
+  const st = loadPlanState();
+  st.plan = generateFinishPlan(st);
+  savePlanState(st);
 
-  block.done = !block.done;
+  // initialize daily log planDone
+  const log = loadDailyLog();
+  st.plan.forEach(d=>{
+    log[d.date] = log[d.date] || { studyMin:0, planDone:0 };
+    log[d.date].planDone = d.tasks.filter(x=>x.done).length;
+  });
+  saveDailyLog(log);
 
-  // Tie plan completion to stats: count minutes as study minutes when marking done (study-oriented)
-  if (block.done){
-    const mins = block.minutes;
-    state.stats.studyMinutes += mins;
-    addDailyMinutes(todayKeyFromDayKey(dayKey), mins);
-    state.stats.subjectMinutes[block.subject] = (state.stats.subjectMinutes[block.subject] || 0) + mins;
-    markActivity();
-    saveStats();
-    toast(t("toast.done"));
-  } else {
-    // Undo: remove minutes (clamp at 0)
-    const mins = block.minutes;
-    state.stats.studyMinutes = Math.max(0, state.stats.studyMinutes - mins);
-    addDailyMinutes(todayKeyFromDayKey(dayKey), -mins);
-    state.stats.subjectMinutes[block.subject] = Math.max(0, (state.stats.subjectMinutes[block.subject] || 0) - mins);
-    markActivity();
-    saveStats();
-    toast(t("toast.undone"));
-  }
-
-  savePlan();
-  renderPlan();
+  toast(t("toastRegenerated"));
+  renderAll();
 }
 
-/* Stats */
+function copyPlan(){
+  const st = loadPlanState();
+  if(!st.plan){
+    toast((getLang()==="ar") ? "ما في خطة لنسخها" : "No plan to copy");
+    return;
+  }
+  const lang = getLang();
+  const lines = [];
+  lines.push(lang==="ar" ? "خطة الختمة (T09)" : "Finish Plan (T09)");
+  lines.push(lang==="ar" ? `الموعد: ${st.target==="may1"?"1 أيار":"15 أيار"}` : `Target: ${st.target==="may1"?"May 1":"May 15"}`);
+  lines.push("");
+
+  for(const d of st.plan){
+    lines.push(`${dowLabel(d.dow)} — ${d.date}`);
+    d.tasks.forEach(task=>{
+      const name = (lang==="ar") ? task.ar : task.en;
+      lines.push(`- [${task.done?"x":" "}] ${name} (${task.estMin} ${t("minutes")})`);
+    });
+    lines.push("");
+  }
+
+  navigator.clipboard.writeText(lines.join("\n"))
+    .then(()=>toast(t("toastCopied")))
+    .catch(()=>toast((getLang()==="ar") ? "فشل النسخ" : "Copy failed"));
+}
+
 function renderStats(){
-  sStudySessions.textContent = String(state.stats.studySessions);
+  const m = loadMetrics();
+  document.getElementById("sStudySessions").textContent = String(m.studySessions);
+  document.getElementById("sStudyMinutes").textContent = String(m.studyMinutes);
 
-  const totalMin = state.stats.studyMinutes;
-  const h = Math.floor(totalMin / 60);
-  const m = totalMin % 60;
-  sStudyTime.textContent = state.lang === "ar" ? `${h}س ${m}د` : `${h}h ${m}m`;
+  document.getElementById("mStudySessions").textContent = String(m.studySessions);
+  document.getElementById("mStudyMinutes").textContent = String(m.studyMinutes);
+  document.getElementById("mBreaks").textContent = String(m.breaks);
+  document.getElementById("mBreakMinutes").textContent = String(m.breakMinutes);
 
-  const pct = Math.round(computePlanCompletion() * 100);
-  sPlanCompletion.textContent = `${pct}%`;
+  const st = loadPlanState();
+  const planPct = st.plan ? computePlanProgress(st.plan).pct : 0;
+  document.getElementById("sPlanPct").textContent = `${planPct}%`;
 
-  sStreak.textContent = String(computeStreak());
+  // streak + best day
+  const log = loadDailyLog();
+  const today = new Date(); today.setHours(0,0,0,0);
 
-  const best = bestDayFromDailyMinutes();
-  sBestDay.textContent = best ? `${best.label} • ${best.minutes} ${state.lang === "ar" ? "د" : "min"}` : "—";
+  // last 120 days scan for streak
+  let streak = 0;
+  for(let i=0;i<365;i++){
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const key = isoDate(d);
+    const entry = log[key];
+    const qualifies = entry && ((entry.studyMin||0) > 0 || (entry.planDone||0) > 0);
+    if(i===0){
+      if(qualifies) streak = 1;
+      else streak = 0;
+    }else{
+      if(qualifies && streak>0) streak++;
+      else break;
+    }
+  }
+  document.getElementById("streakNow").textContent = String(streak);
 
-  const mix = subjectMixSummary();
-  sSubjectMix.textContent = mix || "—";
+  let bestKey = null;
+  let bestMin = -1;
+  for(const k of Object.keys(log)){
+    const sm = (log[k].studyMin||0);
+    if(sm > bestMin){
+      bestMin = sm;
+      bestKey = k;
+    }
+  }
+  document.getElementById("bestDay").textContent = bestKey ? `${bestKey} (${bestMin} ${t("minutes")})` : "—";
+
+  drawWeeklyChart(log);
 }
 
-/* Chart */
-function drawChart(){
-  const canvas = progressChart;
-  if (!canvas) return;
+function drawWeeklyChart(log){
+  const canvas = document.getElementById("weekChart");
   const ctx = canvas.getContext("2d");
+  const W = canvas.width;
+  const H = canvas.height;
+
+  // device scale for crispness
   const rect = canvas.getBoundingClientRect();
-  // match internal size for crispness
   const dpr = window.devicePixelRatio || 1;
-  canvas.width = Math.max(640, Math.floor(rect.width * dpr));
-  canvas.height = Math.floor((rect.width * 0.45) * dpr);
+  canvas.width = Math.round(rect.width * dpr);
+  canvas.height = Math.round(320 * dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
 
-  const W = canvas.width, H = canvas.height;
-  ctx.clearRect(0,0,W,H);
+  const w = rect.width;
+  const h = 320;
 
-  // Background
-  ctx.fillStyle = "rgba(0,0,0,0.10)";
-  roundRect(ctx, 0, 0, W, H, 18 * dpr);
-  ctx.fill();
+  ctx.clearRect(0,0,w,h);
 
-  const pad = 22 * dpr;
-  const chartW = W - pad*2;
-  const chartH = H - pad*2;
-
-  const weekKeys = weekDateKeysSunSat();
-  const values = weekKeys.map(k => Math.max(0, Number(state.stats.dailyMinutes[k] || 0)));
-  const maxV = Math.max(60, ...values); // at least 60 for scale
-
-  // Grid lines
-  ctx.strokeStyle = "rgba(255,255,255,0.10)";
-  ctx.lineWidth = 1 * dpr;
-  for (let i=0;i<=4;i++){
-    const y = pad + (chartH * (i/4));
+  // background grid
+  ctx.strokeStyle = "rgba(255,255,255,.08)";
+  ctx.lineWidth = 1;
+  for(let i=0;i<=4;i++){
+    const y = 26 + i * ((h-52)/4);
     ctx.beginPath();
-    ctx.moveTo(pad, y);
-    ctx.lineTo(pad + chartW, y);
+    ctx.moveTo(16,y);
+    ctx.lineTo(w-16,y);
     ctx.stroke();
   }
 
-  // Axes labels
-  ctx.fillStyle = "rgba(238,242,255,0.75)";
-  ctx.font = `${12 * dpr}px ${getFontFamily()}`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "top";
+  // last 7 days
+  const days = [];
+  const base = new Date(); base.setHours(0,0,0,0);
+  for(let i=6;i>=0;i--){
+    const d = new Date(base);
+    d.setDate(base.getDate() - i);
+    const key = isoDate(d);
+    const val = (log[key]?.studyMin || 0);
+    days.push({ key, val, dow: d.getDay() });
+  }
 
-  const dayLabels = DAYS_SUN_SAT.map(d => state.lang === "ar" ? d.ar : d.en);
-  const stepX = chartW / (weekKeys.length - 1 || 1);
+  const maxVal = Math.max(30, ...days.map(x=>x.val));
+  const left = 18, right = 18, top = 22, bottom = 36;
+  const plotW = w - left - right;
+  const plotH = h - top - bottom;
 
-  // Line
-  ctx.strokeStyle = "rgba(109,40,217,0.95)";
-  ctx.lineWidth = 3 * dpr;
-  ctx.lineJoin = "round";
-  ctx.lineCap = "round";
+  const pts = days.map((d, idx)=>{
+    const x = left + (idx * (plotW / 6));
+    const y = top + (1 - (d.val / maxVal)) * plotH;
+    return {x,y, ...d};
+  });
 
+  // line
+  ctx.strokeStyle = "rgba(139,92,246,.95)";
+  ctx.lineWidth = 2;
   ctx.beginPath();
-  values.forEach((v, i) => {
-    const x = pad + stepX * i;
-    const y = pad + chartH - (v / maxV) * chartH;
-    if (i === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
+  pts.forEach((p,i)=>{
+    if(i===0) ctx.moveTo(p.x,p.y);
+    else ctx.lineTo(p.x,p.y);
   });
   ctx.stroke();
 
-  // Points
-  ctx.fillStyle = "rgba(109,40,217,0.95)";
-  values.forEach((v, i) => {
-    const x = pad + stepX * i;
-    const y = pad + chartH - (v / maxV) * chartH;
+  // points
+  ctx.fillStyle = "rgba(234,240,255,.95)";
+  pts.forEach(p=>{
     ctx.beginPath();
-    ctx.arc(x, y, 4.5 * dpr, 0, Math.PI*2);
+    ctx.arc(p.x,p.y,3.5,0,Math.PI*2);
     ctx.fill();
   });
 
-  // Day labels
-  values.forEach((v, i) => {
-    const x = pad + stepX * i;
-    ctx.fillText(dayLabels[i], x, pad + chartH + 8 * dpr);
+  // labels
+  ctx.fillStyle = "rgba(234,240,255,.70)";
+  ctx.font = "12px system-ui";
+  pts.forEach(p=>{
+    const label = dowLabel(p.dow);
+    ctx.fillText(label, p.x - 12, h - 14);
   });
 
-  // Min markers
-  ctx.textAlign = "end";
-  ctx.textBaseline = "middle";
-  ctx.fillStyle = "rgba(183,192,255,0.6)";
-  for (let i=0;i<=4;i++){
-    const v = Math.round(maxV * (1 - i/4));
-    const y = pad + (chartH * (i/4));
-    ctx.fillText(`${v}`, pad - 8 * dpr, y);
-  }
+  // y axis hint
+  ctx.fillStyle = "rgba(234,240,255,.55)";
+  ctx.fillText(`0`, 18, top + plotH + 12);
+  ctx.fillText(`${maxVal}`, 18, top + 6);
 }
 
-/* Bank */
-function renderQuestionBank(){
-  const subject = state.ui.bankSubject;
-  const search = (state.ui.bankSearch || "").trim().toLowerCase();
-  const diff = state.ui.bankDifficulty;
-  const type = state.ui.bankType;
+function renderAll(){
+  renderHomeMini();
+  renderTodayFocus();
+  renderPlanOptions();
+  renderTodayTasksBox();
+  renderDayList();
+  renderStats();
+}
 
-  // Update segmented
-  subjectSegs.forEach(btn => btn.classList.toggle("is-active", btn.dataset.subject === subject));
-  subjectSegs.forEach(btn => btn.setAttribute("aria-selected", btn.dataset.subject === subject ? "true" : "false"));
-
-  const list = questionBank.subjects[subject]?.questions || [];
-
-  const filtered = list.filter(q => {
-    if (diff !== "all" && q.difficulty !== diff) return false;
-    if (type !== "all" && q.type !== type) return false;
-    if (search){
-      const hay = `${q.text} ${q.answer}`.toLowerCase();
-      if (!hay.includes(search)) return false;
-    }
-    return true;
-  });
-
-  bankList.innerHTML = "";
-
-  if (!filtered.length){
-    const empty = document.createElement("div");
-    empty.className = "note";
-    empty.textContent = t("bank.noResults");
-    bankList.appendChild(empty);
-    return;
-  }
-
-  filtered.forEach(qx => {
-    const card = document.createElement("div");
-    card.className = "q";
-
-    const head = document.createElement("div");
-    head.className = "q-head";
-
-    const title = document.createElement("div");
-    title.className = "q-title";
-    title.textContent = subjectLabel(qx.subject);
-
-    const tags = document.createElement("div");
-    tags.className = "q-tags";
-
-    const sample = document.createElement("span");
-    sample.className = "tag sample";
-    sample.textContent = "Sample";
-
-    const d = document.createElement("span");
-    d.className = `tag ${qx.difficulty}`;
-    d.textContent = t(`difficulty.${qx.difficulty}`);
-
-    const ty = document.createElement("span");
-    ty.className = `tag ${qx.type}`;
-    ty.textContent = t(qx.type === "mcq" ? "qtype.mcq" : "qtype.short");
-
-    tags.appendChild(sample);
-    tags.appendChild(d);
-    tags.appendChild(ty);
-
-    head.appendChild(title);
-    head.appendChild(tags);
-
-    const text = document.createElement("div");
-    text.className = "q-text";
-    text.textContent = qx.text;
-
-    const ans = document.createElement("div");
-    ans.className = "q-answer";
-    ans.textContent = qx.answer;
-
-    const actions = document.createElement("div");
-    actions.className = "q-actions";
-
-    const left = document.createElement("div");
-    left.className = "badge";
-    left.textContent = `#${qx.id}`;
-
-    const toggle = document.createElement("button");
-    toggle.className = "btn";
-    toggle.innerHTML = `<i class="fa-solid fa-eye"></i><span>${t("bank.showAnswer")}</span>`;
-    toggle.addEventListener("click", () => {
-      const open = ans.classList.toggle("is-open");
-      toggle.innerHTML = open
-        ? `<i class="fa-solid fa-eye-slash"></i><span>${t("bank.hideAnswer")}</span>`
-        : `<i class="fa-solid fa-eye"></i><span>${t("bank.showAnswer")}</span>`;
+// ---------- Setup ----------
+function initNav(){
+  document.querySelectorAll("[data-tab]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      setActiveTab(btn.dataset.tab);
     });
+  });
 
-    actions.appendChild(left);
-    actions.appendChild(toggle);
-
-    card.appendChild(head);
-    card.appendChild(text);
-    card.appendChild(ans);
-    card.appendChild(actions);
-
-    bankList.appendChild(card);
+  document.querySelectorAll("[data-go]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      setActiveTab(btn.getAttribute("data-go"));
+    });
   });
 }
 
-function renderSources(){
-  sourcesList.innerHTML = "";
-  const items = Array.isArray(state.sources) ? state.sources : [];
-
-  items.forEach((s, idx) => {
-    const item = document.createElement("div");
-    item.className = "source-item";
-
-    const title = document.createElement("div");
-    title.className = "source-title";
-    title.textContent = s.title || `Source ${idx+1}`;
-
-    const meta = document.createElement("div");
-    meta.className = "source-meta";
-
-    const y = document.createElement("span");
-    y.textContent = `${s.year || "—"} • `;
-
-    const a = document.createElement("a");
-    a.href = s.link || "#";
-    a.target = "_blank";
-    a.rel = "noopener";
-    a.textContent = state.lang === "ar" ? "فتح الرابط" : "Open link";
-
-    meta.appendChild(y);
-    meta.appendChild(a);
-
-    item.appendChild(title);
-    item.appendChild(meta);
-    sourcesList.appendChild(item);
-  });
+function initDrawer(){
+  document.getElementById("btnMenu").addEventListener("click", openDrawer);
+  document.getElementById("btnCloseDrawer").addEventListener("click", closeDrawer);
+  document.getElementById("drawerBackdrop").addEventListener("click", closeDrawer);
 }
 
-/* -----------------------------
-   Events
------------------------------ */
-function bindEvents(){
-  // Tabs
-  tabButtons.forEach(btn => {
-    btn.addEventListener("click", () => setActiveTab(btn.dataset.tab));
+function initLang(){
+  document.getElementById("langAR").addEventListener("click", ()=>setLang("ar"));
+  document.getElementById("langEN").addEventListener("click", ()=>setLang("en"));
+}
+
+function initMute(){
+  setMuted(isMuted());
+  document.getElementById("btnMute").addEventListener("click", ()=>{
+    setMuted(!isMuted());
   });
+  const soundOn = document.getElementById("soundOn");
+  if(soundOn) soundOn.checked = true;
+}
 
-  // Language toggle
-  langToggle.addEventListener("click", () => {
-    setLang(state.lang === "ar" ? "en" : "ar");
-  });
+function initDurationsUI(){
+  const d = loadDurations();
+  const studyMin = document.getElementById("studyMin");
+  const breakMin = document.getElementById("breakMin");
+  studyMin.value = d.studyMin;
+  breakMin.value = d.breakMin;
 
-  // Mute
-  muteToggle.addEventListener("click", () => {
-    state.mute = !state.mute;
-    saveLS(LS.mute, state.mute);
-    renderMuteUI();
-  });
-
-  // Copy debug export
-  copyAppStateBtn.addEventListener("click", async () => {
-    const exportObj = {
-      lang: state.lang,
-      mute: state.mute,
-      timer: state.timer,
-      stats: state.stats,
-      plan: state.plan,
-      sources: state.sources,
-    };
-    await copyToClipboard(JSON.stringify(exportObj, null, 2));
-    toast(t("toast.exportCopied"));
-  });
-
-  // Drawer
-  mobileMenuBtn.addEventListener("click", openDrawer);
-  drawerBackdrop.addEventListener("click", closeDrawer);
-  drawerCloseBtn.addEventListener("click", closeDrawer);
-
-  // Timer buttons
-  btnStart.addEventListener("click", () => timerEngine.start());
-  btnPause.addEventListener("click", () => timerEngine.pause());
-  btnReset.addEventListener("click", () => timerEngine.reset());
-  btnNext.addEventListener("click", () => timerEngine.next());
-
-  autoSwitch.addEventListener("change", () => {
-    state.timer.autoSwitch = !!autoSwitch.checked;
-    saveLS(LS.timer, state.timer);
-  });
-
-  saveDurationsBtn.addEventListener("click", () => {
-    const study = Number(studyMinutesInput.value);
-    const brk = Number(breakMinutesInput.value);
-
-    const ok = Number.isFinite(study) && Number.isFinite(brk)
-      && study >= 10 && study <= 90
-      && brk >= 3 && brk <= 30;
-
-    if (!ok){
-      toast(t("toast.invalid"));
+  document.getElementById("btnSaveDurations").addEventListener("click", ()=>{
+    const s = Number(studyMin.value);
+    const b = Number(breakMin.value);
+    if(!Number.isFinite(s) || !Number.isFinite(b) || s<10 || s>90 || b<3 || b>30){
+      toast(t("invalidNumber"));
       return;
     }
+    saveDurations({ studyMin:s, breakMin:b });
+    // reset timer with new durations
+    setTimerMode(timer.mode);
+    toast(t("toastSaved"));
+  });
+}
 
-    state.timer.studyMinutes = Math.floor(study);
-    state.timer.breakMinutes = Math.floor(brk);
-    state.timer.autoSwitch = !!autoSwitch.checked;
+function initTimer(){
+  loadTimerState();
+  const d = loadDurations();
+  document.getElementById("studyMin").value = d.studyMin;
+  document.getElementById("breakMin").value = d.breakMin;
 
-    saveLS(LS.timer, state.timer);
+  // restore mode/time
+  if(!timer.totalSec || !timer.leftSec){
+    setTimerMode("study");
+  }else{
+    document.getElementById("timerMode").textContent = t(timer.mode === "study" ? "modeStudy" : "modeBreak");
+    document.getElementById("timerHint").textContent = t(timer.mode === "study" ? "hintStudy" : "hintBreak");
+    document.getElementById("cycleTag").textContent = String(timer.cycle);
+    updateTimeText();
+    drawRing();
+  }
 
-    if (!timerEngine.running){
-      timerEngine.setMode(timerEngine.mode);
-    }
-    toast(t("toast.saved"));
+  document.getElementById("btnStart").addEventListener("click", ()=>{
+    // resume audio context on interaction
+    if(audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+    startTick();
+  });
+  document.getElementById("btnPause").addEventListener("click", ()=>{
+    timer.running = false;
+    stopTick();
+    saveTimerState();
+  });
+  document.getElementById("btnNext").addEventListener("click", ()=>{
+    timer.running = false;
+    stopTick();
+    nextMode();
+  });
+  document.getElementById("btnReset").addEventListener("click", ()=>{
+    timer.running = false;
+    stopTick();
+    resetTimer();
+  });
+}
+
+function initPlanControls(){
+  const st = loadPlanState();
+
+  document.getElementById("targetMay1").addEventListener("click", ()=>{
+    const s = loadPlanState();
+    s.target = "may1";
+    savePlanState(s);
+    renderPlanOptions();
+  });
+  document.getElementById("targetMay15").addEventListener("click", ()=>{
+    const s = loadPlanState();
+    s.target = "may15";
+    savePlanState(s);
+    renderPlanOptions();
   });
 
-  // Plan actions
-  regenPlanBtn.addEventListener("click", () => {
-    state.plan = generateWeeklyPlan(Date.now());
-    savePlan();
-    renderPlan();
+  document.getElementById("dailyTwo").addEventListener("click", ()=>{
+    const s = loadPlanState();
+    s.dailyMode = "two";
+    savePlanState(s);
+    renderPlanOptions();
+  });
+  document.getElementById("dailyFour").addEventListener("click", ()=>{
+    const s = loadPlanState();
+    s.dailyMode = "four";
+    savePlanState(s);
+    renderPlanOptions();
   });
 
-  copyPlanBtn.addEventListener("click", async () => {
-    const text = planToText(state.plan);
-    await copyToClipboard(text);
-    toast(t("toast.planCopied"));
+  document.getElementById("includeReviewDays").addEventListener("change", (e)=>{
+    const s = loadPlanState();
+    s.includeReviewDays = e.target.checked;
+    savePlanState(s);
+    renderPlanOptions();
+  });
+  document.getElementById("lightDay").addEventListener("change", (e)=>{
+    const s = loadPlanState();
+    s.lightDay = e.target.checked;
+    savePlanState(s);
+    renderPlanOptions();
   });
 
-  // Reset stats
-  resetStatsBtn.addEventListener("click", () => {
-    openConfirm(t("modal.resetStats"), () => {
-      state.stats = {
-        studySessions: 0,
-        studyMinutes: 0,
-        breakSessions: 0,
-        breakMinutes: 0,
-        dailyMinutes: {},
-        subjectMinutes: { english: 0, arabic: 0, history: 0, religion: 0 },
-        lastActivityDate: null
-      };
-      saveStats();
+  document.getElementById("btnRegeneratePlan").addEventListener("click", regeneratePlan);
+  document.getElementById("btnCopyPlan").addEventListener("click", copyPlan);
 
-      // Also reset plan completion? keep plan but set done to false
-      if (state.plan?.days){
-        Object.values(state.plan.days).forEach(day => day.blocks.forEach(b => b.done = false));
-        savePlan();
-      }
+  document.getElementById("planSearch").addEventListener("input", ()=>{
+    renderDayList();
+  });
+}
 
-      renderAll();
-    });
+function initResets(){
+  document.getElementById("btnResetAll").addEventListener("click", ()=>{
+    if(!confirm(t("confirmReset"))) return;
+    localStorage.removeItem(LS.metrics);
+    localStorage.removeItem(LS.timerState);
+    localStorage.removeItem(LS.dailyLog);
+    localStorage.removeItem(LS.planState);
+    toast(t("toastReset"));
+    // reload defaults
+    timer = { mode:"study", running:false, cycle:1, totalSec:25*60, leftSec:25*60, tickHandle:null };
+    saveTimerState();
+    renderAll();
+    setTimerMode("study");
   });
 
-  // Bank subject switch
-  subjectSegs.forEach(btn => {
-    btn.addEventListener("click", () => {
-      state.ui.bankSubject = btn.dataset.subject;
-      renderQuestionBank();
-    });
+  document.getElementById("btnResetStatsFromSessions").addEventListener("click", ()=>{
+    if(!confirm(t("confirmReset"))) return;
+    localStorage.removeItem(LS.metrics);
+    localStorage.removeItem(LS.dailyLog);
+    toast(t("toastReset"));
+    renderAll();
   });
+}
 
-  // Bank filters
-  bankSearch.addEventListener("input", () => {
-    state.ui.bankSearch = bankSearch.value;
-    renderQuestionBank();
-  });
-  difficultyFilter.addEventListener("change", () => {
-    state.ui.bankDifficulty = difficultyFilter.value;
-    renderQuestionBank();
-  });
-  typeFilter.addEventListener("change", () => {
-    state.ui.bankType = typeFilter.value;
-    renderQuestionBank();
-  });
-
-  // Add source
-  addSourceForm.addEventListener("submit", (e) => {
+// ---------- PWA install ----------
+let deferredPrompt = null;
+window.addEventListener("beforeinstallprompt", (e)=>{
+  e.preventDefault();
+  deferredPrompt = e;
+  const btn = document.getElementById("btnInstall");
+  btn.hidden = false;
+});
+function initInstall(){
+  const btn = document.getElementById("btnInstall");
+  btn.addEventListener("click", async (e)=>{
     e.preventDefault();
-    const title = srcTitle.value.trim();
-    const year = Number(srcYear.value);
-    const link = srcLink.value.trim();
-
-    if (!title || !Number.isFinite(year) || year < 2000 || year > 2100 || !isValidHttpUrl(link)){
-      toast(t("toast.invalid"));
-      return;
-    }
-
-    const newItem = { title, year, link };
-    state.sources = Array.isArray(state.sources) ? state.sources : [];
-    // Remove placeholder if still present
-    state.sources = state.sources.filter(x => x.link !== "https://example.com");
-    state.sources.unshift(newItem);
-    saveLS(LS.sources, state.sources);
-
-    srcTitle.value = "";
-    srcYear.value = "";
-    srcLink.value = "";
-
-    renderSources();
-    toast(t("toast.saved"));
-  });
-
-  // Resize chart
-  window.addEventListener("resize", () => {
-    if (state.ui.activeTab === "stats") drawChart();
+    if(!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    btn.hidden = true;
   });
 }
 
-function renderMuteUI(){
-  if (state.mute){
-    muteIcon.className = "fa-solid fa-volume-xmark";
-  } else {
-    muteIcon.className = "fa-solid fa-volume-high";
+// ---------- Service Worker ----------
+function initSW(){
+  if("serviceWorker" in navigator){
+    navigator.serviceWorker.register("./sw.js").catch(()=>{});
   }
 }
 
-/* -----------------------------
-   Utilities
------------------------------ */
-function t(key){ return i18n[state.lang]?.[key] ?? key; }
+function boot(){
+  initNav();
+  initDrawer();
+  initLang();
+  initMute();
+  initInstall();
 
-function subjectLabel(subj){
-  const s = questionBank.subjects[subj]?.name;
-  if (s) return state.lang === "ar" ? s.ar : s.en;
+  loadTimerState();
+  initDurationsUI();
+  initTimer();
 
-  const map = {
-    english: { ar: "إنجليزي", en: "English" },
-    arabic: { ar: "عربي", en: "Arabic" },
-    history: { ar: "تاريخ", en: "History" },
-    religion: { ar: "دين", en: "Religion" },
-  };
-  return state.lang === "ar" ? map[subj]?.ar : map[subj]?.en;
-}
+  initPlanControls();
+  initResets();
+  initSW();
 
-function taskTypeLabel(type){
-  return state.lang === "ar" ? (TASK_TYPES[type]?.ar || type) : (TASK_TYPES[type]?.en || type);
-}
-function tTypeShort(type){
-  // Short label for compact block title
-  if (state.lang === "ar"){
-    if (type === "practice") return "وزاري";
-    if (type === "revise") return "مراجعة";
-    if (type === "learn") return "تعلم";
-    if (type === "review") return "أسبوعي";
-  } else {
-    if (type === "practice") return "Practice";
-    if (type === "revise") return "Revise";
-    if (type === "learn") return "Learn";
-    if (type === "review") return "Review";
-  }
-  return type;
-}
+  // apply language after DOM ready
+  setLang(getLang());
 
-function pad2(n){ return String(n).padStart(2,"0"); }
-
-function toast(msg){
-  // Lightweight toast
-  const el = document.createElement("div");
-  el.textContent = msg;
-  el.style.position = "fixed";
-  el.style.bottom = "92px";
-  el.style.left = "50%";
-  el.style.transform = "translateX(-50%)";
-  el.style.zIndex = "120";
-  el.style.padding = "10px 12px";
-  el.style.border = "1px solid rgba(255,255,255,0.14)";
-  el.style.borderRadius = "14px";
-  el.style.background = "rgba(15,23,48,0.88)";
-  el.style.backdropFilter = "blur(10px)";
-  el.style.color = "rgba(238,242,255,0.95)";
-  el.style.boxShadow = "0 18px 40px rgba(0,0,0,.35)";
-  el.style.fontSize = "12px";
-  el.style.maxWidth = "calc(100% - 24px)";
-  el.style.textAlign = "center";
-  el.style.opacity = "0";
-  el.style.transition = "opacity .18s ease, transform .18s ease";
-  document.body.appendChild(el);
-  requestAnimationFrame(() => {
-    el.style.opacity = "1";
-    el.style.transform = "translateX(-50%) translateY(-2px)";
-  });
-  setTimeout(() => {
-    el.style.opacity = "0";
-    el.style.transform = "translateX(-50%) translateY(2px)";
-    setTimeout(() => el.remove(), 220);
-  }, 1400);
-}
-
-/* Confirm modal */
-let confirmCallback = null;
-function openConfirm(text, onOk){
-  confirmText.textContent = text;
-  confirmCallback = onOk;
-
-  modalBackdrop.hidden = false;
-  confirmModal.hidden = false;
-
-  const close = () => closeConfirm();
-  modalBackdrop.onclick = close;
-  modalCloseBtn.onclick = close;
-  confirmCancel.onclick = close;
-  confirmOk.onclick = () => {
-    if (typeof confirmCallback === "function") confirmCallback();
-    closeConfirm();
-  };
-}
-function closeConfirm(){
-  confirmCallback = null;
-  modalBackdrop.hidden = true;
-  confirmModal.hidden = true;
-}
-
-/* Drawer */
-function openDrawer(){
-  drawer.hidden = false;
-  drawerBackdrop.hidden = false;
-}
-function closeDrawer(){
-  drawer.hidden = true;
-  drawerBackdrop.hidden = true;
-}
-
-/* LocalStorage */
-function loadLS(key, fallback){
-  try{
-    const raw = localStorage.getItem(key);
-    if (raw === null || raw === undefined) return fallback;
-    return JSON.parse(raw);
-  } catch {
-    return fallback;
-  }
-}
-function saveLS(key, val){
-  try{ localStorage.setItem(key, JSON.stringify(val)); } catch {}
-}
-
-function saveStats(){ saveLS(LS.stats, state.stats); }
-function savePlan(){ saveLS(LS.plan, state.plan); }
-
-/* Date helpers */
-function todayKey(date = new Date()){
-  return toISODate(date);
-}
-function toISODate(d){
-  const y = d.getFullYear();
-  const m = String(d.getMonth()+1).padStart(2,"0");
-  const da = String(d.getDate()).padStart(2,"0");
-  return `${y}-${m}-${da}`;
-}
-function dayKeyFromDate(d){
-  // JS: 0 Sun ... 6 Sat
-  const idx = d.getDay();
-  return DAYS_SUN_SAT[idx].key;
-}
-function todayKeyFromDayKey(dayKey){
-  // Map current week (Sun-Sat) to ISO keys for charting
-  const weekKeys = weekDateKeysSunSat();
-  const idx = DAYS_SUN_SAT.findIndex(x => x.key === dayKey);
-  return weekKeys[Math.max(0, idx)];
-}
-function friendlyDateLabel(d){
-  // Simple label (no Intl dependency)
-  const dayIdx = d.getDay();
-  const dayName = state.lang === "ar" ? DAYS_SUN_SAT[dayIdx].ar : DAYS_SUN_SAT[dayIdx].en;
-  return `${dayName} • ${toISODate(d)}`;
-}
-
-function weekDateKeysSunSat(baseDate = new Date()){
-  // find Sunday of current week
-  const d = new Date(baseDate);
-  const day = d.getDay(); // 0 Sun
-  const sunday = new Date(d);
-  sunday.setDate(d.getDate() - day);
-
-  const keys = [];
-  for (let i=0;i<7;i++){
-    const x = new Date(sunday);
-    x.setDate(sunday.getDate() + i);
-    keys.push(toISODate(x));
-  }
-  return keys;
-}
-
-function getWeekMinutesSum(){
-  const keys = weekDateKeysSunSat();
-  return keys.reduce((sum,k) => sum + Number(state.stats.dailyMinutes[k] || 0), 0);
-}
-
-/* Daily minutes */
-function addDailyMinutes(key, delta){
-  if (!key) return;
-  const cur = Number(state.stats.dailyMinutes[key] || 0);
-  const next = Math.max(0, cur + Number(delta || 0));
-  state.stats.dailyMinutes[key] = next;
-}
-
-/* Streak logic */
-function markActivity(){
-  state.stats.lastActivityDate = todayKey();
-}
-function computeStreak(){
-  // streak counts consecutive days ending today where activity (minutes>0) OR plan blocks done in that day key
-  const today = new Date();
-  let streak = 0;
-
-  for (let back=0; back<365; back++){
-    const d = new Date(today);
-    d.setDate(today.getDate() - back);
-    const iso = toISODate(d);
-
-    const minutes = Number(state.stats.dailyMinutes[iso] || 0);
-    const planDone = hasPlanActivityOnISO(iso);
-
-    if (minutes > 0 || planDone){
-      streak += 1;
-    } else {
-      // stop when first gap found
-      break;
-    }
-  }
-
-  return streak;
-}
-
-function hasPlanActivityOnISO(iso){
-  // We only have plan for current week by dayKey, so infer:
-  // If iso within current week, map to dayKey and check any done block.
-  const keys = weekDateKeysSunSat();
-  const idx = keys.indexOf(iso);
-  if (idx === -1) return false;
-  const dayKey = DAYS_SUN_SAT[idx].key;
-  const day = state.plan?.days?.[dayKey];
-  if (!day) return false;
-  return day.blocks.some(b => b.done);
-}
-
-/* Plan completion */
-function computeDayCompletion(day){
-  if (!day?.blocks?.length) return 0;
-  const done = day.blocks.filter(b => b.done).length;
-  return done / day.blocks.length;
-}
-function computePlanCompletion(){
-  const days = state.plan?.days ? Object.values(state.plan.days) : [];
-  const blocks = days.flatMap(d => d.blocks || []);
-  if (!blocks.length) return 0;
-  const done = blocks.filter(b => b.done).length;
-  return done / blocks.length;
-}
-
-/* Best day */
-function bestDayFromDailyMinutes(){
-  const keys = weekDateKeysSunSat();
-  let best = null;
-  for (let i=0;i<keys.length;i++){
-    const k = keys[i];
-    const v = Number(state.stats.dailyMinutes[k] || 0);
-    if (!best || v > best.minutes){
-      best = { key: k, minutes: v, label: state.lang === "ar" ? DAYS_SUN_SAT[i].ar : DAYS_SUN_SAT[i].en };
-    }
-  }
-  if (best && best.minutes > 0) return best;
-  return null;
-}
-
-/* Subject distribution */
-function subjectMixSummary(){
-  const sm = state.stats.subjectMinutes || {};
-  const total = Object.values(sm).reduce((a,b) => a + Number(b||0), 0);
-  if (!total) return "";
-
-  const entries = Object.entries(sm)
-    .map(([k,v]) => ({ k, v: Number(v||0) }))
-    .sort((a,b) => b.v - a.v)
-    .filter(x => x.v > 0)
-    .slice(0, 3);
-
-  const parts = entries.map(e => {
-    const pct = Math.round((e.v / total) * 100);
-    return `${subjectLabel(e.k)} ${pct}%`;
-  });
-
-  return parts.join(state.lang === "ar" ? " • " : " • ");
-}
-
-/* Today's focus from plan */
-function getTodaysFocus(){
-  const dk = dayKeyFromDate(new Date());
-  const day = state.plan?.days?.[dk];
-  if (!day) return null;
-  const firstUndone = day.blocks.find(b => !b.done);
-  return firstUndone || null;
-}
-function inferFocusSubject(){
-  const f = getTodaysFocus();
-  return f?.subject || null;
-}
-
-/* Copy plan text */
-function planToText(plan){
-  const lines = [];
-  const isAr = state.lang === "ar";
-  lines.push(isAr ? "خطة أسبوعية (توجيهي 2009)" : "Weekly Plan (Tawjihi 2009)");
-  lines.push("—");
-
-  for (const d of DAYS_SUN_SAT){
-    const day = plan.days[d.key];
-    lines.push(isAr ? `\n${d.ar}` : `\n${d.en}`);
-    day.blocks.forEach((b, idx) => {
-      const done = b.done ? (isAr ? "✅" : "✅") : (isAr ? "⬜" : "⬜");
-      lines.push(`${done} ${subjectLabel(b.subject)} — ${taskTypeLabel(b.type)} — ${b.minutes}${isAr ? "د" : "m"} | ${isAr ? "هدف" : "Goal"}: ${b.goal}`);
+  // if plan exists: ensure options reflect it
+  const st = loadPlanState();
+  if(st.plan){
+    // update dailyLog planDone
+    const log = loadDailyLog();
+    st.plan.forEach(d=>{
+      log[d.date] = log[d.date] || { studyMin:0, planDone:0 };
+      log[d.date].planDone = d.tasks.filter(x=>x.done).length;
     });
+    saveDailyLog(log);
   }
-  return lines.join("\n");
+
+  // initial render
+  renderAll();
+
+  // ring
+  drawRing();
 }
 
-/* Clipboard */
-async function copyToClipboard(text){
-  try{
-    await navigator.clipboard.writeText(text);
-  } catch {
-    // fallback
-    const ta = document.createElement("textarea");
-    ta.value = text;
-    ta.style.position = "fixed";
-    ta.style.left = "-9999px";
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand("copy");
-    ta.remove();
-  }
-}
-
-/* URL validation */
-function isValidHttpUrl(str){
-  try{
-    const u = new URL(str);
-    return u.protocol === "http:" || u.protocol === "https:";
-  } catch { return false; }
-}
-
-/* Random helpers (seeded) */
-function hashSeed(str){
-  let h = 2166136261;
-  for (let i=0;i<str.length;i++){
-    h ^= str.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return h >>> 0;
-}
-function mulberry32(a){
-  return function(){
-    let t = a += 0x6D2B79F5;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-function shuffle(arr, rand){
-  for (let i=arr.length-1;i>0;i--){
-    const j = Math.floor(rand() * (i+1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-}
-
-/* Canvas helpers */
-function roundRect(ctx, x, y, w, h, r){
-  const rr = Math.min(r, w/2, h/2);
-  ctx.beginPath();
-  ctx.moveTo(x+rr, y);
-  ctx.arcTo(x+w, y, x+w, y+h, rr);
-  ctx.arcTo(x+w, y+h, x, y+h, rr);
-  ctx.arcTo(x, y+h, x, y, rr);
-  ctx.arcTo(x, y, x+w, y, rr);
-  ctx.closePath();
-}
-function getFontFamily(){
-  return state.lang === "ar" ? "Cairo" : "Inter";
-}
-
-/* Alerts */
-function alertPulse(){
-  // flash ring briefly
-  progressRing.animate(
-    [{ transform: "scale(1)" }, { transform: "scale(1.03)" }, { transform: "scale(1)" }],
-    { duration: 420, easing: "ease-out" }
-  );
-  // also vibrate if available
-  if (navigator.vibrate) navigator.vibrate(120);
-}
-
-function playBeep(){
-  if (state.mute) return;
-  try{
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    const ctx = new AudioContext();
-    const o = ctx.createOscillator();
-    const g = ctx.createGain();
-    o.type = "sine";
-    o.frequency.value = 880;
-    g.gain.value = 0.07;
-    o.connect(g);
-    g.connect(ctx.destination);
-    o.start();
-    setTimeout(() => {
-      o.stop();
-      ctx.close();
-    }, 180);
-  } catch {
-    // ignore
-  }
-}
-
-/* -----------------------------
-   PWA / SW
------------------------------ */
-function registerSW(){
-  if (!("serviceWorker" in navigator)) return;
-  navigator.serviceWorker.register("./sw.js").catch(() => {});
-}
-
-/* -----------------------------
-   Init
------------------------------ */
-function init(){
-  bindEvents();
-
-  // Default active tab
-  setActiveTab(state.ui.activeTab || "home");
-
-  // Apply language
-  setLang(state.lang === "en" ? "en" : "ar");
-
-  // Setup timer
-  timerEngine.setMode("study");
-  updateTimerUI();
-
-  // Load sources and render
-  renderSources();
-
-  // Render bank
-  difficultyFilter.value = state.ui.bankDifficulty;
-  typeFilter.value = state.ui.bankType;
-  bankSearch.value = state.ui.bankSearch;
-  renderQuestionBank();
-
-  // Offline badge
-  updateOfflineBadge();
-  window.addEventListener("online", updateOfflineBadge);
-  window.addEventListener("offline", updateOfflineBadge);
-
-  // Register SW
-  registerSW();
-}
-
-function updateOfflineBadge(){
-  const badge = $("#offlineBadge");
-  if (!badge) return;
-  const online = navigator.onLine;
-  badge.textContent = online ? t("pwa.ready") : (state.lang === "ar" ? "أوفلاين الآن" : "Offline now");
-}
-
-init();
+document.addEventListener("DOMContentLoaded", boot);
