@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 
-<body class="app" data-accent="iris">
+<body class="app" data-accent="iris" data-bg="default" data-timerstyle="classic">
   <!-- Backdrop for mobile drawer -->
   <div id="backdrop" class="backdrop" hidden></div>
 
@@ -47,9 +47,12 @@
       <button class="nav__item" data-tab="sessions" type="button">
         <i data-lucide="timer"></i><span data-i18n="tabSessions">جلسات</span>
       </button>
-      <button class="nav__item" data-tab="plan" type="button">
-        <i data-lucide="calendar-check"></i><span data-i18n="tabPlan">خطة الختمة</span>
+
+      <!-- REPLACED: plan -> materials (tab only) -->
+      <button class="nav__item" data-tab="materials" type="button">
+        <i data-lucide="book-open"></i><span data-i18n="tabMaterials">المواد</span>
       </button>
+
       <button class="nav__item" data-tab="stats" type="button">
         <i data-lucide="bar-chart-3"></i><span data-i18n="tabStats">الإحصائيات</span>
       </button>
@@ -93,9 +96,12 @@
       <button class="nav__item" data-tab="sessions" type="button">
         <i data-lucide="timer"></i><span data-i18n="tabSessions">جلسات</span>
       </button>
-      <button class="nav__item" data-tab="plan" type="button">
-        <i data-lucide="calendar-check"></i><span data-i18n="tabPlan">خطة الختمة</span>
+
+      <!-- REPLACED: plan -> materials (tab only) -->
+      <button class="nav__item" data-tab="materials" type="button">
+        <i data-lucide="book-open"></i><span data-i18n="tabMaterials">المواد</span>
       </button>
+
       <button class="nav__item" data-tab="stats" type="button">
         <i data-lucide="bar-chart-3"></i><span data-i18n="tabStats">الإحصائيات</span>
       </button>
@@ -173,8 +179,10 @@
               <button class="btn btn--primary" data-goto="sessions" type="button">
                 <i data-lucide="timer"></i><span data-i18n="ctaStartSession">ابدأ جلسة</span>
               </button>
-              <button class="btn btn--ghost" data-goto="plan" type="button">
-                <i data-lucide="calendar-check"></i><span data-i18n="ctaOpenPlan">افتح خطة الختمة</span>
+
+              <!-- UPDATED: goto materials -->
+              <button class="btn btn--ghost" data-goto="materials" type="button">
+                <i data-lucide="book-open"></i><span data-i18n="ctaOpenMaterials">افتح المواد</span>
               </button>
             </div>
           </div>
@@ -239,11 +247,12 @@
                 <i class="quickCard__chev" data-lucide="chevron-left"></i>
               </button>
 
-              <button class="quickCard" data-goto="plan" type="button">
-                <div class="quickCard__icon"><i data-lucide="calendar-check"></i></div>
+              <!-- UPDATED: quick materials -->
+              <button class="quickCard" data-goto="materials" type="button">
+                <div class="quickCard__icon"><i data-lucide="book-open"></i></div>
                 <div class="quickCard__text">
-                  <div class="quickCard__title" data-i18n="quickPlanTitle">خطة الختمة</div>
-                  <div class="quickCard__sub" data-i18n="quickPlanSub">توزيع يومي حتى الهدف</div>
+                  <div class="quickCard__title" data-i18n="quickMaterialsTitle">المواد</div>
+                  <div class="quickCard__sub" data-i18n="quickMaterialsSub">أهداف + مهام يومية</div>
                 </div>
                 <i class="quickCard__chev" data-lucide="chevron-left"></i>
               </button>
@@ -433,79 +442,80 @@
         </div>
       </section>
 
-      <!-- PLAN -->
-      <section class="tab" id="tab-plan" data-tab-panel="plan" aria-label="Finish Plan">
+      <!-- MATERIALS (NEW TAB PANEL) -->
+      <section class="tab" id="tab-materials" data-tab-panel="materials" aria-label="Materials">
         <div class="sectionHead">
           <div>
-            <h2 class="sectionTitle" data-i18n="planTitle">خطة الختمة</h2>
-            <p class="sectionDesc" data-i18n="planDesc">توزيع يوم-بيوم حتى تاريخ الهدف، مع بلوك مراجعة/تحليل أخطاء بشكل منتظم.</p>
+            <h2 class="sectionTitle" data-i18n="materialsTitle">المواد</h2>
+            <p class="sectionDesc" data-i18n="materialsDesc">نظّم موادك وأهدافك، وأضفها للمهام اليومية بضغطة.</p>
           </div>
           <div class="sectionActions">
-            <button class="btn btn--soft" id="copyPlan" type="button">
-              <i data-lucide="copy"></i><span data-i18n="copyPlan">نسخ الخطة</span>
-            </button>
-            <button class="btn btn--ghost" id="regenPlan" type="button">
-              <i data-lucide="shuffle"></i><span data-i18n="regenPlan">إعادة توليد</span>
-            </button>
+            <span class="chip">
+              <i data-lucide="layers-3"></i>
+              <span id="materialsCountText" data-i18n="materialsLimit">0/12 مادة</span>
+            </span>
           </div>
         </div>
 
-        <div class="glassCard">
-          <div class="planControls">
-            <div class="pillGroup" role="group" aria-label="Plan mode">
-              <button class="pill" data-mode="intensive" type="button" data-i18n="modeIntensive">مكثفة (حتى 1 أيار)</button>
-              <button class="pill" data-mode="balanced" type="button" data-i18n="modeBalanced">متوازنة (حتى 15 أيار)</button>
-              <button class="pill" data-mode="light" type="button" data-i18n="modeLight">خفيفة (حتى 15 أيار)</button>
+        <div class="grid2">
+          <div class="glassCard">
+            <div class="cardHead">
+              <div class="cardHead__title" data-i18n="materialsYourList">قائمة المواد</div>
+              <div class="cardHead__hint" data-i18n="materialsHint">حد أقصى 12</div>
             </div>
 
-            <div class="pillGroup" role="group" aria-label="Daily split">
-              <button class="pill" data-split="two" type="button" data-i18n="splitTwo">مهمتين/يوم</button>
-              <button class="pill" data-split="four" type="button" data-i18n="splitFour">مادة لكل يوم (4)</button>
-            </div>
-
-            <div class="controlsRow">
-              <label class="toggle">
-                <input id="lighterDay" type="checkbox" />
-                <span class="toggle__ui"></span>
-                <span class="toggle__text" data-i18n="lighterDay">يوم أسبوعي أخف</span>
-              </label>
-
-              <label class="field field--inline">
-                <span class="field__label" data-i18n="reviewEvery">بلوك مراجعة كل</span>
-                <select id="reviewFreq" class="select">
-                  <option value="2">2</option>
-                  <option value="3" selected>3</option>
-                  <option value="4">4</option>
-                </select>
-                <span class="field__hint" data-i18n="days">أيام</span>
-              </label>
-
-              <button class="btn btn--primary" id="generatePlan" type="button">
-                <i data-lucide="wand-2"></i><span data-i18n="generate">توليد الخطة</span>
-              </button>
-
-              <button class="btn btn--ghost" id="rebalancePlan" type="button">
-                <i data-lucide="replace"></i><span data-i18n="rebalance">إعادة موازنة/يوم فائت</span>
+            <div class="row">
+              <input id="matName" class="input" maxlength="26" data-i18n-placeholder="materialsNamePh" placeholder="اسم المادة (مثال: رياضيات)" />
+              <button class="btn btn--primary" id="addMaterial" type="button">
+                <i data-lucide="plus"></i><span data-i18n="addSubject">إضافة</span>
               </button>
             </div>
 
-            <div class="weakBox">
-              <div class="weakBox__title" data-i18n="weakBoostTitle">تعزيز نقاط الضعف</div>
-              <div class="weakBox__hint" data-i18n="weakBoostHint">اختَر 1–3 وسوم لكل مادة لزيادة تكرارها بالخطة.</div>
-              <div class="weakBox__grid" id="weakBoostGrid">
-                <!-- JS inject -->
-              </div>
+            <div class="divider"></div>
+
+            <div id="materialsList" class="mList">
+              <!-- JS inject -->
             </div>
 
             <div class="note">
               <i data-lucide="info"></i>
-              <span data-i18n="editNote">يمكن تعديل البنود بسهولة من ملف app.js</span>
+              <span data-i18n="materialsNote">الأهداف داخل كل مادة، وتقدر تضيف هدف للمهام اليومية.</span>
             </div>
           </div>
-        </div>
 
-        <div class="planList" id="planList">
-          <!-- JS inject day-by-day -->
+          <div class="glassCard">
+            <div class="cardHead">
+              <div class="cardHead__title" data-i18n="materialsDetails">تفاصيل المادة</div>
+              <div class="cardHead__hint" id="matActiveHint">—</div>
+            </div>
+
+            <div id="matEmpty" class="muted" data-i18n="materialsPickOne">اختر مادة من القائمة لعرض أهدافها.</div>
+
+            <div id="matPanel" hidden>
+              <div class="mProg">
+                <div class="mProg__top">
+                  <div class="mProg__label" data-i18n="materialsProgress">التقدم</div>
+                  <div class="mProg__value" id="matProgressText">0%</div>
+                </div>
+                <div class="mProg__bar"><span id="matProgressBar" style="width:0%"></span></div>
+              </div>
+
+              <div class="divider"></div>
+
+              <div class="row">
+                <input id="goalText" class="input" maxlength="48" data-i18n-placeholder="goalPh" placeholder="أضف هدف (درس/مراجعة/أسئلة...)" />
+                <button class="btn btn--soft" id="addGoal" type="button">
+                  <i data-lucide="plus"></i><span data-i18n="addGoal">إضافة هدف</span>
+                </button>
+              </div>
+
+              <div class="divider"></div>
+
+              <div id="goalsList" class="mList">
+                <!-- JS inject -->
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -788,6 +798,11 @@
 
             <div class="divider"></div>
 
+            <!-- (Store UI will be injected by app.js in the next batch) -->
+            <div id="shopMount" class="shopMount"></div>
+
+            <div class="divider"></div>
+
             <div class="cardHead">
               <div class="cardHead__title" data-i18n="backupTitle">نسخ احتياطي</div>
               <div class="cardHead__hint" data-i18n="backupHint">خطة + إحصائيات + أخطاء</div>
@@ -821,9 +836,12 @@
       <button class="bottomNav__item" data-tab="sessions" type="button">
         <i data-lucide="timer"></i><span data-i18n="tabSessions">جلسات</span>
       </button>
-      <button class="bottomNav__item" data-tab="plan" type="button">
-        <i data-lucide="calendar-check"></i><span data-i18n="tabPlan">خطة الختمة</span>
+
+      <!-- REPLACED: plan -> materials -->
+      <button class="bottomNav__item" data-tab="materials" type="button">
+        <i data-lucide="book-open"></i><span data-i18n="tabMaterials">المواد</span>
       </button>
+
       <button class="bottomNav__item" data-tab="stats" type="button">
         <i data-lucide="bar-chart-3"></i><span data-i18n="tabStats">الإحصائيات</span>
       </button>
