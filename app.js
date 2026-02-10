@@ -229,7 +229,7 @@
       tabStats: "Stats",
       tabMistakes: "Mistakes",
       tabSettings: "Settings",
-      headerHint: "Tawjihi 2009 — keep your streak today",
+      headerHint: "  — keep your streak today",
       offlineReady: "Offline-ready (PWA)",
       editNote: "You can tweak items in app.js",
 
