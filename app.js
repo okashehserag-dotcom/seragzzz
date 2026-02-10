@@ -56,7 +56,7 @@
   const I18N = {
     ar: {
       appName: "سراج",
-      appTagline: "رفيق التوجيهي — خطة ختمة + جلسات + دفتر أخطاء",
+      appTagline: "رفيق الدراسه",
       tabHome: "الرئيسية",
       tabSessions: "جلسات",
       tabMaterials: "المواد",
@@ -70,7 +70,7 @@
       heroBadge: "نمط وزاري + مراجعة + تحليل أخطاء",
       heroTitle1: "سراج",
       heroTitle2: "رتّب ختمتك… واثبت على الستريك.",
-      heroDesc: "تطبيق بسيط للتوجيهي 2009: جلسات تركيز، خطة ختمة يومية، دفتر أخطاء، وإحصائيات تساعدك تمشي بثبات.",
+      heroDesc: " جلسات تركيز، خطة ختمة يومية، دفتر أخطاء، وإحصائيات تساعدك تمشي بثبات.",
       ctaStartSession: "ابدأ جلسة",
       ctaOpenMaterials: "افتح المواد",
       todaysFocus: "تركيز اليوم",
@@ -81,7 +81,7 @@
       miniStreak: "ستريك",
 
       quickSessionsTitle: "جلسة تركيز",
-      quickSessionsSub: "Pomodoro للتوجيهي",
+      quickSessionsSub: "اوقت دراستك",
       quickMistakesTitle: "دفتر الأخطاء",
       quickMistakesSub: "ثبت المفاهيم ونقاط الضعف",
       quickStatsTitle: "إحصائياتك",
@@ -105,7 +105,7 @@
       toggleFocus: "تبديل وضع التركيز",
 
       sessionsTitle: "جلسات التركيز",
-      sessionsDesc: "جلسات بأسلوب بومودورو للتوجيهي — بتركيز نمط وزاري (تسمية فقط).",
+      sessionsDesc: "جولات دراسية.",
       timeInsightLoading: "جاري حساب أفضل وقت دراسة…",
       ministerialLabel: "تسمية: نمط وزاري للممارسة",
       modeStudy: "دراسة",
@@ -188,7 +188,7 @@
       subReligion: "دين",
       subEnglish: "إنجليزي",
       subArabic: "عربي",
-      notQuestionBank: "هذا دفتر أخطاء شخصي — ليس بنك أسئلة، ولا يحتوي أسئلة.",
+      notQuestionBank: "هذا دفتر أخطاء شخصي.",
       reviewModalTitle: "مراجعة اليوم",
       close: "إغلاق",
 
@@ -208,7 +208,7 @@
       backupHint: "خطة + إحصائيات + أخطاء",
       exportAll: "تصدير كل البيانات",
       importAll: "استيراد",
-      cacheHelp: "إذا صار تعارض بالكاش أثناء التطوير، احذف Service Worker من إعدادات المتصفح.",
+      cacheHelp: "إ Service Worker .",
 
       // Shop
       shopTitle: "المتجر (Coins)",
