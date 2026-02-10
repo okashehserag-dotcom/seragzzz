@@ -1424,7 +1424,7 @@
     if (dom.todayFocus) {
       const focus = pickTodayFocus();
       if (!focus) {
-        dom.todayFocus.innerHTML = `<div class="muted">${settings.lang === "ar" ? "أضف أهدافًا للمواد لتظهر هنا." : "Add goals to subjects to show here."}</div>`;
+        dom.todayFocus.innerHTML = `<div class="muted">${settings.lang === "ar" ? "اعمل خطتك لليوم    ." : "Add goals to subjects to show here."}</div>`;
       } else {
         dom.todayFocus.innerHTML = `
           <div style="font-weight:950">${escapeHTML(focus.mat)}</div>
