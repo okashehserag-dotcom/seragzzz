@@ -63,7 +63,7 @@
       tabStats: "الإحصائيات",
       tabMistakes: "دفتر الأخطاء",
       tabSettings: "الإعدادات",
-      headerHint: "توجيهي 2009 — ركّز على ستريكك اليوم",
+      headerHint: "  — ركّز على ستريكك اليوم",
       offlineReady: "جاهز للعمل دون إنترنت (PWA)",
       editNote: "يمكن تعديل البنود بسهولة من ملف app.js",
 
