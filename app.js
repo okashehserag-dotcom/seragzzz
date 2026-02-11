@@ -67,7 +67,7 @@
       offlineReady: "جاهز للعمل دون إنترنت (PWA)",
       editNote: "يمكن تعديل البنود بسهولة من ملف app.js",
 
-      heroBadge: "نمط وزاري + مراجعة + تحليل أخطاء",
+      heroBadge: " مراجعة + تحليل أخطاء",
       heroTitle1: "سراج",
       heroTitle2: "رتّب ختمتك… واثبت على الستريك.",
       heroDesc: " جلسات تركيز، خطة ختمة يومية، دفتر أخطاء، وإحصائيات تساعدك تمشي بثبات.",
@@ -107,7 +107,7 @@
       sessionsTitle: "جلسات التركيز",
       sessionsDesc: "جولات دراسية.",
       timeInsightLoading: "جاري حساب أفضل وقت دراسة…",
-      ministerialLabel: "تسمية: نمط وزاري للممارسة",
+      ministerialLabel: "المؤقت",
       modeStudy: "دراسة",
       modeBreak: "راحة",
       timerHint: "جاهز — اضغط ابدأ",
