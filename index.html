@@ -3,865 +3,436 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <meta name="theme-color" content="#0b0f17" />
-  <meta name="color-scheme" content="dark" />
+  <meta name="theme-color" content="#0b1020" />
+  <title>سراج</title>
 
-  <title>سراج | Serag</title>
-
-  <!-- Fonts -->
+  <!-- خط عربي (اختياري) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800;900&display=swap" rel="stylesheet">
 
-  <!-- Icons (Lucide) -->
-  <script src="https://unpkg.com/lucide@0.476.0/dist/umd/lucide.min.js"></script>
-
-  <link rel="manifest" href="manifest.webmanifest" />
   <link rel="stylesheet" href="style.css" />
 </head>
 
-<body class="app" data-accent="iris" data-bg="default" data-timerstyle="classic">
-  <!-- Backdrop for mobile drawer -->
-  <div id="backdrop" class="backdrop" hidden></div>
+<body>
+  <!-- FX Canvas -->
+  <canvas id="fx" aria-hidden="true"></canvas>
 
-  <!-- Mobile Drawer -->
-  <aside id="drawer" class="drawer" aria-hidden="true">
-    <div class="drawer__top">
-      <div class="brand brand--drawer">
-        <div class="brand__mark" aria-hidden="true">س</div>
-        <div class="brand__text">
-          <div class="brand__name" data-i18n="appName">سراج</div>
-          <div class="brand__sub" data-i18n="appTagline">رفيق الدراسة — خطة ختمة + جلسات + دفتر أخطاء</div>
-        </div>
+  <!-- Top Bar -->
+  <header class="topbar glass">
+    <div class="brand">
+      <div class="logo3d" aria-hidden="true">
+        <span class="orb"></span>
+        <span class="ring"></span>
       </div>
-
-      <button id="drawerClose" class="iconBtn iconBtn--close" type="button" aria-label="Close menu" title="Close">
-        <i data-lucide="x"></i>
-      </button>
-    </div>
-
-    <nav class="nav nav--drawer" aria-label="Primary">
-      <button class="nav__item" data-tab="home" type="button">
-        <i data-lucide="sparkles"></i><span data-i18n="tabHome">الرئيسية</span>
-      </button>
-      <button class="nav__item" data-tab="sessions" type="button">
-        <i data-lucide="timer"></i><span data-i18n="tabSessions">جلسات</span>
-      </button>
-
-      <!-- REPLACED: plan -> materials (tab only) -->
-      <button class="nav__item" data-tab="materials" type="button">
-        <i data-lucide="book-open"></i><span data-i18n="tabMaterials">المواد</span>
-      </button>
-
-      <button class="nav__item" data-tab="stats" type="button">
-        <i data-lucide="bar-chart-3"></i><span data-i18n="tabStats">الإحصائيات</span>
-      </button>
-      <button class="nav__item" data-tab="mistakes" type="button">
-        <i data-lucide="notebook-pen"></i><span data-i18n="tabMistakes">دفتر الأخطاء</span>
-      </button>
-      <button class="nav__item" data-tab="settings" type="button">
-        <i data-lucide="settings"></i><span data-i18n="tabSettings">الإعدادات</span>
-      </button>
-    </nav>
-
-    <div class="drawer__footer">
-      <div class="miniRow">
-        <div class="chip">
-          <i data-lucide="wifi-off"></i>
-          <span data-i18n="offlineReady">جاهز للعمل دون إنترنت (PWA)</span>
-        </div>
-      </div>
-      <div class="miniRow">
-        <span class="muted" data-i18n="editNote">يمكن تعديل البنود بسهولة من ملف app.js</span>
-      </div>
-    </div>
-  </aside>
-
-  <!-- Desktop Sidebar -->
-  <aside class="sidebar" aria-label="Sidebar">
-    <div class="sidebar__top">
-      <div class="brand">
-        <div class="brand__mark" aria-hidden="true">س</div>
-        <div class="brand__text">
-          <div class="brand__name" data-i18n="appName">سراج</div>
-          <div class="brand__sub" data-i18n="appTagline">رفيق التوجيهي — خطة ختمة + جلسات + دفتر أخطاء</div>
-        </div>
+      <div class="brandText">
+        <div class="brandName">سراج</div>
+        <div class="brandSub">مهام • مؤقت • متجر • دفاتر • إحصائيات</div>
       </div>
     </div>
 
-    <nav class="nav" aria-label="Primary">
-      <button class="nav__item" data-tab="home" type="button">
-        <i data-lucide="sparkles"></i><span data-i18n="tabHome">الرئيسية</span>
-      </button>
-      <button class="nav__item" data-tab="sessions" type="button">
-        <i data-lucide="timer"></i><span data-i18n="tabSessions">جلسات</span>
-      </button>
-
-      <!-- REPLACED: plan -> materials (tab only) -->
-      <button class="nav__item" data-tab="materials" type="button">
-        <i data-lucide="book-open"></i><span data-i18n="tabMaterials">المواد</span>
-      </button>
-
-      <button class="nav__item" data-tab="stats" type="button">
-        <i data-lucide="bar-chart-3"></i><span data-i18n="tabStats">الإحصائيات</span>
-      </button>
-      <button class="nav__item" data-tab="mistakes" type="button">
-        <i data-lucide="notebook-pen"></i><span data-i18n="tabMistakes">دفتر الأخطاء</span>
-      </button>
-      <button class="nav__item" data-tab="settings" type="button">
-        <i data-lucide="settings"></i><span data-i18n="tabSettings">الإعدادات</span>
-      </button>
-    </nav>
-
-    <div class="sidebar__bottom">
-      <div class="chip">
-        <i data-lucide="shield"></i>
-        <span data-i18n="noExamsNote">بدون بنك أسئلة أو امتحانات — فقط تنظيم ومراجعة</span>
+    <div class="topActions">
+      <div class="chip coins" title="كوينز">
+        <span class="ic">🪙</span>
+        <span id="coin-balance">0</span>
       </div>
+
+      <button class="btn ghost" id="btn-export" title="تصدير نسخة احتياطية">تصدير</button>
+
+      <label class="btn ghost file">
+        استيراد
+        <input id="import-file" type="file" accept="application/json" />
+      </label>
+
+      <button class="btn ghost" id="btn-import" title="تأكيد الاستيراد">تأكيد الاستيراد</button>
     </div>
-  </aside>
+  </header>
+
+  <!-- Navigation -->
+  <nav class="nav glass" aria-label="التنقل">
+    <button class="navBtn active" data-tab="tab-home"><span class="navIc">🏠</span><span class="navTx">الرئيسية</span></button>
+    <button class="navBtn" data-tab="tab-subjects"><span class="navIc">📚</span><span class="navTx">المواد</span></button>
+    <button class="navBtn" data-tab="tab-timer"><span class="navIc">⏳</span><span class="navTx">المؤقت</span></button>
+    <button class="navBtn" data-tab="tab-notebooks"><span class="navIc">📓</span><span class="navTx">الدفاتر</span></button>
+    <button class="navBtn" data-tab="tab-store"><span class="navIc">🛍️</span><span class="navTx">المتجر</span></button>
+    <button class="navBtn" data-tab="tab-stats"><span class="navIc">📊</span><span class="navTx">إحصائيات</span></button>
+    <button class="navBtn" data-tab="tab-settings"><span class="navIc">⚙️</span><span class="navTx">إعدادات</span></button>
+  </nav>
 
   <!-- Main -->
-  <div class="main">
-    <!-- Header -->
-    <header class="topbar">
-      <div class="topbar__left">
-        <button id="menuBtn" class="iconBtn iconBtn--menu" type="button" aria-label="Open menu" title="Menu">
-          <i data-lucide="menu"></i>
-        </button>
+  <main class="wrap" id="app">
 
-        <div class="crumb">
-          <span class="crumb__title" id="pageTitle" data-i18n="tabHome">الرئيسية</span>
-          <span class="crumb__dot">•</span>
-          <span class="crumb__hint" data-i18n="headerHint">  — ركّز على ستريكك اليوم</span>
-        </div>
+    <!-- HOME -->
+    <section class="tab active" id="tab-home">
+      <div class="grid2">
+        <section class="card glass tilt">
+          <div class="cardHead">
+            <h2>لوحة اليوم</h2>
+            <div class="miniRow">
+              <span class="pill">بدون مواد افتراضية</span>
+              <span class="pill">تجربة ثيمات مجانية</span>
+            </div>
+          </div>
+
+          <div class="kpis">
+            <div class="kpi">
+              <div class="kpiK">جلسات</div>
+              <div class="kpiV" id="kpi-sessions">0</div>
+            </div>
+            <div class="kpi">
+              <div class="kpiK">تركيز اليوم</div>
+              <div class="kpiV" id="kpi-today-focus">0د</div>
+            </div>
+            <div class="kpi">
+              <div class="kpiK">مهام اليوم</div>
+              <div class="kpiV" id="kpi-today-tasks">0/0</div>
+            </div>
+            <div class="kpi">
+              <div class="kpiK">أخطاء مصححة</div>
+              <div class="kpiV" id="kpi-fixes">0</div>
+            </div>
+          </div>
+
+          <div class="progressWrap">
+            <div class="progressTop">
+              <div class="muted">خط الإنجاز</div>
+              <div class="progressVal" id="progress-val">0%</div>
+            </div>
+            <div class="progressBar" aria-label="progress">
+              <div class="progressFill" id="progress-fill"></div>
+              <div class="progressShine" aria-hidden="true"></div>
+            </div>
+            <div class="progressHint muted" id="progress-hint">ابدأ بإضافة مادة ومهامها اليومية.</div>
+          </div>
+
+          <div class="row">
+            <button class="btn primary" id="home-go-subjects">أضف موادك</button>
+            <button class="btn" id="home-go-timer">ابدأ جلسة</button>
+            <button class="btn ghost" id="home-go-store">متجر التجربة</button>
+          </div>
+        </section>
+
+        <section class="card glass tilt">
+          <div class="cardHead">
+            <h2>المادة النشطة</h2>
+            <button class="btn ghost" id="btn-pick-active">اختيار</button>
+          </div>
+
+          <div class="activeSubject">
+            <div class="activeName" id="active-subject-name">—</div>
+            <div class="activeMeta muted" id="active-subject-meta">اختر مادة لتفعيل المؤقت والمهام.</div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="row between">
+            <h3>مهام اليوم</h3>
+            <button class="btn ghost" id="btn-add-task-quick">إضافة</button>
+          </div>
+
+          <div id="home-tasks" class="tasks"></div>
+
+          <div class="divider"></div>
+
+          <div class="row">
+            <button class="btn" id="home-reset-today">تصفير اليوم</button>
+            <button class="btn ghost" id="home-open-notebooks">فتح الدفاتر</button>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <!-- SUBJECTS -->
+    <section class="tab" id="tab-subjects">
+      <div class="grid2">
+        <section class="card glass tilt">
+          <div class="cardHead">
+            <h2>المواد</h2>
+            <span class="pill">حد أقصى: 8</span>
+          </div>
+
+          <div class="row">
+            <button class="btn primary" id="btn-add-subject">إضافة مادة</button>
+            <button class="btn ghost" id="btn-open-active-from-list">فتح النشطة</button>
+          </div>
+
+          <div id="subjects-list" class="list"></div>
+        </section>
+
+        <section class="card glass tilt">
+          <div class="cardHead">
+            <h2>تفاصيل المادة</h2>
+            <div class="miniRow">
+              <span class="pill ghost" id="subject-badge">—</span>
+            </div>
+          </div>
+
+          <div id="subject-editor" class="editorShell">
+            <div class="emptyState">
+              اختر مادة من القائمة لعرض المهام، المؤقت، والإحصائيات.
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <!-- TIMER -->
+    <section class="tab" id="tab-timer">
+      <div class="grid2">
+        <section class="card glass tilt">
+          <div class="cardHead">
+            <h2>المؤقت</h2>
+            <button class="btn ghost" id="timer-pick-active">تغيير المادة</button>
+          </div>
+
+          <div class="muted" id="timer-active-line">—</div>
+
+          <div class="timerStage" id="timer-stage" data-skin="none">
+            <div class="timer3d">
+              <div class="timerGlow" aria-hidden="true"></div>
+              <div class="timerFace">
+                <div class="timerMode" id="timer-mode">FOCUS</div>
+                <div class="timerTime" id="timer-time">25:00</div>
+
+                <div class="timerProgress">
+                  <div class="tProgBar"><div class="tProgFill" id="timer-prog"></div></div>
+                </div>
+
+                <div class="timerBtns">
+                  <button class="btn primary" id="timer-toggle">بدء</button>
+                  <button class="btn" id="timer-reset">إعادة</button>
+                  <button class="btn ghost" id="timer-switch">تبديل</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="timerSettings">
+            <label class="field">
+              <span>Focus</span>
+              <input type="number" id="timer-focus-min" min="1" max="180" value="25" />
+            </label>
+            <label class="field">
+              <span>Break</span>
+              <input type="number" id="timer-break-min" min="1" max="60" value="5" />
+            </label>
+            <label class="field switch">
+              <span>صوت</span>
+              <input id="timer-sound" type="checkbox" checked />
+              <i></i>
+            </label>
+            <button class="btn" id="timer-open-store">متجر التايمر</button>
+          </div>
+        </section>
+
+        <section class="card glass tilt">
+          <div class="cardHead">
+            <h2>ملاحظات سريعة</h2>
+            <span class="pill ghost">محلية على جهازك</span>
+          </div>
+
+          <textarea id="timer-notes" class="notes" placeholder="اكتب ملخص الجلسة أو نقاط مهمّة…"></textarea>
+          <div class="row">
+            <button class="btn" id="notes-save">حفظ</button>
+            <button class="btn ghost" id="notes-clear">مسح</button>
+          </div>
+
+          <div class="divider"></div>
+
+          <h3>ملخص سريع</h3>
+          <div class="kpis kpi2">
+            <div class="kpi">
+              <div class="kpiK">جلسات</div>
+              <div class="kpiV" id="timer-kpi-sessions">0</div>
+            </div>
+            <div class="kpi">
+              <div class="kpiK">تركيز</div>
+              <div class="kpiV" id="timer-kpi-focus">0د</div>
+            </div>
+            <div class="kpi">
+              <div class="kpiK">استراحات</div>
+              <div class="kpiV" id="timer-kpi-breaks">0</div>
+            </div>
+            <div class="kpi">
+              <div class="kpiK">كوينز اليوم</div>
+              <div class="kpiV" id="timer-kpi-coins">0</div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <!-- NOTEBOOKS -->
+    <section class="tab" id="tab-notebooks">
+      <div class="grid2">
+        <section class="card glass tilt">
+          <div class="cardHead">
+            <h2>الدفاتر</h2>
+            <div class="miniRow">
+              <span class="pill">دفاتر 3D</span>
+              <span class="pill ghost">افتح دفتر لتظهر الصفحات</span>
+            </div>
+          </div>
+
+          <div class="row">
+            <button class="btn primary" id="btn-add-notebook">دفتر جديد</button>
+            <button class="btn ghost" id="btn-notebook-store">متجر أغلفة</button>
+          </div>
+
+          <div id="notebooks-grid" class="notebooksGrid"></div>
+        </section>
+
+        <section class="card glass tilt">
+          <div class="cardHead">
+            <h2>الدفتر المفتوح</h2>
+            <button class="btn ghost" id="btn-close-notebook">إغلاق</button>
+          </div>
+
+          <div id="book-viewer" class="bookViewer">
+            <div class="emptyState">
+              اختر دفتر من اليسار لفتحه. سيظهر أنيميشن صفحات.
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <!-- STORE -->
+    <section class="tab" id="tab-store">
+      <div class="grid2">
+        <section class="card glass tilt">
+          <div class="cardHead">
+            <h2>متجر الألوان والخلفيات</h2>
+            <div class="miniRow">
+              <span class="pill">3 مجاني للتجربة</span>
+              <span class="pill ghost">والباقي بكوينز</span>
+            </div>
+          </div>
+          <div id="store-wallpapers" class="storeGrid"></div>
+        </section>
+
+        <section class="card glass tilt">
+          <div class="cardHead">
+            <h2>متجر التايمر</h2>
+            <div class="miniRow">
+              <span class="pill">20 شكل 3D</span>
+              <span class="pill ghost">تتفعّل بعد الشراء</span>
+            </div>
+          </div>
+          <div id="store-timers" class="storeGrid"></div>
+        </section>
       </div>
 
-      <div class="topbar__right">
-        <div class="seg" role="group" aria-label="Language">
-          <button class="seg__btn" id="langAR" type="button">AR</button>
-          <button class="seg__btn" id="langEN" type="button">EN</button>
-        </div>
+      <div class="grid2" style="margin-top:14px">
+        <section class="card glass tilt">
+          <div class="cardHead">
+            <h2>متجر أغلفة الدفاتر</h2>
+            <div class="miniRow">
+              <span class="pill">3 مجاني للتجربة</span>
+              <span class="pill ghost">والباقي 55 كوينز</span>
+            </div>
+          </div>
+          <div id="store-notebook-covers" class="storeGrid"></div>
+        </section>
 
-        <button id="muteBtn" class="iconBtn" type="button" aria-pressed="false" title="Mute">
-          <i data-lucide="volume-2"></i>
-        </button>
-
-        <button id="focusBtn" class="iconBtn" type="button" aria-pressed="false" title="Focus Mode">
-          <i data-lucide="focus"></i>
-        </button>
+        <section class="card glass tilt">
+          <div class="cardHead">
+            <h2>متجر أغلفة دفتر الأخطاء</h2>
+            <div class="miniRow">
+              <span class="pill">3 مجاني للتجربة</span>
+              <span class="pill ghost">والباقي 55 كوينز</span>
+            </div>
+          </div>
+          <div id="store-error-books" class="storeGrid"></div>
+        </section>
       </div>
-    </header>
+    </section>
 
-    <!-- Content -->
-    <main class="content" id="content" tabindex="-1">
-      <!-- HOME -->
-      <section class="tab is-active" id="tab-home" data-tab-panel="home" aria-label="Home">
-        <div class="hero">
-          <div class="hero__bg" aria-hidden="true"></div>
-
-          <div class="hero__content">
-            <div class="hero__badge">
-              <i data-lucide="sparkle"></i>
-              <span data-i18n="heroBadge">مراجعة + تحليل أخطاء</span>
-            </div>
-
-            <h1 class="hero__title">
-              <span data-i18n="heroTitle1">سراج</span>
-              <span class="hero__titleSub" data-i18n="heroTitle2">رتّب ختمتك… واثبت على الستريك.</span>
-            </h1>
-
-            <p class="hero__desc" data-i18n="heroDesc">
-              تطبيق بسيط للتوجيهي 2009: جلسات تركيز، خطة ختمة يومية، دفتر أخطاء، وإحصائيات تساعدك تمشي بثبات.
-            </p>
-
-            <div class="hero__actions">
-              <button class="btn btn--primary" data-goto="sessions" type="button">
-                <i data-lucide="timer"></i><span data-i18n="ctaStartSession">ابدأ جلسة</span>
-              </button>
-
-              <!-- UPDATED: goto materials -->
-              <button class="btn btn--ghost" data-goto="materials" type="button">
-                <i data-lucide="book-open"></i><span data-i18n="ctaOpenMaterials">افتح المواد</span>
-              </button>
-            </div>
-          </div>
-
-          <div class="hero__side">
-            <div class="glassCard glassCard--tight">
-              <div class="cardHead">
-                <div class="cardHead__title" data-i18n="todaysFocus">شو بدك تعمل اليوم؟</div>
-                <div class="cardHead__hint" data-i18n="fromPlan">من خطة الختمة</div>
-              </div>
-
-              <div id="todayFocus" class="focusBox">
-                <div class="skeleton sk-1"></div>
-                <div class="skeleton sk-2"></div>
-              </div>
-
-              <div class="miniGrid">
-                <div class="miniStat">
-                  <div class="miniStat__label" data-i18n="miniSessions">جلسات مكتملة</div>
-                  <div class="miniStat__value" id="miniSessions">0</div>
-                </div>
-                <div class="miniStat">
-                  <div class="miniStat__label" data-i18n="miniMinutes">دقائق دراسة</div>
-                  <div class="miniStat__value" id="miniMinutes">0</div>
-                </div>
-                <div class="miniStat">
-                  <div class="miniStat__label" data-i18n="miniPlan">إنجاز الخطة</div>
-                  <div class="miniStat__value" id="miniPlan">0%</div>
-                </div>
-                <div class="miniStat">
-                  <div class="miniStat__label" data-i18n="miniStreak">ستريك</div>
-                  <div class="miniStat__value" id="miniStreak">0</div>
-                </div>
-              </div>
-            </div>
-
-            <div class="quickGrid">
-              <button class="quickCard" data-goto="sessions" type="button">
-                <div class="quickCard__icon"><i data-lucide="flame"></i></div>
-                <div class="quickCard__text">
-                  <div class="quickCard__title" data-i18n="quickSessionsTitle">جلسة تركيز</div>
-                  <div class="quickCard__sub" data-i18n="quickSessionsSub">Pomodoro </div>
-                </div>
-                <i class="quickCard__chev" data-lucide="chevron-left"></i>
-              </button>
-
-              <button class="quickCard" data-goto="mistakes" type="button">
-                <div class="quickCard__icon"><i data-lucide="notebook-pen"></i></div>
-                <div class="quickCard__text">
-                  <div class="quickCard__title" data-i18n="quickMistakesTitle">دفتر الأخطاء</div>
-                  <div class="quickCard__sub" data-i18n="quickMistakesSub">ثبت المفاهيم ونقاط الضعف</div>
-                </div>
-                <i class="quickCard__chev" data-lucide="chevron-left"></i>
-              </button>
-
-              <button class="quickCard" data-goto="stats" type="button">
-                <div class="quickCard__icon"><i data-lucide="bar-chart-3"></i></div>
-                <div class="quickCard__text">
-                  <div class="quickCard__title" data-i18n="quickStatsTitle">إحصائياتك</div>
-                  <div class="quickCard__sub" data-i18n="quickStatsSub">ترند أسبوعي + تركيز</div>
-                </div>
-                <i class="quickCard__chev" data-lucide="chevron-left"></i>
-              </button>
-
-              <!-- UPDATED: quick materials -->
-              <button class="quickCard" data-goto="materials" type="button">
-                <div class="quickCard__icon"><i data-lucide="book-open"></i></div>
-                <div class="quickCard__text">
-                  <div class="quickCard__title" data-i18n="quickMaterialsTitle">المواد</div>
-                  <div class="quickCard__sub" data-i18n="quickMaterialsSub">أهداف + مهام يومية</div>
-                </div>
-                <i class="quickCard__chev" data-lucide="chevron-left"></i>
-              </button>
-            </div>
+    <!-- STATS -->
+    <section class="tab" id="tab-stats">
+      <section class="card glass tilt">
+        <div class="cardHead">
+          <h2>الإحصائيات</h2>
+          <div class="miniRow">
+            <span class="pill ghost">محلي 100%</span>
           </div>
         </div>
 
-        <div class="grid2">
-          <div class="glassCard">
-            <div class="cardHead">
-              <div class="cardHead__title" data-i18n="homeGuidanceTitle">إرشاد سريع</div>
-              <div class="cardHead__hint" data-i18n="homeGuidanceHint">ثلاث خطوات بسيطة</div>
-            </div>
+        <div id="overall-stats" class="statsGrid"></div>
 
-            <ol class="steps">
-              <li>
-                <span class="steps__num">1</span>
-                <div class="steps__body">
-                  <div class="steps__title" data-i18n="step1Title">ثبّت زمن الجلسة</div>
-                  <div class="steps__text" data-i18n="step1Text">ابدأ بـ 25 دقيقة + 5 راحة، وعدّلها حسب قدرتك.</div>
-                </div>
-              </li>
-              <li>
-                <span class="steps__num">2</span>
-                <div class="steps__body">
-                  <div class="steps__title" data-i18n="step2Title">الخصوصية</div>
-                  <div class="steps__text" data-i18n="step2Text">هذا التطبيق يحفظ بياناتك محليًا على جهازك داخل المتصفح ولا يرسلها لخوادمنا. قد يتم تحميل خطوط/أيقونات من مزودين خارجيين لتشغيل الواجهة (مثل Google Fonts و unpkg). قد تُفقد البيانات إذا تم مسح بيانات المتصفح أو تغيير الجهاز/المتصفح أو استخدام التصفح الخفي. ننصح بعمل نسخة احتياطية عبر “تصدير كل البيانات” بشكل دوري. لا نستخدم أدوات تتبع أو تحليلات..</div>
-                </div>
-              </li>
-              <li>
-                <span class="steps__num">3</span>
-                <div class="steps__body">
-                  <div class="steps__title" data-i18n="step3Title">شروط الاستخدام وإخلاء المسؤولية</div>
-                  <div class="steps__text" data-i18n="step3Text">هذا التطبيق أداة تنظيم ومساعدة للدراسة فقط. استخدامك للتطبيق على مسؤوليتك. لا نضمن عدم فقدان البيانات أو توقف الخدمة، ولا نتحمل مسؤولية أي خسارة أو ضرر ناتج عن مسح بيانات المتصفح، تعطل الجهاز/المتصفح، أو سوء استخدام ميزة الاستيراد/التصدير. يرجى حفظ نسخة احتياطية بشكل دوري. التطبيق لا يقدم ضمان نتائج دراسية ولا يمثل جهة رسمية..</div>
-                </div>
-              </li>
-            </ol>
-          </div>
+        <div class="divider"></div>
 
-          <div class="glassCard">
-            <div class="cardHead">
-              <div class="cardHead__title" data-i18n="homeFocusModeTitle">وضع التركيز</div>
-              <div class="cardHead__hint" data-i18n="homeFocusModeHint">أقل تشتيت، نفس الإنجاز</div>
-            </div>
-
-            <div class="callout">
-              <div class="callout__icon"><i data-lucide="focus"></i></div>
-              <div class="callout__text">
-                <div class="callout__title" data-i18n="focusCalloutTitle">إخفاء المشتتات أثناء الدراسة</div>
-                <div class="callout__desc" data-i18n="focusCalloutDesc">فعّل وضع التركيز من أعلى الشاشة خلال الجلسات أو أثناء تنفيذ مهام الخطة.</div>
-              </div>
-              <button class="btn btn--soft" id="focusCalloutBtn" type="button">
-                <span data-i18n="toggleFocus">تبديل وضع التركيز</span>
-              </button>
-            </div>
-          </div>
-        </div>
+        <h3>توزيع المواد</h3>
+        <div id="subjects-stats" class="list"></div>
       </section>
+    </section>
 
-      <!-- SESSIONS -->
-      <section class="tab" id="tab-sessions" data-tab-panel="sessions" aria-label="Sessions Timer">
-        <div class="sectionHead">
-          <div>
-            <h2 class="sectionTitle" data-i18n="sessionsTitle">جلسات التركيز</h2>
-            <p class="sectionDesc" data-i18n="sessionsDesc">جلسات بأسلوب بومودورو .</p>
-          </div>
-          <div class="sectionActions">
-            <span class="chip" id="timeInsightChip">
-              <i data-lucide="sun-moon"></i>
-              <span data-i18n="timeInsightLoading">جاري حساب أفضل وقت دراسة…</span>
-            </span>
-          </div>
-        </div>
-
-        <div class="grid2">
-          <div class="glassCard">
-            <div class="timerShell">
-              <div class="timerTop">
-                <div class="modePill" id="timerModePill">
-                  <span class="dot"></span>
-                  <span id="timerModeLabel" data-i18n="modeStudy">دراسة</span>
-                </div>
-                <div class="timerMeta">
-                  <span class="muted" data-i18n="ministerialLabel">serag</span>
-                </div>
-              </div>
-
-              <div class="ringRow">
-                <canvas id="ring" width="220" height="220" aria-label="Progress ring"></canvas>
-                <div class="ringCenter">
-                  <div id="timerClock" class="clock">25:00</div>
-                  <div class="muted" id="timerHint" data-i18n="timerHint">جاهز — اضغط ابدأ</div>
-                </div>
-              </div>
-
-              <div class="timerControls">
-                <button class="btn btn--primary" id="btnStart" type="button">
-                  <i data-lucide="play"></i><span data-i18n="start">ابدأ</span>
-                </button>
-                <button class="btn btn--soft" id="btnPause" type="button">
-                  <i data-lucide="pause"></i><span data-i18n="pause">إيقاف مؤقت</span>
-                </button>
-                <button class="btn btn--ghost" id="btnReset" type="button">
-                  <i data-lucide="rotate-ccw"></i><span data-i18n="reset">إعادة</span>
-                </button>
-                <button class="btn btn--ghost" id="btnNext" type="button">
-                  <i data-lucide="skip-forward"></i><span data-i18n="next">التالي</span>
-                </button>
-              </div>
-
-              <div class="divider"></div>
-
-              <div class="formGrid">
-                <label class="field">
-                  <span class="field__label" data-i18n="studyMinutes">دقائق الدراسة</span>
-                  <input id="studyMin" type="number" min="10" max="90" step="1" inputmode="numeric" />
-                  <span class="field__hint" data-i18n="studyHint">10–90 دقيقة</span>
-                </label>
-
-                <label class="field">
-                  <span class="field__label" data-i18n="breakMinutes">دقائق الراحة</span>
-                  <input id="breakMin" type="number" min="3" max="30" step="1" inputmode="numeric" />
-                  <span class="field__hint" data-i18n="breakHint">3–30 دقيقة</span>
-                </label>
-
-                <label class="toggle">
-                  <input id="autoSwitch" type="checkbox" />
-                  <span class="toggle__ui"></span>
-                  <span class="toggle__text" data-i18n="autoSwitch">تبديل تلقائي بين دراسة/راحة</span>
-                </label>
-              </div>
-
-              <div class="note" role="status" id="timerToast" aria-live="polite"></div>
-            </div>
+    <!-- SETTINGS -->
+    <section class="tab" id="tab-settings">
+      <div class="grid2">
+        <section class="card glass tilt">
+          <div class="cardHead">
+            <h2>إعدادات المظهر</h2>
+            <span class="pill ghost">أنيميشن + 3D</span>
           </div>
 
-          <div class="glassCard">
-            <div class="cardHead">
-              <div class="cardHead__title" data-i18n="sessionNotesTitle">ملاحظات الجلسة</div>
-              <div class="cardHead__hint" data-i18n="sessionNotesHint">اكتب نقاط سريعة…</div>
-            </div>
+          <div class="settingsGrid">
+            <label class="field switch">
+              <span>خلفية متحركة</span>
+              <input id="fx-toggle" type="checkbox" checked />
+              <i></i>
+            </label>
 
-            <textarea id="sessionNotes" class="textarea" rows="10" data-i18n-placeholder="sessionNotesPh" placeholder="مثال: نقاط ضعف اليوم — قاعدة if only + تلخيص فتح عمورية"></textarea>
+            <label class="field switch">
+              <span>تأثير 3D</span>
+              <input id="tilt-toggle" type="checkbox" checked />
+              <i></i>
+            </label>
 
-            <div class="row">
-              <button id="saveNotes" class="btn btn--soft" type="button">
-                <i data-lucide="save"></i><span data-i18n="saveNotes">حفظ</span>
-              </button>
-              <button id="clearNotes" class="btn btn--ghost" type="button">
-                <i data-lucide="trash-2"></i><span data-i18n="clear">مسح</span>
-              </button>
-              <span class="muted" id="notesStatus" data-i18n="notesAutosave">يتم الحفظ محليًا</span>
-            </div>
+            <label class="field">
+              <span>حساسية 3D</span>
+              <input id="tilt-sensitivity" type="range" min="6" max="18" value="10" />
+            </label>
 
-            <div class="divider"></div>
-
-            <div class="metrics">
-              <div class="metric">
-                <div class="metric__label" data-i18n="mStudySessions">جلسات دراسة مكتملة</div>
-                <div class="metric__value" id="mStudySessions">0</div>
-              </div>
-              <div class="metric">
-                <div class="metric__label" data-i18n="mStudyMinutes">مجموع دقائق الدراسة</div>
-                <div class="metric__value" id="mStudyMinutes">0</div>
-              </div>
-              <div class="metric">
-                <div class="metric__label" data-i18n="mBreaks">استراحات مكتملة</div>
-                <div class="metric__value" id="mBreaks">0</div>
-              </div>
-              <div class="metric">
-                <div class="metric__label" data-i18n="mBreakMinutes">مجموع دقائق الراحة</div>
-                <div class="metric__value" id="mBreakMinutes">0</div>
-              </div>
-            </div>
-
-            <div class="divider"></div>
-
-            <div class="callout callout--small">
-              <div class="callout__icon"><i data-lucide="bell"></i></div>
-              <div class="callout__text">
-                <div class="callout__title" data-i18n="alertsTitle">تنبيه صوتي + بصري</div>
-                <div class="callout__desc" data-i18n="alertsDesc">عند انتهاء المؤقت راح يظهر تنبيه، وتقدر تكتم الصوت من أعلى.</div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      <!-- MATERIALS (NEW TAB PANEL) -->
-      <section class="tab" id="tab-materials" data-tab-panel="materials" aria-label="Materials">
-        <div class="sectionHead">
-          <div>
-            <h2 class="sectionTitle" data-i18n="materialsTitle">المواد</h2>
-            <p class="sectionDesc" data-i18n="materialsDesc">نظّم موادك وأهدافك، وأضفها للمهام اليومية بضغطة.</p>
-          </div>
-          <div class="sectionActions">
-            <span class="chip">
-              <i data-lucide="layers-3"></i>
-              <span id="materialsCountText" data-i18n="materialsLimit">0/12 مادة</span>
-            </span>
-          </div>
-        </div>
-
-        <div class="grid2">
-          <div class="glassCard">
-            <div class="cardHead">
-              <div class="cardHead__title" data-i18n="materialsYourList">قائمة المواد</div>
-              <div class="cardHead__hint" data-i18n="materialsHint">حد أقصى 12</div>
-            </div>
-
-            <div class="row">
-              <input id="matName" class="input" maxlength="26" data-i18n-placeholder="materialsNamePh" placeholder="اسم المادة (مثال: رياضيات)" />
-              <button class="btn btn--primary" id="addMaterial" type="button">
-                <i data-lucide="plus"></i><span data-i18n="addSubject">إضافة</span>
-              </button>
-            </div>
-
-            <div class="divider"></div>
-
-            <div id="materialsList" class="mList">
-              <!-- JS inject -->
-            </div>
-
-            <div class="note">
-              <i data-lucide="info"></i>
-              <span data-i18n="materialsNote">الأهداف داخل كل مادة، وتقدر تضيف هدف للمهام اليومية.</span>
-            </div>
-          </div>
-
-          <div class="glassCard">
-            <div class="cardHead">
-              <div class="cardHead__title" data-i18n="materialsDetails">تفاصيل المادة</div>
-              <div class="cardHead__hint" id="matActiveHint">—</div>
-            </div>
-
-            <div id="matEmpty" class="muted" data-i18n="materialsPickOne">اختر مادة من القائمة لعرض أهدافها.</div>
-
-            <div id="matPanel" hidden>
-              <div class="mProg">
-                <div class="mProg__top">
-                  <div class="mProg__label" data-i18n="materialsProgress">التقدم</div>
-                  <div class="mProg__value" id="matProgressText">0%</div>
-                </div>
-                <div class="mProg__bar"><span id="matProgressBar" style="width:0%"></span></div>
-              </div>
-
-              <div class="divider"></div>
-
-              <div class="row">
-                <input id="goalText" class="input" maxlength="48" data-i18n-placeholder="goalPh" placeholder="أضف هدف (درس/مراجعة/أسئلة...)" />
-                <button class="btn btn--soft" id="addGoal" type="button">
-                  <i data-lucide="plus"></i><span data-i18n="addGoal">إضافة هدف</span>
-                </button>
-              </div>
-
-              <div class="divider"></div>
-
-              <div id="goalsList" class="mList">
-                <!-- JS inject -->
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- STATS -->
-      <section class="tab" id="tab-stats" data-tab-panel="stats" aria-label="Statistics">
-        <div class="sectionHead">
-          <div>
-            <h2 class="sectionTitle" data-i18n="statsTitle">الإحصائيات</h2>
-            <p class="sectionDesc" data-i18n="statsDesc">ملخص إنجازك: جلسات + خطة + دفتر أخطاء، مع ترند أسبوعي بسيط.</p>
-          </div>
-          <div class="sectionActions">
-            <button class="btn btn--ghost" id="resetStats" type="button">
-              <i data-lucide="rotate-ccw"></i><span data-i18n="resetStats">تصفير الإحصائيات</span>
-            </button>
-            <button class="btn btn--danger" id="resetAll" type="button">
-              <i data-lucide="trash-2"></i><span data-i18n="resetAll">تصفير كل شيء</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="grid2">
-          <div class="glassCard">
-            <div class="cardHead">
-              <div class="cardHead__title" data-i18n="statsOverview">نظرة عامة</div>
-              <div class="cardHead__hint" data-i18n="liveUpdate">يتحدّث مباشرة</div>
-            </div>
-
-            <div class="metrics metrics--big">
-              <div class="metric">
-                <div class="metric__label" data-i18n="sCompletedSessions">جلسات مكتملة</div>
-                <div class="metric__value" id="sCompletedSessions">0</div>
-              </div>
-              <div class="metric">
-                <div class="metric__label" data-i18n="sTotalMinutes">مجموع دقائق الدراسة</div>
-                <div class="metric__value" id="sTotalMinutes">0</div>
-              </div>
-              <div class="metric">
-                <div class="metric__label" data-i18n="sPlanCompletion">إنجاز الخطة</div>
-                <div class="metric__value" id="sPlanCompletion">0%</div>
-              </div>
-              <div class="metric">
-                <div class="metric__label" data-i18n="sStreak">الستريك الحالي</div>
-                <div class="metric__value" id="sStreak">0</div>
-              </div>
-            </div>
-
-            <div class="divider"></div>
-
-            <div class="insights" id="insights">
-              <div class="chip"><i data-lucide="trending-up"></i><span id="trendText" data-i18n="trendLoading">جاري حساب الترند…</span></div>
-              <div class="chip"><i data-lucide="badge-check"></i><span id="consistencyText" data-i18n="consistencyLoading">جاري حساب الاتساق…</span></div>
-              <div class="chip"><i data-lucide="sparkles"></i><span id="focusScoreText" data-i18n="focusScoreLoading">جاري حساب نقاط التركيز…</span></div>
-            </div>
-          </div>
-
-          <div class="glassCard">
-            <div class="cardHead">
-              <div class="cardHead__title" data-i18n="weeklyChartTitle">آخر 7 أيام</div>
-              <div class="cardHead__hint" data-i18n="weeklyChartHint">دقائق الدراسة اليومية</div>
-            </div>
-
-            <canvas id="weeklyChart" width="800" height="280" aria-label="Weekly minutes chart"></canvas>
-
-            <div class="divider"></div>
-
-            <div class="subjectDist">
-              <div class="subjectDist__title" data-i18n="subjectDistTitle">توزيع المواد</div>
-              <div class="bars" id="subjectBars">
-                <!-- JS inject -->
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- MISTAKES -->
-      <section class="tab" id="tab-mistakes" data-tab-panel="mistakes" aria-label="Mistake Notebook">
-        <div class="sectionHead">
-          <div>
-            <h2 class="sectionTitle" data-i18n="mistakesTitle">دفتر الأخطاء</h2>
-            <p class="sectionDesc" data-i18n="mistakesDesc">سجّل أخطاءك أنت فقط — ثم راجعها بتكرار متباعد (1/3/7/14 يوم).</p>
-          </div>
-          <div class="sectionActions">
-            <button class="btn btn--soft" id="reviewToday" type="button">
-              <i data-lucide="repeat"></i><span data-i18n="reviewToday">مراجعة اليوم</span>
-            </button>
-            <button class="btn btn--ghost" id="exportMistakes" type="button">
-              <i data-lucide="download"></i><span data-i18n="exportJson">تصدير JSON</span>
-            </button>
-            <label class="btn btn--ghost fileBtn">
-              <i data-lucide="upload"></i><span data-i18n="importJson">استيراد JSON</span>
-              <input id="importMistakes" type="file" accept="application/json" hidden />
+            <label class="field switch">
+              <span>تقليل الحركة</span>
+              <input id="reduce-motion" type="checkbox" />
+              <i></i>
             </label>
           </div>
-        </div>
+        </section>
 
-        <div class="grid2">
-          <div class="glassCard">
-            <div class="cardHead">
-              <div class="cardHead__title" data-i18n="addMistakeTitle">إضافة خطأ</div>
-              <div class="cardHead__hint" data-i18n="addMistakeHint">اختصره وخليه واضح</div>
-            </div>
-
-            <form id="mistakeForm" class="formGrid formGrid--wide">
-              <label class="field">
-                <span class="field__label" data-i18n="subject">المادة</span>
-                <select id="mSubject" class="select" required>
-                  <option value="history" data-i18n="subHistory">تاريخ</option>
-                  <option value="religion" data-i18n="subReligion">دين</option>
-                  <option value="english" data-i18n="subEnglish">إنجليزي</option>
-                  <option value="arabic" data-i18n="subArabic">عربي</option>
-                </select>
-              </label>
-
-              <label class="field">
-                <span class="field__label" data-i18n="title">العنوان</span>
-                <input id="mTitle" class="input" maxlength="60" required />
-                <span class="field__hint" data-i18n="titleHint">قصير (حتى 60 حرف)</span>
-              </label>
-
-              <label class="field">
-                <span class="field__label" data-i18n="whatWentWrong">شو اللي غلط؟</span>
-                <textarea id="mWrong" class="textarea" rows="3" required></textarea>
-              </label>
-
-              <label class="field">
-                <span class="field__label" data-i18n="correctConcept">التصحيح/المفهوم الصحيح</span>
-                <textarea id="mCorrect" class="textarea" rows="3" required></textarea>
-              </label>
-
-              <label class="field">
-                <span class="field__label" data-i18n="fixAction">إجراء تصحيح</span>
-                <textarea id="mFix" class="textarea" rows="2" required></textarea>
-              </label>
-
-              <label class="field">
-                <span class="field__label" data-i18n="tags">وسوم (اختياري)</span>
-                <input id="mTags" class="input" placeholder="مثال: قاعدة, تلخيص, مصطلح" />
-              </label>
-
-              <div class="row row--spread">
-                <label class="toggle">
-                  <input id="mMastered" type="checkbox" />
-                  <span class="toggle__ui"></span>
-                  <span class="toggle__text" data-i18n="mastered">متقن</span>
-                </label>
-
-                <button class="btn btn--primary" type="submit">
-                  <i data-lucide="plus"></i><span data-i18n="add">إضافة</span>
-                </button>
-              </div>
-            </form>
+        <section class="card glass tilt">
+          <div class="cardHead">
+            <h2>إدارة البيانات</h2>
+            <span class="pill ghost">استيراد/تصدير</span>
           </div>
 
-          <div class="glassCard">
-            <div class="cardHead">
-              <div class="cardHead__title" data-i18n="libraryTitle">مكتبتك</div>
-              <div class="cardHead__hint" data-i18n="libraryHint">بحث + فلترة</div>
-            </div>
-
-            <div class="row">
-              <input id="mSearch" class="input" data-i18n-placeholder="searchPh" placeholder="ابحث…" />
-              <select id="mFilter" class="select">
-                <option value="all" data-i18n="allSubjects">كل المواد</option>
-                <option value="history" data-i18n="subHistory">تاريخ</option>
-                <option value="religion" data-i18n="subReligion">دين</option>
-                <option value="english" data-i18n="subEnglish">إنجليزي</option>
-                <option value="arabic" data-i18n="subArabic">عربي</option>
-              </select>
-            </div>
-
-            <div class="mistakeList" id="mistakeList"></div>
-
-            <div class="note">
-              <i data-lucide="info"></i>
-              <span data-i18n="notQuestionBank">هذا دفتر أخطاء شخصي — ليس بنك أسئلة، ولا يحتوي أسئلة.</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Modal -->
-        <dialog id="reviewModal" class="modal">
-          <div class="modal__top">
-            <div class="modal__title" data-i18n="reviewModalTitle">مراجعة اليوم</div>
-            <button class="iconBtn iconBtn--close" id="closeReview" type="button" aria-label="Close">
-              <i data-lucide="x"></i>
-            </button>
-          </div>
-          <div class="modal__body" id="reviewBody"></div>
-          <div class="modal__actions">
-            <button class="btn btn--ghost" id="closeReview2" type="button" data-i18n="close">إغلاق</button>
-          </div>
-        </dialog>
-      </section>
-
-      <!-- SETTINGS -->
-      <section class="tab" id="tab-settings" data-tab-panel="settings" aria-label="Settings">
-        <div class="sectionHead">
-          <div>
-            <h2 class="sectionTitle" data-i18n="settingsTitle">الإعدادات</h2>
-            <p class="sectionDesc" data-i18n="settingsDesc">عدّل الزمن، الصوت، وضع التركيز، وأدوات النسخ الاحتياطي.</p>
-          </div>
-        </div>
-
-        <div class="grid2">
-          <div class="glassCard">
-            <div class="cardHead">
-              <div class="cardHead__title" data-i18n="durationsTitle">إعدادات الزمن</div>
-              <div class="cardHead__hint" data-i18n="durationsHint">تنطبق على المؤقت</div>
-            </div>
-
-            <div class="formGrid">
-              <label class="field">
-                <span class="field__label" data-i18n="studyMinutes">دقائق الدراسة</span>
-                <input id="setStudyMin" type="number" min="10" max="90" step="1" inputmode="numeric" />
-                <span class="field__hint" data-i18n="studyHint">10–90 دقيقة</span>
-              </label>
-
-              <label class="field">
-                <span class="field__label" data-i18n="breakMinutes">دقائق الراحة</span>
-                <input id="setBreakMin" type="number" min="3" max="30" step="1" inputmode="numeric" />
-                <span class="field__hint" data-i18n="breakHint">3–30 دقيقة</span>
-              </label>
-
-              <button class="btn btn--soft" id="saveDurations" type="button">
-                <i data-lucide="save"></i><span data-i18n="save">حفظ</span>
-              </button>
-            </div>
-
-            <div class="divider"></div>
-
-            <div class="formGrid">
-              <label class="toggle">
-                <input id="setAutoSwitch" type="checkbox" />
-                <span class="toggle__ui"></span>
-                <span class="toggle__text" data-i18n="autoSwitch">تبديل تلقائي بين دراسة/راحة</span>
-              </label>
-
-              <label class="toggle">
-                <input id="setSound" type="checkbox" />
-                <span class="toggle__ui"></span>
-                <span class="toggle__text" data-i18n="soundOn">الصوت مفعّل</span>
-              </label>
-
-              <label class="toggle">
-                <input id="setFocusDefault" type="checkbox" />
-                <span class="toggle__ui"></span>
-                <span class="toggle__text" data-i18n="focusDefault">وضع التركيز افتراضيًا</span>
-              </label>
-
-              <label class="toggle">
-                <input id="setLighterDay" type="checkbox" />
-                <span class="toggle__ui"></span>
-                <span class="toggle__text" data-i18n="lighterDay">يوم أسبوعي أخف</span>
-              </label>
-
-              <label class="field field--inline">
-                <span class="field__label" data-i18n="reviewEvery">بلوك مراجعة كل</span>
-                <select id="setReviewFreq" class="select">
-                  <option value="2">2</option>
-                  <option value="3">3</option>
-                  <option value="4">4</option>
-                </select>
-                <span class="field__hint" data-i18n="days">أيام</span>
-              </label>
-            </div>
+          <div class="note">
+            ننصح دائمًا بتصدير نسخة احتياطية من وقت لآخر حتى لا تضيع بياناتك.
           </div>
 
-          <div class="glassCard">
-            <div class="cardHead">
-              <div class="cardHead__title" data-i18n="appearanceTitle">المظهر</div>
-              <div class="cardHead__hint" data-i18n="appearanceHint">لمسات لون (Accent)</div>
-            </div>
-
-            <div class="accentGrid">
-              <button class="accent" data-accent="iris" type="button" aria-label="Iris"></button>
-              <button class="accent" data-accent="mint" type="button" aria-label="Mint"></button>
-              <button class="accent" data-accent="ember" type="button" aria-label="Ember"></button>
-            </div>
-
-            <div class="divider"></div>
-
-            <!-- (Store UI will be injected by app.js in the next batch) -->
-            <div id="shopMount" class="shopMount"></div>
-
-            <div class="divider"></div>
-
-            <div class="cardHead">
-              <div class="cardHead__title" data-i18n="backupTitle">نسخ احتياطي</div>
-              <div class="cardHead__hint" data-i18n="backupHint">خطة + إحصائيات + أخطاء</div>
-            </div>
-
-            <div class="row">
-              <button class="btn btn--soft" id="exportAll" type="button">
-                <i data-lucide="download"></i><span data-i18n="exportAll">تصدير كل البيانات</span>
-              </button>
-
-              <label class="btn btn--ghost fileBtn">
-                <i data-lucide="upload"></i><span data-i18n="importAll">استيراد</span>
-                <input id="importAllFile" type="file" accept="application/json" hidden />
-              </label>
-            </div>
-
-            <div class="note">
-              <i data-lucide="info"></i>
-              <span data-i18n="cacheHelp">إذا صار تعارض بالكاش أثناء التطوير، احذف هذا التطبيق يحفظ بياناتك محليًا على جهازك داخل المتصفح ولا يرسلها لخوادمنا. قد يتم تحميل خطوط/أيقونات من مزودين خارجيين لتشغيل الواجهة (مثل Google Fonts و unpkg). قد تُفقد البيانات إذا تم مسح بيانات المتصفح أو تغيير الجهاز/المتصفح أو استخدام التصفح الخفي. ننصح بعمل نسخة احتياطية عبر “تصدير كل البيانات” بشكل دوري. لا نستخدم أدوات تتبع أو تحليلات.  من إعدادات المتصفح.</span>
-            </div>
+          <div class="row">
+            <button class="btn primary" id="btn-reset-soft">تصفير الإحصائيات</button>
+            <button class="btn danger" id="btn-reset-hard">حذف كل شيء</button>
           </div>
-        </div>
-      </section>
-    </main>
+        </section>
+      </div>
+    </section>
 
-    <!-- Bottom Nav (mobile) -->
-    <nav class="bottomNav" aria-label="Bottom navigation">
-      <button class="bottomNav__item" data-tab="home" type="button">
-        <i data-lucide="sparkles"></i><span data-i18n="tabHome">الرئيسية</span>
-      </button>
-      <button class="bottomNav__item" data-tab="sessions" type="button">
-        <i data-lucide="timer"></i><span data-i18n="tabSessions">جلسات</span>
-      </button>
+  </main>
 
-      <!-- REPLACED: plan -> materials -->
-      <button class="bottomNav__item" data-tab="materials" type="button">
-        <i data-lucide="book-open"></i><span data-i18n="tabMaterials">المواد</span>
-      </button>
-
-      <button class="bottomNav__item" data-tab="stats" type="button">
-        <i data-lucide="bar-chart-3"></i><span data-i18n="tabStats">الإحصائيات</span>
-      </button>
-      <button class="bottomNav__item" data-tab="mistakes" type="button">
-        <i data-lucide="notebook-pen"></i><span data-i18n="tabMistakes">دفتر الأخطاء</span>
-      </button>
-      <button class="bottomNav__item" data-tab="settings" type="button">
-        <i data-lucide="settings"></i><span data-i18n="tabSettings">الإعدادات</span>
-      </button>
-    </nav>
+  <!-- Modal -->
+  <div class="modal hidden" id="modal">
+    <div class="modalCard glass" id="modal-card">
+      <div class="modalHead">
+        <h3 id="modal-title">—</h3>
+        <button class="btn ghost" id="modal-close">إغلاق</button>
+      </div>
+      <div id="modal-body"></div>
+    </div>
   </div>
 
-  <script src="app.js" defer></script>
-  <script>
-    // Safe SW register (actual sw.js provided later)
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(() => {});
-      });
-    }
-  </script>
+  <script src="app.js"></script>
 </body>
 </html>
