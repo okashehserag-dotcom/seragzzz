@@ -1,2394 +1,955 @@
-/* ==========================================================
-   سراج - app.js (Compatible 100% مع index.html + style.css)
-   - بدون مكتبات
-   - LocalStorage only
-   - Coins + Store + Subjects + Timer + Notebooks (3D) + Error books
-   - Import / Export كامل
-   ========================================================== */
+/* Serag Dashboard — Clean SPA Tabs + Subjects + Notebooks + Tasks + Timer + Stats
+   - No coins / No shop / No AI
+   - LocalStorage persistence
+   - Glitch-free modal (X + ESC + backdrop)
+*/
 
 (() => {
   "use strict";
 
-  /* =========================
-     Helpers
-     ========================= */
-  const $ = (sel, root = document) => root.querySelector(sel);
-  const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+  // ---------- Helpers ----------
+  const qs = (s, r = document) => r.querySelector(s);
+  const qsa = (s, r = document) => Array.from(r.querySelectorAll(s));
+  const uid = (p="id") => `${p}_${Math.random().toString(16).slice(2)}_${Date.now().toString(16)}`;
+  const clamp = (v,a,b) => Math.min(b, Math.max(a, v));
+  const pad2 = (n) => String(n).padStart(2,"0");
+  const escapeHtml = (s) => String(s)
+    .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;").replaceAll("'","&#039;");
 
-  const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
-  const uid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
-  const nowISO = () => new Date().toISOString();
-  const todayKey = () => {
-    const d = new Date();
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const da = String(d.getDate()).padStart(2, "0");
-    return `${y}-${m}-${da}`;
-  };
-  const safeJSON = (str, fallback = null) => {
-    try { return JSON.parse(str); } catch { return fallback; }
-  };
+  // ---------- Storage ----------
+  const KEY = "serag_dash_v2";
+  const defaults = () => ({
+    theme: "dark",
+    subjects: [], // {id,name}
+    notebooks: [], // {id,title,subjectId,notes,createdAt}
+    tasks: [], // {id,subjectId,text,done,createdAt,doneAt?}
+    sessions: [], // study sessions only: {id,subjectId,minutes,ts}
+  });
 
-  function toast(msg) {
-    let el = $(".siraj-toast");
-    if (!el) {
-      el = document.createElement("div");
-      el.className = "siraj-toast";
-      document.body.appendChild(el);
+  let state = load();
+  function load(){
+    try{
+      const raw = localStorage.getItem(KEY);
+      if(!raw) return defaults();
+      const parsed = JSON.parse(raw);
+      return { ...defaults(), ...parsed };
+    }catch{
+      return defaults();
     }
-    el.textContent = msg;
-    el.classList.add("show");
-    clearTimeout(toast._t);
-    toast._t = setTimeout(() => el.classList.remove("show"), 2200);
+  }
+  function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
+
+  // ---------- Tabs ----------
+  const tabButtons = qsa(".tab-btn");
+  const tabPanels  = qsa(".tab-panel");
+
+  function switchTab(tabId){
+    tabButtons.forEach(b => {
+      const on = b.dataset.tab === tabId;
+      b.classList.toggle("active", on);
+      b.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    tabPanels.forEach(p => p.classList.toggle("active", p.id === tabId));
+
+    // on enter render
+    renderAll();
   }
 
-  function formatMin(m) {
-    const mm = Math.max(0, Math.round(m));
-    return `${mm}د`;
+  // delegation for tabs
+  qs(".tabs-nav")?.addEventListener("click", (e) => {
+    const btn = e.target.closest?.(".tab-btn");
+    if(!btn) return;
+    switchTab(btn.dataset.tab);
+  });
+
+  // quick actions
+  qs("#dashboard")?.addEventListener("click", (e) => {
+    const b = e.target.closest?.("[data-go]");
+    if(!b) return;
+    switchTab(b.dataset.go);
+  });
+
+  // ---------- Toast ----------
+  const toastsEl = qs("#toasts");
+  function toast(msg, type="info", ms=2500){
+    if(!toastsEl) return;
+    const el = document.createElement("div");
+    el.className = `toast ${type}`;
+    el.innerHTML = `<span class="dot"></span><div class="msg"></div><button class="x" type="button" aria-label="إغلاق">✕</button>`;
+    qs(".msg", el).textContent = msg;
+
+    const close = () => {
+      el.style.transition = "opacity .18s ease, transform .18s ease";
+      el.style.opacity = "0";
+      el.style.transform = "translateY(10px)";
+      setTimeout(() => el.remove(), 190);
+    };
+    qs(".x", el).addEventListener("click", close);
+
+    toastsEl.appendChild(el);
+    setTimeout(close, ms);
   }
 
-  function minutesToCoins(mins) {
-    // 0.2 coin per minute focus
-    return mins * 0.2;
+  // ---------- Modal (glitch-free) ----------
+  const modalBackdrop = qs("#modalBackdrop");
+  const modal = qs("#modal");
+  const modalTitle = qs("#modalTitle");
+  const modalBody = qs("#modalBody");
+  const modalFooter = qs("#modalFooter");
+  const modalClose = qs("#modalClose");
+
+  let modalOnClose = null;
+
+  function openModal({title="", bodyHTML="", footerHTML="", onClose=null}){
+    modalTitle.textContent = title;
+    modalBody.innerHTML = bodyHTML;
+    modalFooter.innerHTML = footerHTML;
+
+    modalOnClose = onClose;
+
+    modalBackdrop.hidden = false;
+    modal.hidden = false;
+    modal.setAttribute("aria-hidden", "false");
+
+    // focus close
+    setTimeout(() => modalClose.focus(), 0);
   }
 
-  function round1(n) {
-    return Math.round(n * 10) / 10;
+  function closeModal(){
+    modalBackdrop.hidden = true;
+    modal.hidden = true;
+    modal.setAttribute("aria-hidden", "true");
+    if(typeof modalOnClose === "function") modalOnClose();
+    modalOnClose = null;
   }
 
-  function round0(n) {
-    return Math.round(n);
+  modalClose?.addEventListener("click", closeModal);
+  modalBackdrop?.addEventListener("click", closeModal);
+  document.addEventListener("keydown", (e) => {
+    if(e.key === "Escape" && !modal.hidden) closeModal();
+  });
+
+  // ---------- Theme ----------
+  function applyTheme(){
+    document.documentElement.setAttribute("data-theme", state.theme === "light" ? "light" : "dark");
+  }
+  qs("#btnTheme")?.addEventListener("click", () => {
+    state.theme = (state.theme === "light") ? "dark" : "light";
+    save();
+    applyTheme();
+    toast(state.theme === "light" ? "تم تفعيل الثيم الفاتح" : "تم تفعيل الثيم الداكن", "ok");
+  });
+
+  // ---------- Subjects ----------
+  const subjectName = qs("#subjectName");
+  const btnAddSubject = qs("#btnAddSubject");
+  const subjectsGrid = qs("#subjectsGrid");
+  const subjectsEmpty = qs("#subjectsEmpty");
+  const subjectsLeft = qs("#subjectsLeft");
+
+  function addSubject(name){
+    name = (name || "").trim();
+    if(!name) return toast("اكتب اسم المادة.", "warn");
+    if(state.subjects.length >= 8) return toast("وصلت للحد الأقصى: 8 مواد.", "warn");
+    if(state.subjects.some(s => s.name.toLowerCase() === name.toLowerCase()))
+      return toast("هذه المادة موجودة مسبقًا.", "warn");
+
+    state.subjects.push({ id: uid("sub"), name });
+    save();
+    subjectName.value = "";
+    toast("تمت إضافة المادة.", "ok");
+    renderAll();
   }
 
-  function playBeep() {
-    // small web-audio beep (no external file)
-    try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.type = "sine";
-      o.frequency.value = 880;
-      g.gain.value = 0.0001;
-      o.connect(g); g.connect(ctx.destination);
-      o.start();
-      const t = ctx.currentTime;
-      g.gain.exponentialRampToValueAtTime(0.08, t + 0.01);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.25);
-      o.stop(t + 0.27);
-      setTimeout(() => ctx.close && ctx.close(), 400);
-    } catch {}
+  function deleteSubject(id){
+    // unlink notebooks/tasks/sessions keep sessions (for history) but subject may disappear gracefully
+    state.subjects = state.subjects.filter(s => s.id !== id);
+    state.notebooks = state.notebooks.map(n => n.subjectId === id ? ({...n, subjectId:""}) : n);
+    state.tasks = state.tasks.map(t => t.subjectId === id ? ({...t, subjectId:""}) : t);
+    save();
+    toast("تم حذف المادة.", "ok");
+    renderAll();
   }
 
-  /* =========================
-     Storage
-     ========================= */
-  const LS_KEY = "siraj_state_v2";
+  btnAddSubject?.addEventListener("click", () => addSubject(subjectName.value));
+  subjectName?.addEventListener("keydown", (e) => {
+    if(e.key === "Enter") addSubject(subjectName.value);
+  });
 
-  /* =========================
-     Store catalog (internal)
-     - لا يعتمد على HTML إضافي
-     ========================= */
-  const CATALOG = {
-    wallpapers: [
-      { id: "wp_01", name: "سماوي بنفسجي", css: "linear-gradient(135deg,#0ea5e9,#a855f7,#22c55e)", price: 0, free: true },
-      { id: "wp_02", name: "ليل أزرق", css: "linear-gradient(135deg,#0b1020,#1d2b64,#f8cdda)", price: 0, free: true },
-      { id: "wp_03", name: "نيازك", css: "linear-gradient(135deg,#111b35,#7c5cff,#22d3ee)", price: 0, free: true },
+  function renderSubjects(){
+    if(!subjectsGrid) return;
 
-      { id: "wp_04", name: "غروب", css: "linear-gradient(135deg,#fb7185,#f59e0b,#22d3ee)", price: 80 },
-      { id: "wp_05", name: "مجرة", css: "radial-gradient(900px 500px at 30% 20%, rgba(124,92,255,.42), transparent 55%), linear-gradient(135deg,#0b1020,#111b35)", price: 80 },
-      { id: "wp_06", name: "نعناع", css: "linear-gradient(135deg,#22c55e,#22d3ee,#7c5cff)", price: 80 },
-      { id: "wp_07", name: "رمادي أنيق", css: "linear-gradient(135deg,#0f172a,#1f2937,#111827)", price: 80 },
-      { id: "wp_08", name: "كرز", css: "linear-gradient(135deg,#be123c,#fb7185,#7c5cff)", price: 80 },
-      { id: "wp_09", name: "بحر", css: "linear-gradient(135deg,#0ea5e9,#22d3ee,#0b1020)", price: 80 },
-      { id: "wp_10", name: "ذهب", css: "linear-gradient(135deg,#f59e0b,#fde68a,#7c5cff)", price: 80 },
-    ],
-    timerSkins: (() => {
-      // 20 skins paid 60 coins - cannot activate unless owned
-      const names = [
-        ["ts_ring", "Ring"],
-        ["ts_3d_cube", "3D Cube"],
-        ["ts_neon", "Neon"],
-        ["ts_holo", "Holo"],
-        ["ts_dual_ring", "Dual Ring"],
-        ["ts_bar", "Bar"],
-        ["ts_glass", "Glass"],
-        ["ts_pulse", "Pulse"],
-        ["ts_arc", "Arc"],
-        ["ts_orbit", "Orbit"],
-        ["ts_prism", "Prism"],
-        ["ts_wave", "Wave"],
-        ["ts_spark", "Spark"],
-        ["ts_dots", "Dots"],
-        ["ts_sun", "Sun"],
-        ["ts_moon", "Moon"],
-        ["ts_grid", "Grid"],
-        ["ts_metal", "Metal"],
-        ["ts_frost", "Frost"],
-        ["ts_zen", "Zen"],
-      ];
-      return names.map(([id, n]) => ({ id, name: n, price: 60 }));
-    })(),
-    notebookCovers: [
-      { id: "nbc_01", name: "بنفسجي", css: "linear-gradient(135deg,#7c5cff,#22d3ee)", price: 0, free: true },
-      { id: "nbc_02", name: "أخضر", css: "linear-gradient(135deg,#22c55e,#0ea5e9)", price: 0, free: true },
-      { id: "nbc_03", name: "وردي", css: "linear-gradient(135deg,#fb7185,#a855f7)", price: 0, free: true },
+    const left = Math.max(0, 8 - state.subjects.length);
+    subjectsLeft.textContent = `${left} left`;
+    subjectsEmpty.hidden = state.subjects.length !== 0;
 
-      { id: "nbc_04", name: "كحلي", css: "linear-gradient(135deg,#0b1020,#1d2b64)", price: 55 },
-      { id: "nbc_05", name: "ذهبي", css: "linear-gradient(135deg,#f59e0b,#fde68a)", price: 55 },
-      { id: "nbc_06", name: "ثلجي", css: "linear-gradient(135deg,#22d3ee,#eef2ff)", price: 55 },
-      { id: "nbc_07", name: "فحمي", css: "linear-gradient(135deg,#0f172a,#111827)", price: 55 },
-      { id: "nbc_08", name: "نعناع", css: "linear-gradient(135deg,#22c55e,#a7f3d0)", price: 55 },
-      { id: "nbc_09", name: "بنفسجي عميق", css: "linear-gradient(135deg,#4c1d95,#7c3aed)", price: 55 },
-      { id: "nbc_10", name: "سماوي داكن", css: "linear-gradient(135deg,#0ea5e9,#0b1020)", price: 55 },
-    ],
-    errorBookCovers: [
-      { id: "ebc_01", name: "تحسين", css: "linear-gradient(135deg,#7c5cff,#22c55e)", price: 0, free: true },
-      { id: "ebc_02", name: "مراجعة", css: "linear-gradient(135deg,#22d3ee,#a855f7)", price: 0, free: true },
-      { id: "ebc_03", name: "تصحيح", css: "linear-gradient(135deg,#fb7185,#f59e0b)", price: 0, free: true },
+    subjectsGrid.innerHTML = state.subjects.map(s => `
+      <div class="content-card subject-card" data-sid="${s.id}">
+        <div class="subject-actions">
+          <button class="icon-btn danger" type="button" data-action="del-subject" aria-label="حذف">🗑️</button>
+        </div>
+        <div class="subject-name">${escapeHtml(s.name)}</div>
+        <div class="subject-meta">دفاتر: ${countNotebooks(s.id)} • مهام: ${countTasks(s.id)}</div>
+      </div>
+    `).join("");
+  }
 
-      { id: "ebc_04", name: "ليل", css: "linear-gradient(135deg,#0b1020,#111b35)", price: 55 },
-      { id: "ebc_05", name: "بحر", css: "linear-gradient(135deg,#0ea5e9,#22d3ee)", price: 55 },
-      { id: "ebc_06", name: "ورق", css: "linear-gradient(135deg,#eef2ff,#aab3d6)", price: 55 },
-      { id: "ebc_07", name: "فحم", css: "linear-gradient(135deg,#111827,#0f172a)", price: 55 },
-      { id: "ebc_08", name: "أخضر", css: "linear-gradient(135deg,#22c55e,#14532d)", price: 55 },
-      { id: "ebc_09", name: "بنفسجي", css: "linear-gradient(135deg,#a855f7,#7c5cff)", price: 55 },
-      { id: "ebc_10", name: "ثلجي", css: "linear-gradient(135deg,#22d3ee,#eef2ff)", price: 55 },
-    ],
+  function countNotebooks(subjectId){
+    return state.notebooks.filter(n => n.subjectId === subjectId).length;
+  }
+  function countTasks(subjectId){
+    return state.tasks.filter(t => t.subjectId === subjectId).length;
+  }
+
+  // ---------- Notebooks ----------
+  const nbTitle = qs("#nbTitle");
+  const nbSubject = qs("#nbSubject");
+  const btnAddNotebook = qs("#btnAddNotebook");
+  const notebooksGrid = qs("#notebooksGrid");
+  const notebooksEmpty = qs("#notebooksEmpty");
+  const notebooksLeft = qs("#notebooksLeft");
+
+  const editorTitle = qs("#editorTitle");
+  const editorSubject = qs("#editorSubject");
+  const editorText = qs("#editorText");
+  const saveIndicator = qs("#saveIndicator");
+
+  let activeNotebookId = "";
+  let saveTimer = 0;
+
+  function addNotebook(title, subjectId){
+    title = (title || "").trim();
+    if(!title) return toast("اكتب عنوان الدفتر.", "warn");
+    if(state.notebooks.length >= 8) return toast("وصلت للحد الأقصى: 8 دفاتر.", "warn");
+
+    state.notebooks.push({
+      id: uid("nb"),
+      title,
+      subjectId: subjectId || "",
+      notes: "",
+      createdAt: Date.now()
+    });
+    save();
+    nbTitle.value = "";
+    toast("تمت إضافة الدفتر.", "ok");
+    renderAll();
+  }
+
+  function deleteNotebook(id){
+    state.notebooks = state.notebooks.filter(n => n.id !== id);
+    if(activeNotebookId === id){
+      activeNotebookId = "";
+      setEditor(null);
+    }
+    save();
+    toast("تم حذف الدفتر.", "ok");
+    renderAll();
+  }
+
+  btnAddNotebook?.addEventListener("click", () => addNotebook(nbTitle.value, nbSubject.value));
+  nbTitle?.addEventListener("keydown", (e) => {
+    if(e.key === "Enter") addNotebook(nbTitle.value, nbSubject.value);
+  });
+
+  function setSaveIndicator(mode, text){
+    if(!saveIndicator) return;
+    saveIndicator.dataset.mode = mode;
+    qs(".txt", saveIndicator).textContent = text;
+  }
+
+  function setEditor(nb){
+    if(!nb){
+      editorTitle.textContent = "Editor";
+      editorText.value = "";
+      editorText.disabled = true;
+      editorSubject.value = "";
+      editorSubject.disabled = true;
+      setSaveIndicator("idle", "اختر دفترًا");
+      return;
+    }
+    activeNotebookId = nb.id;
+    editorTitle.textContent = `Notebook: ${nb.title}`;
+    editorText.disabled = false;
+    editorSubject.disabled = false;
+    editorText.value = nb.notes || "";
+    editorSubject.value = nb.subjectId || "";
+    setSaveIndicator("saved", "تم الحفظ");
+  }
+
+  editorText?.addEventListener("input", () => {
+    if(!activeNotebookId) return;
+    clearTimeout(saveTimer);
+    setSaveIndicator("saving", "جار الحفظ...");
+    saveTimer = setTimeout(() => {
+      const nb = state.notebooks.find(n => n.id === activeNotebookId);
+      if(!nb) return;
+      nb.notes = editorText.value;
+      save();
+      setSaveIndicator("saved", "تم الحفظ");
+    }, 450);
+  });
+
+  editorSubject?.addEventListener("change", () => {
+    const nb = state.notebooks.find(n => n.id === activeNotebookId);
+    if(!nb) return;
+    nb.subjectId = editorSubject.value || "";
+    save();
+    setSaveIndicator("saving", "جار الحفظ...");
+    setTimeout(() => setSaveIndicator("saved", "تم الحفظ"), 180);
+    renderAll();
+  });
+
+  function renderNotebooks(){
+    if(!notebooksGrid) return;
+
+    const left = Math.max(0, 8 - state.notebooks.length);
+    notebooksLeft.textContent = `${left} left`;
+    notebooksEmpty.hidden = state.notebooks.length !== 0;
+
+    notebooksGrid.innerHTML = state.notebooks.map(n => {
+      const subj = state.subjects.find(s => s.id === n.subjectId)?.name || "—";
+      return `
+        <div class="notebook" data-nid="${n.id}">
+          <div class="row-between">
+            <div class="nb-title">${escapeHtml(n.title)}</div>
+            <button class="icon-btn danger" type="button" data-action="del-notebook" aria-label="حذف">🗑️</button>
+          </div>
+          <div class="nb-badge">${escapeHtml(subj)}</div>
+        </div>
+      `;
+    }).join("");
+
+    // keep editor consistent
+    if(activeNotebookId && !state.notebooks.some(n => n.id === activeNotebookId)){
+      activeNotebookId = "";
+      setEditor(null);
+    }
+    if(activeNotebookId){
+      const nb = state.notebooks.find(n => n.id === activeNotebookId);
+      if(nb) setEditor(nb);
+    }
+  }
+
+  // ---------- Tasks ----------
+  const taskSubject = qs("#taskSubject");
+  const taskText = qs("#taskText");
+  const btnAddTask = qs("#btnAddTask");
+  const tasksList = qs("#tasksList");
+  const tasksEmpty = qs("#tasksEmpty");
+  const tasksFilter = qs("#tasksFilter");
+  const tasksHint = qs("#tasksHint");
+  const tasksMeta = qs("#tasksMeta");
+
+  function addTask(subjectId, text){
+    if(state.subjects.length === 0){
+      tasksHint.hidden = false;
+      return toast("أضف مادة أولاً.", "warn");
+    }
+    text = (text || "").trim();
+    if(!text) return toast("اكتب نص المهمة.", "warn");
+
+    state.tasks.push({
+      id: uid("task"),
+      subjectId: subjectId || "",
+      text,
+      done: false,
+      createdAt: Date.now()
+    });
+    save();
+    taskText.value = "";
+    toast("تمت إضافة المهمة.", "ok");
+    renderAll();
+  }
+
+  function toggleTask(id){
+    const t = state.tasks.find(x => x.id === id);
+    if(!t) return;
+    t.done = !t.done;
+    t.doneAt = t.done ? Date.now() : null;
+    save();
+    renderAll();
+  }
+
+  function deleteTask(id){
+    state.tasks = state.tasks.filter(t => t.id !== id);
+    save();
+    toast("تم حذف المهمة.", "ok");
+    renderAll();
+  }
+
+  btnAddTask?.addEventListener("click", () => addTask(taskSubject.value, taskText.value));
+  taskText?.addEventListener("keydown", (e) => {
+    if(e.key === "Enter") addTask(taskSubject.value, taskText.value);
+  });
+  tasksFilter?.addEventListener("change", renderTasks);
+
+  function renderTasks(){
+    if(!tasksList) return;
+
+    tasksHint.hidden = state.subjects.length !== 0;
+
+    const filterSid = tasksFilter.value || "";
+    const list = state.tasks.filter(t => filterSid ? t.subjectId === filterSid : true);
+
+    const doneCount = state.tasks.filter(t => t.done).length;
+    tasksMeta.textContent = `${doneCount}/${state.tasks.length}`;
+
+    tasksEmpty.hidden = list.length !== 0;
+
+    tasksList.innerHTML = list.map(t => {
+      const subj = state.subjects.find(s => s.id === t.subjectId)?.name || "—";
+      return `
+        <div class="task ${t.done ? "done" : ""}" data-tid="${t.id}">
+          <div class="task-left">
+            <button class="task-check" type="button" data-action="toggle-task">${t.done ? "✓" : ""}</button>
+            <div>
+              <div class="task-title">${escapeHtml(t.text)}</div>
+              <div class="task-meta">${escapeHtml(subj)}</div>
+            </div>
+          </div>
+          <button class="icon-btn danger" type="button" data-action="del-task" aria-label="حذف">🗑️</button>
+        </div>
+      `;
+    }).join("");
+  }
+
+  // ---------- Timer ----------
+  const studyMin = qs("#studyMin");
+  const breakMin = qs("#breakMin");
+  const timerSubject = qs("#timerSubject");
+  const timerHint = qs("#timerHint");
+
+  const timer3d = qs("#timer3d");
+  const timerRing = qs("#timerRing");
+  const timerMode = qs("#timerMode");
+  const timerTextEl = qs("#timerText");
+  const timerSub = qs("#timerSub");
+
+  const btnStartPause = qs("#btnStartPause");
+  const btnReset = qs("#btnReset");
+  const btnSwitchMode = qs("#btnSwitchMode");
+
+  const timer = {
+    mode: "study",   // study | break
+    running: false,
+    total: 25*60,
+    remaining: 25*60,
+    last: 0,
+    raf: 0,
+    sessionId: "",
+    rot: {x:-8, y:12},
+    vel: {x:0, y:0},
+    drag: null,
   };
 
-  /* =========================
-     Default state
-     ========================= */
-  function defaultState() {
-    const t = todayKey();
-    // first 3 wallpapers + first 3 notebook covers + first 3 error covers are owned
-    const ownedWallpapers = Object.fromEntries(CATALOG.wallpapers.map((w, i) => [w.id, i < 3 ? true : false]));
-    const ownedNotebookCovers = Object.fromEntries(CATALOG.notebookCovers.map((c, i) => [c.id, i < 3 ? true : false]));
-    const ownedErrorCovers = Object.fromEntries(CATALOG.errorBookCovers.map((c, i) => [c.id, i < 3 ? true : false]));
-    const ownedTimerSkins = Object.fromEntries(CATALOG.timerSkins.map((s) => [s.id, false])); // none owned initially
+  function formatTime(sec){
+    sec = Math.max(0, Math.floor(sec));
+    const m = Math.floor(sec/60);
+    const s = sec % 60;
+    return `${pad2(m)}:${pad2(s)}`;
+  }
 
-    return {
-      version: 2,
-      createdAt: nowISO(),
-      coins: 240,
-      prefs: {
-        fxEnabled: true,
-        tiltEnabled: true,
-        tiltSensitivity: 10,
-        reduceMotion: false,
-        soundEnabled: true,
-      },
-      store: {
-        wallpapers: { owned: ownedWallpapers, active: "wp_01" },
-        timers: { owned: ownedTimerSkins, active: "none" }, // data-skin on #timer-stage
-        notebookCovers: { owned: ownedNotebookCovers },
-        errorBookCovers: { owned: ownedErrorCovers },
-      },
-      ui: {
-        activeTab: "tab-home",
-        activeSubjectId: null,
-        openNotebookId: null,
-      },
-      subjects: [], // up to 8
-      // notebooks (general study notebooks) + error books (multi)
-      notebooks: [], // {id,title,coverId,pages:[{id,txt,ts}]}
-      errorBooks: [], // {id,title,coverId,errors:[{id,text,ts,fixed,fixedAt}]}
-      stats: {
-        total: {
-          sessions: 0,
-          focusMin: 0,
-          breakMin: 0,
-          tasksDone: 0,
-          tasksTotal: 0,
-          fixes: 0,
-          coinsEarned: 0,
-          coinsSpent: 0,
-        },
-        daily: {
-          // [YYYY-MM-DD]: {sessions, focusMin, breakMin, tasksDone, tasksTotal, fixes, coinsEarned}
-        }
-      },
-      today: {
-        key: t,
-        // daily resets: tasks baseline per subject (we count tasks due "daily" tasks list per subject)
-        // no server - just computed
-      },
-      timer: {
-        running: false,
-        mode: "FOCUS", // FOCUS/BREAK
-        // duration (per active subject if exists, else default)
-        startTs: null,
-        remainingSec: 25 * 60,
-        lastTickTs: null,
-      },
-      quickNotes: {
-        // by subjectId: {text, updatedAt}
+  function setTimerFromInputs(){
+    const sm = clamp(parseInt(studyMin.value || "25",10) || 25, 1, 180);
+    const bm = clamp(parseInt(breakMin.value || "5",10) || 5, 1, 60);
+    const mins = timer.mode === "study" ? sm : bm;
+    timer.total = mins * 60;
+    timer.remaining = timer.total;
+    timer.sessionId = "";
+    refreshTimerUI();
+  }
+
+  function refreshTimerUI(){
+    const p = timer.total ? 1 - (timer.remaining/timer.total) : 0;
+    timerRing.style.setProperty("--p", String(clamp(p,0,1)));
+
+    timerMode.textContent = timer.mode === "study" ? "Study" : "Break";
+    timerTextEl.textContent = formatTime(timer.remaining);
+
+    const sid = timerSubject.value || "";
+    const subj = state.subjects.find(s => s.id === sid)?.name || "—";
+    timerSub.textContent = subj;
+
+    btnStartPause.textContent = timer.running ? "إيقاف مؤقت" : "بدء";
+
+    timerHint.hidden = state.subjects.length !== 0;
+  }
+
+  function start(){
+    if(timer.running) return;
+    timer.running = true;
+    timer.last = performance.now();
+    if(!timer.sessionId) timer.sessionId = uid("sess");
+    loop();
+    refreshTimerUI();
+  }
+
+  function pause(){
+    timer.running = false;
+    cancelAnimationFrame(timer.raf);
+    timer.raf = 0;
+    refreshTimerUI();
+  }
+
+  function reset(){
+    pause();
+    setTimerFromInputs();
+    toast("تمت إعادة ضبط التايمر.", "info");
+  }
+
+  function complete(){
+    pause();
+
+    if(timer.mode === "study"){
+      // save session
+      const mins = Math.round(timer.total/60);
+      const sid = timerSubject.value || "";
+      state.sessions.push({
+        id: timer.sessionId,
+        subjectId: sid || "",
+        minutes: mins,
+        ts: Date.now()
+      });
+      save();
+      toast("انتهت جلسة الدراسة ✅", "ok");
+
+      // auto to break
+      timer.mode = "break";
+      setTimerFromInputs();
+    }else{
+      toast("انتهت الاستراحة. جاهز للدراسة؟", "ok");
+      timer.mode = "study";
+      setTimerFromInputs();
+    }
+
+    renderAll();
+  }
+
+  function loop(){
+    if(!timer.running) return;
+    const now = performance.now();
+    const dt = (now - timer.last)/1000;
+    timer.last = now;
+
+    timer.remaining -= dt;
+    if(timer.remaining <= 0){
+      timer.remaining = 0;
+      refreshTimerUI();
+      return complete();
+    }
+    refreshTimerUI();
+    timer.raf = requestAnimationFrame(loop);
+  }
+
+  btnStartPause?.addEventListener("click", () => timer.running ? pause() : start());
+  btnReset?.addEventListener("click", reset);
+  btnSwitchMode?.addEventListener("click", () => {
+    pause();
+    timer.mode = timer.mode === "study" ? "break" : "study";
+    setTimerFromInputs();
+  });
+
+  studyMin?.addEventListener("input", () => !timer.running && setTimerFromInputs());
+  breakMin?.addEventListener("input", () => !timer.running && setTimerFromInputs());
+  timerSubject?.addEventListener("change", refreshTimerUI);
+
+  // 3D drag + inertia (smooth, no glitches)
+  function mountTimer3D(){
+    if(!timer3d) return;
+    const applyRot = () => {
+      timer3d.style.transform = `rotateX(${timer.rot.x}deg) rotateY(${timer.rot.y}deg)`;
+    };
+    applyRot();
+
+    const onDown = (e) => {
+      timer.drag = { id:e.pointerId, x:e.clientX, y:e.clientY, t:performance.now() };
+      timer.vel.x = 0; timer.vel.y = 0;
+      timer3d.setPointerCapture?.(e.pointerId);
+      timer3d.style.cursor = "grabbing";
+    };
+
+    const onMove = (e) => {
+      if(!timer.drag || e.pointerId !== timer.drag.id) return;
+      const dx = e.clientX - timer.drag.x;
+      const dy = e.clientY - timer.drag.y;
+      timer.drag.x = e.clientX;
+      timer.drag.y = e.clientY;
+
+      const now = performance.now();
+      const dt = Math.max(8, now - timer.drag.t);
+      timer.drag.t = now;
+
+      timer.rot.y += dx * 0.16;
+      timer.rot.x -= dy * 0.14;
+
+      timer.rot.x = clamp(timer.rot.x, -26, 18);
+      timer.rot.y = clamp(timer.rot.y, -40, 40);
+
+      timer.vel.y = (dx/dt) * 22;
+      timer.vel.x = (-dy/dt) * 22;
+
+      applyRot();
+    };
+
+    const inertia = () => {
+      timer.vel.x *= 0.92;
+      timer.vel.y *= 0.92;
+
+      timer.rot.x = clamp(timer.rot.x + timer.vel.x, -26, 18);
+      timer.rot.y = clamp(timer.rot.y + timer.vel.y, -40, 40);
+
+      applyRot();
+      if(Math.abs(timer.vel.x) + Math.abs(timer.vel.y) > 0.06){
+        requestAnimationFrame(inertia);
       }
     };
+
+    const onUp = (e) => {
+      if(!timer.drag || e.pointerId !== timer.drag.id) return;
+      timer.drag = null;
+      timer3d.style.cursor = "grab";
+      requestAnimationFrame(inertia);
+    };
+
+    timer3d.addEventListener("pointerdown", onDown);
+    timer3d.addEventListener("pointermove", onMove);
+    timer3d.addEventListener("pointerup", onUp);
+    timer3d.addEventListener("pointercancel", onUp);
   }
 
-  function loadState() {
-    const raw = localStorage.getItem(LS_KEY);
-    const s = raw ? safeJSON(raw, null) : null;
-    if (!s || typeof s !== "object") return defaultState();
+  // ---------- Stats / Dashboard ----------
+  const dashWeekMinutes = qs("#dashWeekMinutes");
+  const dashTasksDone = qs("#dashTasksDone");
+  const dashSubjects = qs("#dashSubjects");
+  const weekChart = qs("#weekChart");
 
-    // basic migrations / patching
-    const d = defaultState();
-    const merged = deepMerge(d, s);
-    // ensure today key exists
-    merged.today = merged.today || { key: todayKey() };
-    merged.today.key = merged.today.key || todayKey();
+  function rangeStart(days){
+    const d = new Date();
+    d.setHours(0,0,0,0);
+    return d.getTime() - (days*24*60*60*1000);
+  }
 
-    // if day changed, keep stats daily map but update today key
-    if (merged.today.key !== todayKey()) {
-      merged.today.key = todayKey();
+  function getWeekBuckets(){
+    const dayMs = 24*60*60*1000;
+    const start = rangeStart(6); // last 7 days including today
+    const buckets = new Array(7).fill(0);
+
+    for(const s of state.sessions){
+      const day = new Date(s.ts);
+      day.setHours(0,0,0,0);
+      const idx = Math.floor((day.getTime() - start)/dayMs);
+      if(idx >= 0 && idx < 7) buckets[idx] += s.minutes;
     }
-    // cap subjects
-    if (Array.isArray(merged.subjects) && merged.subjects.length > 8) merged.subjects = merged.subjects.slice(0, 8);
-
-    return merged;
+    return buckets;
   }
 
-  function saveState() {
-    try {
-      localStorage.setItem(LS_KEY, JSON.stringify(state));
-    } catch (e) {
-      console.error(e);
-      toast("تعذّر الحفظ. مساحة التخزين ممتلئة؟");
+  function tasksDoneRate(){
+    const total = state.tasks.length;
+    if(!total) return 0;
+    const done = state.tasks.filter(t => t.done).length;
+    return Math.round((done/total)*100);
+  }
+
+  function weekTotalMinutes(){
+    const from = rangeStart(6);
+    return state.sessions.filter(s => s.ts >= from).reduce((a,b)=>a+b.minutes,0);
+  }
+
+  function drawWeekChart(){
+    if(!weekChart) return;
+    const ctx = weekChart.getContext("2d");
+    const cssW = weekChart.clientWidth || 920;
+    const cssH = 260;
+    const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+    weekChart.width = Math.floor(cssW * dpr);
+    weekChart.height = Math.floor(cssH * dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+
+    const W = cssW, H = cssH;
+    ctx.clearRect(0,0,W,H);
+
+    const data = getWeekBuckets();
+    const max = Math.max(10, ...data);
+    const pad = 18;
+    const gap = (W - pad*2) / data.length;
+    const barW = gap * 0.62;
+
+    // grid lines
+    ctx.globalAlpha = 0.35;
+    ctx.strokeStyle = "rgba(255,255,255,0.10)";
+    for(let i=1;i<=4;i++){
+      const y = (H*i)/5;
+      ctx.beginPath();
+      ctx.moveTo(0,y);
+      ctx.lineTo(W,y);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+
+    for(let i=0;i<data.length;i++){
+      const v = data[i];
+      const h = (v/max) * (H - pad*2);
+      const x = pad + i*gap + (gap-barW)/2;
+      const y = H - pad - h;
+
+      const g = ctx.createLinearGradient(x,y,x,y+h);
+      g.addColorStop(0,"rgba(99,102,241,0.88)");
+      g.addColorStop(1,"rgba(168,85,247,0.55)");
+      ctx.fillStyle = g;
+
+      roundRect(ctx, x, y, barW, h, 12);
+      ctx.fill();
+
+      ctx.fillStyle = "rgba(255,255,255,0.08)";
+      roundRect(ctx, x, y, barW, 10, 12);
+      ctx.fill();
+    }
+
+    ctx.fillStyle = "rgba(255,255,255,0.65)";
+    ctx.font = "12px system-ui, sans-serif";
+    ctx.fillText("Study minutes (last 7 days)", 12, 18);
+  }
+
+  function roundRect(ctx,x,y,w,h,r){
+    r = Math.min(r, w/2, h/2);
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.arcTo(x+w, y, x+w, y+h, r);
+    ctx.arcTo(x+w, y+h, x, y+h, r);
+    ctx.arcTo(x, y+h, x, y, r);
+    ctx.arcTo(x, y, x+w, y, r);
+    ctx.closePath();
+  }
+
+  // ---------- Selects refresh ----------
+  function refreshSubjectSelects(){
+    const opts = [`<option value="">— بدون مادة —</option>`]
+      .concat(state.subjects.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`))
+      .join("");
+
+    if(timerSubject){
+      timerSubject.innerHTML = opts;
+    }
+    if(nbSubject){
+      nbSubject.innerHTML = opts;
+    }
+    if(editorSubject){
+      editorSubject.innerHTML = opts;
+      editorSubject.disabled = !activeNotebookId;
+    }
+    if(taskSubject){
+      taskSubject.innerHTML = opts;
+    }
+
+    // filter (tasks)
+    if(tasksFilter){
+      const prev = tasksFilter.value || "";
+      tasksFilter.innerHTML = `<option value="">كل المواد</option>` +
+        state.subjects.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join("");
+      tasksFilter.value = prev;
     }
   }
 
-  function deepMerge(base, extra) {
-    if (Array.isArray(base)) return Array.isArray(extra) ? extra : base;
-    if (base && typeof base === "object") {
-      const out = { ...base };
-      if (extra && typeof extra === "object") {
-        for (const k of Object.keys(extra)) {
-          if (k in base) out[k] = deepMerge(base[k], extra[k]);
-          else out[k] = extra[k];
-        }
-      }
-      return out;
-    }
-    return (extra === undefined ? base : extra);
-  }
-
-  let state = loadState();
-
-  /* =========================
-     Daily stats helpers
-     ========================= */
-  function ensureDaily() {
-    const k = todayKey();
-    if (!state.stats.daily[k]) {
-      state.stats.daily[k] = {
-        sessions: 0,
-        focusMin: 0,
-        breakMin: 0,
-        tasksDone: 0,
-        tasksTotal: 0,
-        fixes: 0,
-        coinsEarned: 0,
-      };
-    }
-    return state.stats.daily[k];
-  }
-
-  function bumpCoins(delta, reason = "") {
-    state.coins = Math.max(0, round1(state.coins + delta));
-    if (delta > 0) {
-      state.stats.total.coinsEarned = round1(state.stats.total.coinsEarned + delta);
-      ensureDaily().coinsEarned = round1(ensureDaily().coinsEarned + delta);
-    } else if (delta < 0) {
-      state.stats.total.coinsSpent = round1(state.stats.total.coinsSpent + Math.abs(delta));
-    }
-    saveState();
-    renderCoins();
-    if (reason) toast(reason);
-  }
-
-  /* =========================
-     DOM refs
-     ========================= */
-  const els = {
-    // topbar
-    coinBalance: $("#coin-balance"),
-    exportBtn: $("#btn-export"),
-    importFile: $("#import-file"),
-    importBtn: $("#btn-import"),
-
-    // nav / tabs
-    navBtns: $$(".navBtn"),
-    tabs: $$(".tab"),
-
-    // home
-    kpiSessions: $("#kpi-sessions"),
-    kpiTodayFocus: $("#kpi-today-focus"),
-    kpiTodayTasks: $("#kpi-today-tasks"),
-    kpiFixes: $("#kpi-fixes"),
-    progressVal: $("#progress-val"),
-    progressFill: $("#progress-fill"),
-    progressHint: $("#progress-hint"),
-    homeGoSubjects: $("#home-go-subjects"),
-    homeGoTimer: $("#home-go-timer"),
-    homeGoStore: $("#home-go-store"),
-    btnPickActive: $("#btn-pick-active"),
-    activeSubjectName: $("#active-subject-name"),
-    activeSubjectMeta: $("#active-subject-meta"),
-    btnAddTaskQuick: $("#btn-add-task-quick"),
-    homeTasks: $("#home-tasks"),
-    homeResetToday: $("#home-reset-today"),
-    homeOpenNotebooks: $("#home-open-notebooks"),
+  // ---------- Delegated actions (no glitch) ----------
+  document.addEventListener("click", (e) => {
+    const el = e.target.closest?.("[data-action]");
+    if(!el) return;
+    const action = el.dataset.action;
 
     // subjects
-    btnAddSubject: $("#btn-add-subject"),
-    btnOpenActiveFromList: $("#btn-open-active-from-list"),
-    subjectsList: $("#subjects-list"),
-    subjectEditor: $("#subject-editor"),
-    subjectBadge: $("#subject-badge"),
+    if(action === "del-subject"){
+      const card = el.closest(".subject-card");
+      const id = card?.dataset.sid;
+      if(!id) return;
 
-    // timer
-    timerPickActive: $("#timer-pick-active"),
-    timerActiveLine: $("#timer-active-line"),
-    timerStage: $("#timer-stage"),
-    timerMode: $("#timer-mode"),
-    timerTime: $("#timer-time"),
-    timerProg: $("#timer-prog"),
-    timerToggle: $("#timer-toggle"),
-    timerReset: $("#timer-reset"),
-    timerSwitch: $("#timer-switch"),
-    timerFocusMin: $("#timer-focus-min"),
-    timerBreakMin: $("#timer-break-min"),
-    timerSound: $("#timer-sound"),
-    timerOpenStore: $("#timer-open-store"),
-    timerNotes: $("#timer-notes"),
-    notesSave: $("#notes-save"),
-    notesClear: $("#notes-clear"),
-    timerKpiSessions: $("#timer-kpi-sessions"),
-    timerKpiFocus: $("#timer-kpi-focus"),
-    timerKpiBreaks: $("#timer-kpi-breaks"),
-    timerKpiCoins: $("#timer-kpi-coins"),
+      openModal({
+        title: "حذف مادة",
+        bodyHTML: `<p>هل أنت متأكد؟ سيتم فك الربط من الدفاتر والمهام.</p>`,
+        footerHTML: `
+          <button class="btn-ghost" type="button" data-m="cancel">إلغاء</button>
+          <button class="btn-danger" type="button" data-m="ok">حذف</button>
+        `,
+        onClose: null
+      });
+
+      modalFooter.onclick = (ev) => {
+        const b = ev.target.closest?.("button");
+        if(!b) return;
+        const m = b.getAttribute("data-m");
+        if(m === "cancel") return closeModal();
+        if(m === "ok"){
+          deleteSubject(id);
+          closeModal();
+        }
+      };
+    }
 
     // notebooks
-    btnAddNotebook: $("#btn-add-notebook"),
-    btnNotebookStore: $("#btn-notebook-store"),
-    notebooksGrid: $("#notebooks-grid"),
-    bookViewer: $("#book-viewer"),
-    btnCloseNotebook: $("#btn-close-notebook"),
+    if(action === "del-notebook"){
+      const wrap = el.closest(".notebook");
+      const id = wrap?.dataset.nid;
+      if(!id) return;
 
-    // store
-    storeWallpapers: $("#store-wallpapers"),
-    storeTimers: $("#store-timers"),
-    storeNotebookCovers: $("#store-notebook-covers"),
-    storeErrorBooks: $("#store-error-books"),
+      openModal({
+        title: "حذف دفتر",
+        bodyHTML: `<p>حذف الدفتر سيحذف الملاحظات داخله.</p>`,
+        footerHTML: `
+          <button class="btn-ghost" type="button" data-m="cancel">إلغاء</button>
+          <button class="btn-danger" type="button" data-m="ok">حذف</button>
+        `
+      });
 
-    // stats
-    overallStats: $("#overall-stats"),
-    subjectsStats: $("#subjects-stats"),
-
-    // settings
-    fxToggle: $("#fx-toggle"),
-    tiltToggle: $("#tilt-toggle"),
-    tiltSensitivity: $("#tilt-sensitivity"),
-    reduceMotion: $("#reduce-motion"),
-    btnResetSoft: $("#btn-reset-soft"),
-    btnResetHard: $("#btn-reset-hard"),
-
-    // modal
-    modal: $("#modal"),
-    modalCard: $("#modal-card"),
-    modalTitle: $("#modal-title"),
-    modalBody: $("#modal-body"),
-    modalClose: $("#modal-close"),
-
-    // canvas fx
-    fxCanvas: $("#fx"),
-  };
-
-  /* =========================
-     Modal
-     ========================= */
-  function openModal(title, html) {
-    els.modalTitle.textContent = title || "—";
-    els.modalBody.innerHTML = html || "";
-    els.modal.classList.remove("hidden");
-  }
-  function closeModal() {
-    els.modal.classList.add("hidden");
-    els.modalBody.innerHTML = "";
-  }
-  els.modalClose?.addEventListener("click", closeModal);
-  els.modal?.addEventListener("click", (e) => {
-    if (e.target === els.modal) closeModal();
-  });
-
-  /* =========================
-     Tabs / Navigation
-     ========================= */
-  function setTab(tabId) {
-    state.ui.activeTab = tabId;
-    els.tabs.forEach(t => t.classList.toggle("active", t.id === tabId));
-    els.navBtns.forEach(b => b.classList.toggle("active", b.dataset.tab === tabId));
-    saveState();
-    // on enter: render-specific
-    if (tabId === "tab-home") renderHome();
-    if (tabId === "tab-subjects") renderSubjects();
-    if (tabId === "tab-timer") renderTimerUI();
-    if (tabId === "tab-notebooks") renderNotebooks();
-    if (tabId === "tab-store") renderStore();
-    if (tabId === "tab-stats") renderStats();
-    if (tabId === "tab-settings") renderSettings();
-  }
-
-  els.navBtns.forEach(btn => {
-    btn.addEventListener("click", () => {
-      const t = btn.dataset.tab;
-      if (t) setTab(t);
-    });
-  });
-
-  // quick nav buttons in home
-  els.homeGoSubjects?.addEventListener("click", () => setTab("tab-subjects"));
-  els.homeGoTimer?.addEventListener("click", () => setTab("tab-timer"));
-  els.homeGoStore?.addEventListener("click", () => setTab("tab-store"));
-  els.homeOpenNotebooks?.addEventListener("click", () => setTab("tab-notebooks"));
-
-  /* =========================
-     Theme apply (wallpaper + timer skin)
-     ========================= */
-  function applyWallpaper() {
-    const id = state.store.wallpapers.active || "wp_01";
-    const item = CATALOG.wallpapers.find(w => w.id === id) || CATALOG.wallpapers[0];
-    document.documentElement.style.setProperty("--siraj-wallpaper", item.css);
-  }
-  function applyTimerSkin() {
-    const skin = state.store.timers.active || "none";
-    if (els.timerStage) els.timerStage.setAttribute("data-skin", skin);
-  }
-
-  /* =========================
-     Coins UI
-     ========================= */
-  function renderCoins() {
-    if (els.coinBalance) els.coinBalance.textContent = String(round1(state.coins));
-  }
-
-  /* =========================
-     Subjects + Tasks
-     Each subject:
-       {id,name,createdAt,taskTemplates:[{id,text,active}], dailyTasks: {dateKey: [{id,text,done,doneAt}]},
-        timer: {focusMin, breakMin},
-        stats: {sessions, focusMin, breakMin, tasksDone, tasksTotal}
-       }
-     ========================= */
-  function subjectById(id) {
-    return state.subjects.find(s => s.id === id) || null;
-  }
-  function getActiveSubject() {
-    const s = subjectById(state.ui.activeSubjectId);
-    return s || null;
-  }
-
-  function ensureSubjectDailyTasks(subject, dateK) {
-    subject.dailyTasks = subject.dailyTasks || {};
-    if (!subject.dailyTasks[dateK]) {
-      const tasks = (subject.taskTemplates || [])
-        .filter(t => t.active !== false)
-        .map(t => ({ id: uid(), text: t.text, done: false, doneAt: null }));
-      subject.dailyTasks[dateK] = tasks;
-    }
-    return subject.dailyTasks[dateK];
-  }
-
-  function computeTodayTasks() {
-    const dk = todayKey();
-    let total = 0;
-    let done = 0;
-    state.subjects.forEach(s => {
-      const list = ensureSubjectDailyTasks(s, dk);
-      total += list.length;
-      done += list.filter(x => x.done).length;
-    });
-    return { total, done };
-  }
-
-  function updateProgressBar() {
-    const { total, done } = computeTodayTasks();
-    const pct = total === 0 ? 0 : Math.round((done / total) * 100);
-    if (els.progressVal) els.progressVal.textContent = `${pct}%`;
-    if (els.progressFill) els.progressFill.style.width = `${pct}%`;
-    if (els.progressHint) {
-      els.progressHint.textContent = total === 0
-        ? "ابدأ بإضافة مادة ومهامها اليومية."
-        : (done === total ? "ممتاز! أنهيت مهام اليوم." : "كمّل! اقتربت من هدفك اليومي.");
-    }
-    // KPI today tasks
-    if (els.kpiTodayTasks) els.kpiTodayTasks.textContent = `${done}/${total}`;
-    // keep daily stats counts for info
-    ensureDaily().tasksDone = done;
-    ensureDaily().tasksTotal = total;
-    state.stats.total.tasksDone = (state.stats.total.tasksDone || 0); // cumulative already updated on completion
-    state.stats.total.tasksTotal = (state.stats.total.tasksTotal || 0);
-    saveState();
-  }
-
-  function setActiveSubject(id) {
-    state.ui.activeSubjectId = id;
-    saveState();
-    renderHome();
-    renderSubjects();
-    renderTimerUI();
-    toast("تم تفعيل المادة.");
-  }
-
-  function addSubjectFlow() {
-    openModal("إضافة مادة", `
-      <div class="row" style="margin-top:8px">
-        <label class="field" style="flex:1">
-          <span>اسم المادة</span>
-          <input id="m-subject-name" type="text" placeholder="مثال: رياضيات" />
-        </label>
-      </div>
-      <div class="row" style="margin-top:10px">
-        <button class="btn primary" id="m-create-subject">إضافة</button>
-        <button class="btn ghost" id="m-cancel">إلغاء</button>
-      </div>
-    `);
-
-    $("#m-cancel")?.addEventListener("click", closeModal);
-    $("#m-create-subject")?.addEventListener("click", () => {
-      const name = ($("#m-subject-name")?.value || "").trim();
-      if (!name) return toast("اكتب اسم المادة.");
-      if (state.subjects.length >= 8) return toast("وصلت للحد الأقصى (8 مواد).");
-
-      const s = {
-        id: uid(),
-        name,
-        createdAt: nowISO(),
-        taskTemplates: [],
-        dailyTasks: {},
-        timer: { focusMin: 25, breakMin: 5 },
-        stats: { sessions: 0, focusMin: 0, breakMin: 0, tasksDone: 0, tasksTotal: 0 }
+      modalFooter.onclick = (ev) => {
+        const b = ev.target.closest?.("button");
+        if(!b) return;
+        const m = b.getAttribute("data-m");
+        if(m === "cancel") return closeModal();
+        if(m === "ok"){
+          deleteNotebook(id);
+          closeModal();
+        }
       };
-      state.subjects.push(s);
-      if (!state.ui.activeSubjectId) state.ui.activeSubjectId = s.id;
-      saveState();
-      closeModal();
-      renderSubjects();
-      renderHome();
-      toast("تمت إضافة المادة.");
-    });
-  }
-
-  function renderSubjectsList() {
-    if (!els.subjectsList) return;
-    els.subjectsList.innerHTML = "";
-    if (state.subjects.length === 0) {
-      const div = document.createElement("div");
-      div.className = "emptyState";
-      div.textContent = "لا توجد مواد بعد. اضغط (إضافة مادة).";
-      els.subjectsList.appendChild(div);
-      return;
     }
 
-    state.subjects.forEach(s => {
-      const item = document.createElement("div");
-      item.className = "subject-item";
-      item.dataset.id = s.id;
+    // tasks
+    if(action === "toggle-task"){
+      const row = el.closest(".task");
+      const id = row?.dataset.tid;
+      if(id) toggleTask(id);
+    }
+    if(action === "del-task"){
+      const row = el.closest(".task");
+      const id = row?.dataset.tid;
+      if(!id) return;
 
-      const left = document.createElement("div");
-      left.innerHTML = `
-        <div class="subject-title">${escapeHTML(s.name)}</div>
-        <div class="subject-meta">جلسات: ${s.stats?.sessions || 0} • تركيز: ${formatMin(s.stats?.focusMin || 0)}</div>
-      `;
-
-      const btnOpen = document.createElement("button");
-      btnOpen.className = "btn tiny";
-      btnOpen.textContent = "فتح";
-      btnOpen.addEventListener("click", () => openSubjectEditor(s.id));
-
-      const btnActive = document.createElement("button");
-      btnActive.className = "btn tiny primary";
-      btnActive.textContent = (state.ui.activeSubjectId === s.id) ? "مفعّلة" : "تفعيل";
-      btnActive.addEventListener("click", () => setActiveSubject(s.id));
-
-      item.appendChild(left);
-      item.appendChild(btnOpen);
-      item.appendChild(btnActive);
-      els.subjectsList.appendChild(item);
-    });
-  }
-
-  function openSubjectEditor(subjectId) {
-    const s = subjectById(subjectId);
-    if (!s || !els.subjectEditor) return;
-    state.ui.lastSubjectEditorId = subjectId;
-    saveState();
-
-    // badge
-    if (els.subjectBadge) els.subjectBadge.textContent = s.name;
-
-    const dk = todayKey();
-    const todayTasks = ensureSubjectDailyTasks(s, dk);
-
-    els.subjectEditor.innerHTML = `
-      <div class="row between" style="margin-bottom:8px">
-        <h3>المهام اليومية (قوالب)</h3>
-        <button class="btn tiny primary" id="sub-add-template">إضافة مهمة</button>
-      </div>
-
-      <div id="sub-templates" class="tasks"></div>
-
-      <div class="divider"></div>
-
-      <div class="row between" style="margin-bottom:8px">
-        <h3>مهام اليوم (${dk})</h3>
-        <button class="btn tiny" id="sub-regenerate-today">تحديث من القوالب</button>
-      </div>
-      <div id="sub-today" class="tasks"></div>
-
-      <div class="divider"></div>
-
-      <div class="row" style="align-items:flex-end">
-        <label class="field" style="flex:1">
-          <span>Focus (دقيقة)</span>
-          <input type="number" id="sub-focus" min="1" max="180" value="${s.timer?.focusMin ?? 25}">
-        </label>
-        <label class="field" style="flex:1">
-          <span>Break (دقيقة)</span>
-          <input type="number" id="sub-break" min="1" max="60" value="${s.timer?.breakMin ?? 5}">
-        </label>
-        <button class="btn" id="sub-save-timer">حفظ مؤقت المادة</button>
-      </div>
-
-      <div class="divider"></div>
-
-      <div class="row between">
-        <div>
-          <h3>إحصائيات المادة</h3>
-          <div class="muted" style="font-size:12px; margin-top:4px">
-            جلسات: ${s.stats?.sessions || 0} • تركيز: ${formatMin(s.stats?.focusMin || 0)} • استراحات: ${formatMin(s.stats?.breakMin || 0)}
-          </div>
-        </div>
-        <button class="btn danger" id="sub-delete">حذف المادة</button>
-      </div>
-    `;
-
-    // render templates + today tasks
-    renderSubjectTemplates(s);
-    renderSubjectTodayTasks(s);
-
-    $("#sub-add-template")?.addEventListener("click", () => addTemplateFlow(s.id));
-    $("#sub-regenerate-today")?.addEventListener("click", () => {
-      // regenerate today's list from templates (keeps done tasks if same text? simpler: overwrite if none done)
-      const list = ensureSubjectDailyTasks(s, dk);
-      const hasAnyDone = list.some(t => t.done);
-      if (hasAnyDone) {
-        toast("يوجد مهام مكتملة اليوم. لن يتم الاستبدال.");
-        return;
-      }
-      s.dailyTasks[dk] = (s.taskTemplates || []).filter(t => t.active !== false).map(t => ({
-        id: uid(), text: t.text, done: false, doneAt: null
-      }));
-      saveState();
-      renderSubjectTodayTasks(s);
-      renderHome();
-      toast("تم تحديث مهام اليوم.");
-    });
-
-    $("#sub-save-timer")?.addEventListener("click", () => {
-      const f = clamp(parseInt($("#sub-focus")?.value || "25", 10) || 25, 1, 180);
-      const b = clamp(parseInt($("#sub-break")?.value || "5", 10) || 5, 1, 60);
-      s.timer = { focusMin: f, breakMin: b };
-      saveState();
-      renderTimerUI();
-      toast("تم حفظ مؤقت المادة.");
-    });
-
-    $("#sub-delete")?.addEventListener("click", () => {
-      openModal("تأكيد الحذف", `
-        <p class="p">هل أنت متأكد من حذف مادة: <b>${escapeHTML(s.name)}</b>؟</p>
-        <div class="row" style="margin-top:12px">
-          <button class="btn danger" id="m-del-yes">حذف</button>
-          <button class="btn ghost" id="m-del-no">إلغاء</button>
-        </div>
-      `);
-      $("#m-del-no")?.addEventListener("click", closeModal);
-      $("#m-del-yes")?.addEventListener("click", () => {
-        // stop timer if on this subject
-        if (state.ui.activeSubjectId === s.id) state.ui.activeSubjectId = null;
-        state.subjects = state.subjects.filter(x => x.id !== s.id);
-        if (!state.ui.activeSubjectId && state.subjects[0]) state.ui.activeSubjectId = state.subjects[0].id;
-        saveState();
-        closeModal();
-        renderSubjects();
-        renderHome();
-        renderTimerUI();
-        toast("تم حذف المادة.");
+      openModal({
+        title: "حذف مهمة",
+        bodyHTML: `<p>هل تريد حذف المهمة؟</p>`,
+        footerHTML: `
+          <button class="btn-ghost" type="button" data-m="cancel">إلغاء</button>
+          <button class="btn-danger" type="button" data-m="ok">حذف</button>
+        `
       });
-    });
-  }
 
-  function renderSubjectTemplates(subject) {
-    const box = $("#sub-templates");
-    if (!box) return;
-    box.innerHTML = "";
-    const arr = subject.taskTemplates || [];
-    if (arr.length === 0) {
-      const e = document.createElement("div");
-      e.className = "emptyState";
-      e.textContent = "لا توجد مهام يومية. أضف قوالب مهام لتظهر كل يوم.";
-      box.appendChild(e);
-      return;
-    }
-    arr.forEach(t => {
-      const row = document.createElement("div");
-      row.className = "task-row";
-      row.dataset.done = "0";
-      row.innerHTML = `
-        <button class="task-check" title="تفعيل/تعطيل">${t.active === false ? "—" : "✓"}</button>
-        <div class="task-text">${escapeHTML(t.text)}</div>
-        <button class="btn tiny" title="تعديل">تعديل</button>
-        <button class="btn tiny danger" title="حذف">حذف</button>
-      `;
-      const [btnToggle, , btnEdit, btnDel] = row.children;
-      btnToggle.addEventListener("click", () => {
-        t.active = (t.active === false) ? true : false;
-        saveState();
-        renderSubjectTemplates(subject);
-        toast(t.active ? "تم تفعيل المهمة." : "تم تعطيل المهمة.");
-      });
-      btnEdit.addEventListener("click", () => editTemplateFlow(subject.id, t.id));
-      btnDel.addEventListener("click", () => {
-        subject.taskTemplates = subject.taskTemplates.filter(x => x.id !== t.id);
-        saveState();
-        renderSubjectTemplates(subject);
-        toast("تم حذف المهمة.");
-      });
-      box.appendChild(row);
-    });
-  }
-
-  function renderSubjectTodayTasks(subject) {
-    const box = $("#sub-today");
-    if (!box) return;
-    box.innerHTML = "";
-    const dk = todayKey();
-    const list = ensureSubjectDailyTasks(subject, dk);
-    if (list.length === 0) {
-      const e = document.createElement("div");
-      e.className = "emptyState";
-      e.textContent = "لا توجد مهام اليوم لهذه المادة. أضف قوالب ثم حدث.";
-      box.appendChild(e);
-      return;
-    }
-
-    list.forEach(task => {
-      const row = document.createElement("div");
-      row.className = "task-row";
-      row.dataset.done = task.done ? "1" : "0";
-      row.innerHTML = `
-        <button class="task-check">${task.done ? "✓" : ""}</button>
-        <div class="task-text">${escapeHTML(task.text)}</div>
-        <button class="btn tiny ghost">حذف</button>
-      `;
-      const btnCheck = row.querySelector(".task-check");
-      const btnDel = row.querySelector(".btn.tiny.ghost");
-      btnCheck.addEventListener("click", () => toggleTodayTask(subject.id, task.id, row));
-      btnDel.addEventListener("click", () => {
-        subject.dailyTasks[dk] = subject.dailyTasks[dk].filter(x => x.id !== task.id);
-        saveState();
-        renderSubjectTodayTasks(subject);
-        renderHome();
-        toast("تم حذف مهمة اليوم.");
-      });
-      box.appendChild(row);
-    });
-  }
-
-  function toggleTodayTask(subjectId, taskId, rowEl) {
-    const s = subjectById(subjectId);
-    if (!s) return;
-    const dk = todayKey();
-    const list = ensureSubjectDailyTasks(s, dk);
-    const t = list.find(x => x.id === taskId);
-    if (!t) return;
-
-    const wasDone = !!t.done;
-    t.done = !t.done;
-    t.doneAt = t.done ? nowISO() : null;
-
-    rowEl.dataset.done = t.done ? "1" : "0";
-    const btn = rowEl.querySelector(".task-check");
-    if (btn) btn.textContent = t.done ? "✓" : "";
-
-    // if completed -> +6 coins, animate
-    if (!wasDone && t.done) {
-      rowEl.classList.add("done-pop");
-      setTimeout(() => rowEl.classList.remove("done-pop"), 650);
-
-      bumpCoins(6, "+6 كوينز لإنهاء مهمة");
-      state.stats.total.tasksDone += 1;
-      ensureDaily().tasksDone += 1;
-      s.stats.tasksDone = (s.stats.tasksDone || 0) + 1;
-    }
-    // total tasks cumulative: add when created? We'll count templates as daily; keep simple on completion only
-    saveState();
-    renderHome();
-    updateProgressBar();
-  }
-
-  function addTemplateFlow(subjectId) {
-    const s = subjectById(subjectId);
-    if (!s) return;
-    openModal("إضافة مهمة يومية", `
-      <label class="field">
-        <span>نص المهمة</span>
-        <input id="m-task-text" type="text" placeholder="مثال: حل 20 سؤال" />
-      </label>
-      <div class="row" style="margin-top:12px">
-        <button class="btn primary" id="m-task-add">إضافة</button>
-        <button class="btn ghost" id="m-task-cancel">إلغاء</button>
-      </div>
-    `);
-    $("#m-task-cancel")?.addEventListener("click", closeModal);
-    $("#m-task-add")?.addEventListener("click", () => {
-      const text = ($("#m-task-text")?.value || "").trim();
-      if (!text) return toast("اكتب نص المهمة.");
-      s.taskTemplates = s.taskTemplates || [];
-      s.taskTemplates.push({ id: uid(), text, active: true });
-      saveState();
-      closeModal();
-      renderSubjectTemplates(s);
-      toast("تمت إضافة مهمة يومية.");
-    });
-  }
-
-  function editTemplateFlow(subjectId, templateId) {
-    const s = subjectById(subjectId);
-    if (!s) return;
-    const t = (s.taskTemplates || []).find(x => x.id === templateId);
-    if (!t) return;
-
-    openModal("تعديل المهمة", `
-      <label class="field">
-        <span>نص المهمة</span>
-        <input id="m-task-text" type="text" value="${escapeAttr(t.text)}" />
-      </label>
-      <div class="row" style="margin-top:12px">
-        <button class="btn primary" id="m-task-save">حفظ</button>
-        <button class="btn ghost" id="m-task-cancel">إلغاء</button>
-      </div>
-    `);
-    $("#m-task-cancel")?.addEventListener("click", closeModal);
-    $("#m-task-save")?.addEventListener("click", () => {
-      const text = ($("#m-task-text")?.value || "").trim();
-      if (!text) return toast("اكتب نص المهمة.");
-      t.text = text;
-      saveState();
-      closeModal();
-      renderSubjectTemplates(s);
-      toast("تم حفظ التعديل.");
-    });
-  }
-
-  function escapeHTML(s) {
-    return String(s).replace(/[&<>"']/g, (c) => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;",
-    }[c]));
-  }
-  function escapeAttr(s) { return escapeHTML(s).replace(/"/g, "&quot;"); }
-
-  /* =========================
-     HOME render
-     ========================= */
-  function renderHome() {
-    ensureDaily();
-    renderCoins();
-    updateProgressBar();
-
-    // KPIs
-    const d = ensureDaily();
-    if (els.kpiSessions) els.kpiSessions.textContent = String(d.sessions || 0);
-    if (els.kpiTodayFocus) els.kpiTodayFocus.textContent = formatMin(d.focusMin || 0);
-    if (els.kpiFixes) els.kpiFixes.textContent = String(d.fixes || 0);
-
-    // active subject line
-    const s = getActiveSubject();
-    if (els.activeSubjectName) els.activeSubjectName.textContent = s ? s.name : "—";
-    if (els.activeSubjectMeta) {
-      els.activeSubjectMeta.textContent = s
-        ? `Focus: ${s.timer?.focusMin ?? 25}د • Break: ${s.timer?.breakMin ?? 5}د`
-        : "اختر مادة لتفعيل المؤقت والمهام.";
-    }
-
-    // home tasks = tasks for active subject (today)
-    if (els.homeTasks) {
-      els.homeTasks.innerHTML = "";
-      if (!s) {
-        const e = document.createElement("div");
-        e.className = "emptyState";
-        e.textContent = "لا توجد مادة نشطة. اختر مادة أولاً.";
-        els.homeTasks.appendChild(e);
-      } else {
-        const dk = todayKey();
-        const list = ensureSubjectDailyTasks(s, dk);
-        if (list.length === 0) {
-          const e = document.createElement("div");
-          e.className = "emptyState";
-          e.textContent = "لا توجد مهام اليوم لهذه المادة. أضف قوالب مهام من تبويب المواد.";
-          els.homeTasks.appendChild(e);
-        } else {
-          list.forEach(task => {
-            const row = document.createElement("div");
-            row.className = "task-row";
-            row.dataset.done = task.done ? "1" : "0";
-            row.innerHTML = `
-              <button class="task-check">${task.done ? "✓" : ""}</button>
-              <div class="task-text">${escapeHTML(task.text)}</div>
-            `;
-            row.querySelector(".task-check").addEventListener("click", () => {
-              toggleTodayTask(s.id, task.id, row);
-            });
-            els.homeTasks.appendChild(row);
-          });
+      modalFooter.onclick = (ev) => {
+        const b = ev.target.closest?.("button");
+        if(!b) return;
+        const m = b.getAttribute("data-m");
+        if(m === "cancel") return closeModal();
+        if(m === "ok"){
+          deleteTask(id);
+          closeModal();
         }
-      }
-    }
-  }
-
-  // Home actions
-  els.btnPickActive?.addEventListener("click", () => {
-    if (state.subjects.length === 0) return toast("أضف مادة أولاً.");
-    openModal("اختيار مادة نشطة", `
-      <div class="list">
-        ${state.subjects.map(s => `
-          <div class="subject-item" style="grid-template-columns: 1fr auto;">
-            <div>
-              <div class="subject-title">${escapeHTML(s.name)}</div>
-              <div class="subject-meta">Focus: ${s.timer?.focusMin ?? 25}د • Break: ${s.timer?.breakMin ?? 5}د</div>
-            </div>
-            <button class="btn tiny primary" data-pick="${s.id}">تفعيل</button>
-          </div>
-        `).join("")}
-      </div>
-      <div class="row" style="margin-top:12px">
-        <button class="btn ghost" id="m-close">إغلاق</button>
-      </div>
-    `);
-    $("#m-close")?.addEventListener("click", closeModal);
-    $$("[data-pick]").forEach(b => {
-      b.addEventListener("click", () => {
-        setActiveSubject(b.getAttribute("data-pick"));
-        closeModal();
-      });
-    });
-  });
-
-  els.btnAddTaskQuick?.addEventListener("click", () => {
-    const s = getActiveSubject();
-    if (!s) return toast("اختر مادة نشطة أولاً.");
-    openModal("إضافة مهمة لليوم", `
-      <label class="field">
-        <span>نص المهمة</span>
-        <input id="m-today-task" type="text" placeholder="مثال: مراجعة ملخص الدرس" />
-      </label>
-      <div class="row" style="margin-top:12px">
-        <button class="btn primary" id="m-add">إضافة</button>
-        <button class="btn ghost" id="m-cancel">إلغاء</button>
-      </div>
-    `);
-    $("#m-cancel")?.addEventListener("click", closeModal);
-    $("#m-add")?.addEventListener("click", () => {
-      const text = ($("#m-today-task")?.value || "").trim();
-      if (!text) return toast("اكتب نص المهمة.");
-      const dk = todayKey();
-      const list = ensureSubjectDailyTasks(s, dk);
-      list.push({ id: uid(), text, done: false, doneAt: null });
-      saveState();
-      closeModal();
-      renderHome();
-      updateProgressBar();
-      toast("تمت إضافة مهمة اليوم.");
-    });
-  });
-
-  els.homeResetToday?.addEventListener("click", () => {
-    openModal("تصفير اليوم", `
-      <p class="p">سيتم إلغاء إنجاز مهام اليوم فقط (لن تُحذف القوالب).</p>
-      <div class="row" style="margin-top:12px">
-        <button class="btn danger" id="m-reset-yes">تصفير</button>
-        <button class="btn ghost" id="m-reset-no">إلغاء</button>
-      </div>
-    `);
-    $("#m-reset-no")?.addEventListener("click", closeModal);
-    $("#m-reset-yes")?.addEventListener("click", () => {
-      const dk = todayKey();
-      state.subjects.forEach(s => {
-        const list = ensureSubjectDailyTasks(s, dk);
-        list.forEach(t => { t.done = false; t.doneAt = null; });
-      });
-      // daily stats reset (sessions/focus/break maybe not; requirement says "تصفير اليوم" on home -> likely tasks; keep focus stats)
-      ensureDaily().tasksDone = 0;
-      ensureDaily().tasksTotal = computeTodayTasks().total;
-      saveState();
-      closeModal();
-      renderHome();
-      toast("تم تصفير مهام اليوم.");
-    });
-  });
-
-  /* =========================
-     Subjects tab render
-     ========================= */
-  function renderSubjects() {
-    renderCoins();
-    renderSubjectsList();
-
-    // open last subject editor if exists
-    const lastId = state.ui.lastSubjectEditorId;
-    if (lastId && subjectById(lastId)) openSubjectEditor(lastId);
-    else {
-      if (els.subjectEditor) {
-        els.subjectEditor.innerHTML = `
-          <div class="emptyState">
-            اختر مادة من القائمة لعرض المهام، المؤقت، والإحصائيات.
-          </div>
-        `;
-      }
-      if (els.subjectBadge) els.subjectBadge.textContent = "—";
-    }
-  }
-
-  els.btnAddSubject?.addEventListener("click", addSubjectFlow);
-  els.btnOpenActiveFromList?.addEventListener("click", () => {
-    const s = getActiveSubject();
-    if (!s) return toast("لا توجد مادة نشطة.");
-    openSubjectEditor(s.id);
-  });
-
-  /* =========================
-     Timer
-     ========================= */
-  function getTimerDurations() {
-    const s = getActiveSubject();
-    if (s) return { focusMin: s.timer?.focusMin ?? 25, breakMin: s.timer?.breakMin ?? 5 };
-    return { focusMin: 25, breakMin: 5 };
-  }
-
-  function setTimerFromDurations() {
-    const d = getTimerDurations();
-    const mins = state.timer.mode === "FOCUS" ? d.focusMin : d.breakMin;
-    state.timer.remainingSec = Math.max(1, Math.round(mins * 60));
-  }
-
-  function formatTime(sec) {
-    const s = Math.max(0, Math.floor(sec));
-    const mm = String(Math.floor(s / 60)).padStart(2, "0");
-    const ss = String(s % 60).padStart(2, "0");
-    return `${mm}:${ss}`;
-  }
-
-  function renderTimerUI() {
-    applyTimerSkin();
-    renderCoins();
-
-    const s = getActiveSubject();
-    if (els.timerActiveLine) {
-      els.timerActiveLine.textContent = s
-        ? `المادة: ${s.name} • Focus ${s.timer?.focusMin ?? 25}د / Break ${s.timer?.breakMin ?? 5}د`
-        : "—";
+      };
     }
 
-    // inputs reflect subject timer if exists
-    const d = getTimerDurations();
-    if (els.timerFocusMin) els.timerFocusMin.value = String(d.focusMin);
-    if (els.timerBreakMin) els.timerBreakMin.value = String(d.breakMin);
-
-    // sound toggle
-    if (els.timerSound) els.timerSound.checked = !!state.prefs.soundEnabled;
-
-    // stage values
-    if (els.timerMode) els.timerMode.textContent = state.timer.mode;
-    if (els.timerTime) els.timerTime.textContent = formatTime(state.timer.remainingSec);
-    renderTimerProgress();
-
-    // quick KPIs (today)
-    const dy = ensureDaily();
-    if (els.timerKpiSessions) els.timerKpiSessions.textContent = String(dy.sessions || 0);
-    if (els.timerKpiFocus) els.timerKpiFocus.textContent = formatMin(dy.focusMin || 0);
-    if (els.timerKpiBreaks) els.timerKpiBreaks.textContent = String(dy.breakMin ? Math.round((dy.breakMin) / (d.breakMin || 5)) : 0);
-    if (els.timerKpiCoins) els.timerKpiCoins.textContent = String(round1(dy.coinsEarned || 0));
-    // notes load
-    if (els.timerNotes) {
-      const sid = state.ui.activeSubjectId || "global";
-      els.timerNotes.value = (state.quickNotes[sid]?.text || "");
-    }
-
-    if (els.timerToggle) els.timerToggle.textContent = state.timer.running ? "إيقاف" : "بدء";
-  }
-
-  function renderTimerProgress() {
-    const d = getTimerDurations();
-    const totalSec = (state.timer.mode === "FOCUS" ? d.focusMin : d.breakMin) * 60;
-    const remain = state.timer.remainingSec;
-    const done = Math.max(0, totalSec - remain);
-    const pct = totalSec <= 0 ? 0 : clamp((done / totalSec) * 100, 0, 100);
-    document.documentElement.style.setProperty("--tprog", `${pct}%`);
-    if (els.timerProg) els.timerProg.style.width = `${pct}%`;
-  }
-
-  function timerStart() {
-    // require active subject for full features? allow global too
-    state.timer.running = true;
-    state.timer.startTs = Date.now();
-    state.timer.lastTickTs = Date.now();
-    saveState();
-    renderTimerUI();
-  }
-
-  function timerStop() {
-    state.timer.running = false;
-    state.timer.startTs = null;
-    state.timer.lastTickTs = null;
-    saveState();
-    renderTimerUI();
-  }
-
-  function timerReset() {
-    state.timer.running = false;
-    state.timer.startTs = null;
-    state.timer.lastTickTs = null;
-    // reset to full duration of current mode
-    setTimerFromDurations();
-    saveState();
-    renderTimerUI();
-    toast("تمت إعادة ضبط المؤقت.");
-  }
-
-  function timerSwitchMode() {
-    state.timer.mode = (state.timer.mode === "FOCUS") ? "BREAK" : "FOCUS";
-    state.timer.running = false;
-    state.timer.startTs = null;
-    state.timer.lastTickTs = null;
-    setTimerFromDurations();
-    saveState();
-    renderTimerUI();
-    toast("تم تبديل الوضع.");
-  }
-
-  function timerComplete(modeJustFinished, minutesSpent) {
-    // Update stats + coins
-    ensureDaily();
-    const s = getActiveSubject();
-
-    if (modeJustFinished === "FOCUS") {
-      const mins = minutesSpent;
-      // coins: 0.2 per minute focus
-      const earned = round1(minutesToCoins(mins));
-      bumpCoins(earned, `+${earned} كوينز تركيز`);
-      // stats
-      state.stats.total.focusMin += mins;
-      ensureDaily().focusMin += mins;
-      if (s) s.stats.focusMin = (s.stats.focusMin || 0) + mins;
-
-      state.stats.total.sessions += 1;
-      ensureDaily().sessions += 1;
-      if (s) s.stats.sessions = (s.stats.sessions || 0) + 1;
-    } else {
-      const mins = minutesSpent;
-      state.stats.total.breakMin += mins;
-      ensureDaily().breakMin += mins;
-      if (s) s.stats.breakMin = (s.stats.breakMin || 0) + mins;
-    }
-
-    saveState();
-    renderHome();
-    renderStats();
-    renderTimerUI();
-
-    if (state.prefs.soundEnabled) playBeep();
-  }
-
-  // Timer tick loop
-  setInterval(() => {
-    if (!state.timer.running) return;
-    const now = Date.now();
-    const last = state.timer.lastTickTs || now;
-    const dt = Math.max(0, Math.floor((now - last) / 1000));
-    if (dt <= 0) return;
-
-    state.timer.lastTickTs = now;
-    state.timer.remainingSec -= dt;
-
-    if (state.timer.remainingSec <= 0) {
-      // compute minutes spent in this cycle (based on configured duration)
-      const d = getTimerDurations();
-      const totalMin = state.timer.mode === "FOCUS" ? d.focusMin : d.breakMin;
-      const mode = state.timer.mode;
-
-      // stop and complete
-      state.timer.running = false;
-      state.timer.remainingSec = 0;
-      saveState();
-
-      timerComplete(mode, totalMin);
-
-      // auto switch to other mode (nice UX)
-      state.timer.mode = (mode === "FOCUS") ? "BREAK" : "FOCUS";
-      setTimerFromDurations();
-      saveState();
-      renderTimerUI();
-      toast(mode === "FOCUS" ? "انتهى التركيز! وقت الاستراحة." : "انتهت الاستراحة! ارجع للتركيز.");
-      return;
-    }
-
-    saveState();
-    if (els.timerTime) els.timerTime.textContent = formatTime(state.timer.remainingSec);
-    if (els.timerMode) els.timerMode.textContent = state.timer.mode;
-    renderTimerProgress();
-  }, 300);
-
-  els.timerToggle?.addEventListener("click", () => {
-    if (state.timer.running) timerStop();
-    else timerStart();
-  });
-  els.timerReset?.addEventListener("click", timerReset);
-  els.timerSwitch?.addEventListener("click", timerSwitchMode);
-
-  els.timerPickActive?.addEventListener("click", () => {
-    // same as home pick
-    els.btnPickActive?.click();
-  });
-
-  els.timerFocusMin?.addEventListener("change", () => {
-    const s = getActiveSubject();
-    const v = clamp(parseInt(els.timerFocusMin.value || "25", 10) || 25, 1, 180);
-    if (s) {
-      s.timer.focusMin = v;
-      saveState();
-    }
-    if (!state.timer.running && state.timer.mode === "FOCUS") {
-      setTimerFromDurations();
-      saveState();
-      renderTimerUI();
-    }
-  });
-  els.timerBreakMin?.addEventListener("change", () => {
-    const s = getActiveSubject();
-    const v = clamp(parseInt(els.timerBreakMin.value || "5", 10) || 5, 1, 60);
-    if (s) {
-      s.timer.breakMin = v;
-      saveState();
-    }
-    if (!state.timer.running && state.timer.mode === "BREAK") {
-      setTimerFromDurations();
-      saveState();
-      renderTimerUI();
+    // open notebook editor
+    const nb = e.target.closest?.(".notebook");
+    if(nb && !e.target.closest?.("[data-action='del-notebook']")){
+      const id = nb.dataset.nid;
+      const n = state.notebooks.find(x => x.id === id);
+      if(n) setEditor(n);
     }
   });
 
-  els.timerSound?.addEventListener("change", () => {
-    state.prefs.soundEnabled = !!els.timerSound.checked;
-    saveState();
-  });
-
-  els.timerOpenStore?.addEventListener("click", () => setTab("tab-store"));
-
-  els.notesSave?.addEventListener("click", () => {
-    const sid = state.ui.activeSubjectId || "global";
-    state.quickNotes[sid] = { text: els.timerNotes?.value || "", updatedAt: nowISO() };
-    saveState();
-    toast("تم حفظ الملاحظات.");
-  });
-  els.notesClear?.addEventListener("click", () => {
-    if (els.timerNotes) els.timerNotes.value = "";
-    const sid = state.ui.activeSubjectId || "global";
-    state.quickNotes[sid] = { text: "", updatedAt: nowISO() };
-    saveState();
-    toast("تم مسح الملاحظات.");
-  });
-
-  /* =========================
-     Store (purchase + activate)
-     ========================= */
-  function canAfford(price) {
-    return round1(state.coins) >= price;
-  }
-
-  function purchase(price, label) {
-    if (price <= 0) return true;
-    if (!canAfford(price)) {
-      toast("كوينز غير كافية.");
-      return false;
-    }
-    bumpCoins(-price, `تم شراء: ${label}`);
-    return true;
-  }
-
-  function renderStore() {
-    renderCoins();
-    renderWallpapersStore();
-    renderTimersStore();
-    renderNotebookCoversStore();
-    renderErrorBookCoversStore();
-  }
-
-  function storeCard({ title, meta, previewStyle, owned, active, ctaText }) {
-    const ownedAttr = owned ? "1" : "0";
-    const activeAttr = active ? "1" : "0";
-    return `
-      <div class="store-card" data-owned="${ownedAttr}" data-active="${activeAttr}">
-        <div class="wallpaper-preview" style="${previewStyle || ""}"></div>
-        <div class="store-title">${escapeHTML(title)}</div>
-        <div class="store-meta">${escapeHTML(meta)}</div>
-        <div class="store-actions">
-          <button class="btn primary">${escapeHTML(ctaText)}</button>
-        </div>
-      </div>
-    `;
-  }
-
-  function renderWallpapersStore() {
-    const root = els.storeWallpapers;
-    if (!root) return;
-    root.innerHTML = "";
-
-    CATALOG.wallpapers.forEach((w, idx) => {
-      const owned = !!state.store.wallpapers.owned[w.id];
-      const active = state.store.wallpapers.active === w.id;
-
-      const price = (idx < 3) ? 0 : 80;
-      const meta = (idx < 3)
-        ? "مجاني للتجربة"
-        : `السعر: ${price} كوينز`;
-
-      const html = storeCard({
-        title: `خلفية: ${w.name}`,
-        meta,
-        previewStyle: `background:${w.css}`,
-        owned,
-        active,
-        ctaText: active ? "مفعّلة" : (owned ? "تفعيل" : "شراء")
-      });
-
-      const wrap = document.createElement("div");
-      wrap.innerHTML = html.trim();
-      const card = wrap.firstElementChild;
-      const btn = card.querySelector("button");
-
-      btn.addEventListener("click", () => {
-        if (!owned) {
-          if (!purchase(price, `خلفية ${w.name}`)) return;
-          state.store.wallpapers.owned[w.id] = true;
-          saveState();
-        }
-        state.store.wallpapers.active = w.id;
-        saveState();
-        applyWallpaper();
-        renderStore();
-        toast("تم تفعيل الخلفية.");
-      });
-
-      root.appendChild(card);
-    });
-  }
-
-  function renderTimersStore() {
-    const root = els.storeTimers;
-    if (!root) return;
-    root.innerHTML = "";
-
-    CATALOG.timerSkins.forEach((s) => {
-      const owned = !!state.store.timers.owned[s.id];
-      const active = state.store.timers.active === s.id;
-      const meta = `السعر: 60 كوينز`;
-
-      const html = `
-        <div class="store-card" data-owned="${owned ? "1" : "0"}" data-active="${active ? "1" : "0"}">
-          <div class="timer-preview">
-            <div class="timer-mini" data-skin="${miniSkinFromId(s.id)}">
-              <div class="timer-mini-face"></div>
-              <div class="timer-mini-label">${escapeHTML(s.name)}</div>
-            </div>
-          </div>
-          <div class="store-title">تايمر: ${escapeHTML(s.name)}</div>
-          <div class="store-meta">${meta}</div>
-          <div class="store-actions">
-            <button class="btn primary">${active ? "مفعّل" : (owned ? "تفعيل" : "شراء")}</button>
-          </div>
-        </div>
-      `;
-      const wrap = document.createElement("div");
-      wrap.innerHTML = html.trim();
-      const card = wrap.firstElementChild;
-      const btn = card.querySelector("button");
-
-      btn.addEventListener("click", () => {
-        if (!owned) {
-          if (!purchase(60, `تايمر ${s.name}`)) return;
-          state.store.timers.owned[s.id] = true;
-          saveState();
-        }
-        // لا يتم تفعيل إلا إذا مشتَرى (الآن مملوك)
-        state.store.timers.active = s.id;
-        saveState();
-        applyTimerSkin();
-        renderStore();
-        renderTimerUI();
-        toast("تم تفعيل شكل التايمر.");
-      });
-
-      root.appendChild(card);
-    });
-
-    // extra: allow "none"
-    const noneCard = document.createElement("div");
-    noneCard.innerHTML = `
-      <div class="store-card" data-owned="1" data-active="${state.store.timers.active === "none" ? "1" : "0"}">
-        <div class="timer-preview">
-          <div class="timer-mini" data-skin="bar">
-            <div class="timer-mini-face"></div>
-            <div class="timer-mini-label">Default</div>
-          </div>
-        </div>
-        <div class="store-title">تايمر: Default</div>
-        <div class="store-meta">مجاني • الشكل الافتراضي</div>
-        <div class="store-actions">
-          <button class="btn primary">${state.store.timers.active === "none" ? "مفعّل" : "تفعيل"}</button>
-        </div>
-      </div>
-    `.trim();
-    const card = noneCard.firstElementChild;
-    card.querySelector("button").addEventListener("click", () => {
-      state.store.timers.active = "none";
-      saveState();
-      applyTimerSkin();
-      renderStore();
-      renderTimerUI();
-      toast("تم تفعيل الشكل الافتراضي.");
-    });
-    root.appendChild(card);
-  }
-
-  function miniSkinFromId(id) {
-    // map to CSS mini data-skin variants available in style.css
-    if (id.includes("ring")) return "ring";
-    if (id.includes("dual")) return "dualRing";
-    if (id.includes("bar")) return "bar";
-    if (id.includes("cube")) return "cube";
-    if (id.includes("holo")) return "holo";
-    // fallback
-    return "bar";
-  }
-
-  function renderNotebookCoversStore() {
-    const root = els.storeNotebookCovers;
-    if (!root) return;
-    root.innerHTML = "";
-
-    CATALOG.notebookCovers.forEach((c, idx) => {
-      const owned = !!state.store.notebookCovers.owned[c.id];
-      const price = (idx < 3) ? 0 : 55;
-
-      const html = `
-        <div class="store-card" data-owned="${owned ? "1" : "0"}" data-active="0">
-          <div class="wallpaper-preview" style="background:${c.css}"></div>
-          <div class="store-title">غلاف دفاتر: ${escapeHTML(c.name)}</div>
-          <div class="store-meta">${idx < 3 ? "مجاني للتجربة" : `السعر: ${price} كوينز`}</div>
-          <div class="store-actions">
-            <button class="btn primary">${owned ? "مملوك" : "شراء"}</button>
-          </div>
-        </div>
-      `;
-      const wrap = document.createElement("div");
-      wrap.innerHTML = html.trim();
-      const card = wrap.firstElementChild;
-      const btn = card.querySelector("button");
-
-      btn.addEventListener("click", () => {
-        if (owned) return toast("الغلاف مملوك.");
-        if (!purchase(price, `غلاف دفاتر ${c.name}`)) return;
-        state.store.notebookCovers.owned[c.id] = true;
-        saveState();
-        renderStore();
-      });
-
-      root.appendChild(card);
-    });
-  }
-
-  function renderErrorBookCoversStore() {
-    const root = els.storeErrorBooks;
-    if (!root) return;
-    root.innerHTML = "";
-
-    CATALOG.errorBookCovers.forEach((c, idx) => {
-      const owned = !!state.store.errorBookCovers.owned[c.id];
-      const price = (idx < 3) ? 0 : 55;
-
-      const html = `
-        <div class="store-card" data-owned="${owned ? "1" : "0"}" data-active="0">
-          <div class="wallpaper-preview" style="background:${c.css}"></div>
-          <div class="store-title">غلاف دفتر الأخطاء: ${escapeHTML(c.name)}</div>
-          <div class="store-meta">${idx < 3 ? "مجاني للتجربة" : `السعر: ${price} كوينز`}</div>
-          <div class="store-actions">
-            <button class="btn primary">${owned ? "مملوك" : "شراء"}</button>
-          </div>
-        </div>
-      `;
-      const wrap = document.createElement("div");
-      wrap.innerHTML = html.trim();
-      const card = wrap.firstElementChild;
-      const btn = card.querySelector("button");
-
-      btn.addEventListener("click", () => {
-        if (owned) return toast("الغلاف مملوك.");
-        if (!purchase(price, `غلاف أخطاء ${c.name}`)) return;
-        state.store.errorBookCovers.owned[c.id] = true;
-        saveState();
-        renderStore();
-      });
-
-      root.appendChild(card);
-    });
-  }
-
-  /* =========================
-     Notebooks (3D) + Error books (multi)
-     - تبويب الدفاتر: نعرض نوعين:
-       1) دفاتر عامة (ملاحظات)
-       2) دفاتر أخطاء (متعددة)
-     - نفس grid موجود: notebooks-grid
-     - viewer: book-viewer
-     ========================= */
-  function ensureDefaultBooks() {
-    // create at least one notebook and one error book if empty? requirement: "لازم يكون عندي أكثر من دفتر (3D)"
-    // but not "افتراضي" إجباري؛ مع ذلك تبويب الدفاتر يحتاج "أكثر من دفتر".
-    // سننشئ دفترين عامّين + دفتر أخطاء واحد أول مرة فقط إذا لا يوجد أي شيء.
-    if ((state.notebooks?.length || 0) === 0 && (state.errorBooks?.length || 0) === 0) {
-      state.notebooks = [
-        { id: uid(), title: "دفتر 1", coverId: "nbc_01", pages: [{ id: uid(), txt: "اكتب ملاحظاتك هنا…", ts: nowISO() }] },
-        { id: uid(), title: "دفتر 2", coverId: "nbc_02", pages: [{ id: uid(), txt: "صفحة 1", ts: nowISO() }] },
-      ];
-      state.errorBooks = [
-        { id: uid(), title: "دفتر أخطاء 1", coverId: "ebc_01", errors: [] },
-      ];
-      saveState();
-    } else {
-      state.notebooks = state.notebooks || [];
-      state.errorBooks = state.errorBooks || [];
-    }
-  }
-
-  function notebookCoverCSS(coverId) {
-    const item = CATALOG.notebookCovers.find(x => x.id === coverId) || CATALOG.notebookCovers[0];
-    return item?.css || "linear-gradient(135deg,#7c5cff,#22d3ee)";
-  }
-  function errorCoverCSS(coverId) {
-    const item = CATALOG.errorBookCovers.find(x => x.id === coverId) || CATALOG.errorBookCovers[0];
-    return item?.css || "linear-gradient(135deg,#7c5cff,#22c55e)";
-  }
-
-  function renderNotebooks() {
-    ensureDefaultBooks();
-    renderCoins();
-
-    if (!els.notebooksGrid) return;
-    els.notebooksGrid.innerHTML = "";
-
-    // section header cards inside grid (as notebooks)
-    // We'll render general notebooks first then error books.
-    const allCards = [];
-
-    state.notebooks.forEach(nb => {
-      allCards.push(makeNotebookCard(nb, "normal"));
-    });
-    state.errorBooks.forEach(eb => {
-      allCards.push(makeNotebookCard(eb, "error"));
-    });
-
-    if (allCards.length === 0) {
-      const e = document.createElement("div");
-      e.className = "emptyState";
-      e.textContent = "لا توجد دفاتر بعد.";
-      els.notebooksGrid.appendChild(e);
-    } else {
-      allCards.forEach(card => els.notebooksGrid.appendChild(card));
-    }
-
-    // viewer render
-    renderBookViewer();
-  }
-
-  function makeNotebookCard(obj, type) {
-    const card = document.createElement("div");
-    card.className = "nbCard";
-    card.dataset.type = type;
-    card.dataset.id = obj.id;
-
-    const css = type === "error" ? errorCoverCSS(obj.coverId) : notebookCoverCSS(obj.coverId);
-    const meta = type === "error"
-      ? `أخطاء: ${(obj.errors || []).length} • مصححة: ${(obj.errors || []).filter(e => e.fixed).length}`
-      : `صفحات: ${(obj.pages || []).length}`;
-
-    card.innerHTML = `
-      <div class="nbCover" style="background:${css}">
-        <div class="nbSpine"></div>
-      </div>
-      <div class="nbTitle">${escapeHTML(obj.title)}</div>
-      <div class="nbMeta">${escapeHTML(meta)}${type === "error" ? " • (+20 عند التصحيح)" : ""}</div>
-    `;
-    card.addEventListener("click", () => openNotebook(type, obj.id));
-    return card;
-  }
-
-  function openNotebook(type, id) {
-    state.ui.openNotebookId = `${type}:${id}`;
-    saveState();
-    renderBookViewer();
-  }
-
-  function closeNotebook() {
-    state.ui.openNotebookId = null;
-    saveState();
-    renderBookViewer();
-  }
-  els.btnCloseNotebook?.addEventListener("click", closeNotebook);
-
-  function renderBookViewer() {
-    if (!els.bookViewer) return;
-
-    const open = state.ui.openNotebookId;
-    if (!open) {
-      els.bookViewer.innerHTML = `
-        <div class="emptyState">
-          اختر دفتر من اليسار لفتحه. سيظهر أنيميشن صفحات.
-        </div>
-      `;
-      return;
-    }
-    const [type, id] = open.split(":");
-    if (type === "normal") {
-      const nb = state.notebooks.find(x => x.id === id);
-      if (!nb) return closeNotebook();
-      renderNormalNotebookViewer(nb);
-    } else {
-      const eb = state.errorBooks.find(x => x.id === id);
-      if (!eb) return closeNotebook();
-      renderErrorBookViewer(eb);
-    }
-  }
-
-  // Normal notebook viewer with pages flip
-  function renderNormalNotebookViewer(nb) {
-    const pages = nb.pages || [];
-    const pageIndex = clamp(state.ui.pageIndex || 0, 0, Math.max(0, pages.length - 1));
-    state.ui.pageIndex = pageIndex;
-
-    const current = pages[pageIndex] || { txt: "" };
-
-    els.bookViewer.innerHTML = `
-      <div class="row between" style="margin-bottom:10px">
-        <div>
-          <h3>${escapeHTML(nb.title)}</h3>
-          <div class="muted" style="font-size:12px">غلاف: ${escapeHTML(coverName("notebook", nb.coverId))}</div>
-        </div>
-        <div class="row">
-          <button class="btn tiny" id="nb-change-cover">تغيير الغلاف</button>
-          <button class="btn tiny primary" id="nb-add-page">صفحة جديدة</button>
-        </div>
-      </div>
-
-      <div class="book3d">
-        <div class="book">
-          <div class="page" id="page-el">
-            <div class="pageContent">
-              <textarea id="nb-page-text" class="notes" style="min-height:210px">${escapeHTML(current.txt || "")}</textarea>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="bookControls">
-        <button class="btn" id="nb-prev">السابق</button>
-        <button class="btn" id="nb-save">حفظ الصفحة</button>
-        <button class="btn" id="nb-next">التالي</button>
-      </div>
-
-      <div class="row" style="margin-top:12px; justify-content:space-between">
-        <div class="muted" style="font-size:12px">صفحة ${pageIndex + 1} / ${Math.max(1, pages.length)}</div>
-        <button class="btn danger tiny" id="nb-delete">حذف الدفتر</button>
-      </div>
-    `;
-
-    $("#nb-save")?.addEventListener("click", () => {
-      const txt = $("#nb-page-text")?.value || "";
-      pages[pageIndex].txt = txt;
-      pages[pageIndex].ts = nowISO();
-      nb.pages = pages;
-      saveState();
-      toast("تم حفظ الصفحة.");
-    });
-
-    $("#nb-add-page")?.addEventListener("click", () => {
-      nb.pages = nb.pages || [];
-      nb.pages.push({ id: uid(), txt: "", ts: nowISO() });
-      state.ui.pageIndex = nb.pages.length - 1;
-      saveState();
-      flipPageAnim();
-      renderNormalNotebookViewer(nb);
-      toast("تمت إضافة صفحة.");
-    });
-
-    $("#nb-prev")?.addEventListener("click", () => {
-      if (pageIndex <= 0) return;
-      state.ui.pageIndex = pageIndex - 1;
-      saveState();
-      flipPageAnim();
-      renderNormalNotebookViewer(nb);
-    });
-    $("#nb-next")?.addEventListener("click", () => {
-      if (pageIndex >= pages.length - 1) return;
-      state.ui.pageIndex = pageIndex + 1;
-      saveState();
-      flipPageAnim();
-      renderNormalNotebookViewer(nb);
-    });
-
-    $("#nb-delete")?.addEventListener("click", () => {
-      openModal("حذف الدفتر", `
-        <p class="p">حذف: <b>${escapeHTML(nb.title)}</b>؟</p>
-        <div class="row" style="margin-top:12px">
-          <button class="btn danger" id="m-yes">حذف</button>
-          <button class="btn ghost" id="m-no">إلغاء</button>
-        </div>
-      `);
-      $("#m-no")?.addEventListener("click", closeModal);
-      $("#m-yes")?.addEventListener("click", () => {
-        state.notebooks = state.notebooks.filter(x => x.id !== nb.id);
-        closeModal();
-        closeNotebook();
-        saveState();
-        renderNotebooks();
-        toast("تم حذف الدفتر.");
-      });
-    });
-
-    $("#nb-change-cover")?.addEventListener("click", () => changeCoverFlow("notebook", nb.id));
-
-    function flipPageAnim() {
-      const p = $("#page-el");
-      p?.classList.add("flip");
-      setTimeout(() => p?.classList.remove("flip"), 620);
-    }
-  }
-
-  // Error book viewer
-  function renderErrorBookViewer(eb) {
-    els.bookViewer.innerHTML = `
-      <div class="row between" style="margin-bottom:10px">
-        <div>
-          <h3>${escapeHTML(eb.title)}</h3>
-          <div class="muted" style="font-size:12px">غلاف: ${escapeHTML(coverName("error", eb.coverId))} • (+20 عند التصحيح)</div>
-        </div>
-        <div class="row">
-          <button class="btn tiny" id="eb-change-cover">تغيير الغلاف</button>
-          <button class="btn tiny primary" id="eb-add-error">إضافة خطأ</button>
-        </div>
-      </div>
-
-      <div class="book3d">
-        <div class="book">
-          <div class="page" id="page-el">
-            <div class="pageContent">
-              <div id="eb-errors"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="bookControls">
-        <button class="btn danger tiny" id="eb-delete">حذف الدفتر</button>
-      </div>
-    `;
-
-    // render errors list inside page
-    const listEl = $("#eb-errors");
-    const errors = eb.errors || [];
-    if (!listEl) return;
-
-    if (errors.length === 0) {
-      listEl.innerHTML = `<div class="emptyState">لا توجد أخطاء بعد. أضف خطأ لتتبع التصحيح.</div>`;
-    } else {
-      listEl.innerHTML = errors.map(er => `
-        <div class="error-row" data-id="${er.id}" data-fixed="${er.fixed ? "1" : "0"}">
-          <div class="error-text">${escapeHTML(er.text)}</div>
-          <div class="error-meta">${escapeHTML(er.ts.slice(0,16).replace("T"," "))}${er.fixed ? ` • مصحح: ${escapeHTML(er.fixedAt?.slice(0,16).replace("T"," ") || "")}` : ""}</div>
-          <div class="error-actions">
-            ${er.fixed ? `<span class="pill">تم التصحيح</span>` : `<button class="btn tiny primary" data-fix="${er.id}">تصحيح</button>`}
-            <button class="btn tiny ghost" data-del="${er.id}">حذف</button>
-          </div>
-        </div>
-      `).join("");
-    }
-
-    // bind actions
-    $$("[data-fix]").forEach(b => {
-      b.addEventListener("click", () => {
-        const id = b.getAttribute("data-fix");
-        const er = errors.find(x => x.id === id);
-        if (!er || er.fixed) return;
-        er.fixed = true;
-        er.fixedAt = nowISO();
-
-        // reward
-        bumpCoins(20, "+20 كوينز لتصحيح خطأ");
-        state.stats.total.fixes += 1;
-        ensureDaily().fixes += 1;
-
-        saveState();
-        // flip animation for delight
-        $("#page-el")?.classList.add("flip");
-        setTimeout(() => $("#page-el")?.classList.remove("flip"), 620);
-
-        renderErrorBookViewer(eb);
-        renderHome();
-        renderStats();
-      });
-    });
-
-    $$("[data-del]").forEach(b => {
-      b.addEventListener("click", () => {
-        const id = b.getAttribute("data-del");
-        eb.errors = (eb.errors || []).filter(x => x.id !== id);
-        saveState();
-        renderErrorBookViewer(eb);
-        toast("تم حذف الخطأ.");
-      });
-    });
-
-    $("#eb-add-error")?.addEventListener("click", () => {
-      openModal("إضافة خطأ", `
-        <label class="field">
-          <span>وصف الخطأ</span>
-          <textarea id="m-err-text" class="notes" placeholder="اكتب الخطأ، السبب، وكيف ستتجنبه…"></textarea>
-        </label>
-        <div class="row" style="margin-top:12px">
-          <button class="btn primary" id="m-err-add">إضافة</button>
-          <button class="btn ghost" id="m-err-cancel">إلغاء</button>
-        </div>
-      `);
-      $("#m-err-cancel")?.addEventListener("click", closeModal);
-      $("#m-err-add")?.addEventListener("click", () => {
-        const text = ($("#m-err-text")?.value || "").trim();
-        if (!text) return toast("اكتب وصف الخطأ.");
-        eb.errors = eb.errors || [];
-        eb.errors.unshift({ id: uid(), text, ts: nowISO(), fixed: false, fixedAt: null });
-        saveState();
-        closeModal();
-        $("#page-el")?.classList.add("flip");
-        setTimeout(() => $("#page-el")?.classList.remove("flip"), 620);
-        renderErrorBookViewer(eb);
-        toast("تمت إضافة الخطأ.");
-      });
-    });
-
-    $("#eb-change-cover")?.addEventListener("click", () => changeCoverFlow("error", eb.id));
-
-    $("#eb-delete")?.addEventListener("click", () => {
-      openModal("حذف دفتر الأخطاء", `
-        <p class="p">حذف: <b>${escapeHTML(eb.title)}</b>؟</p>
-        <div class="row" style="margin-top:12px">
-          <button class="btn danger" id="m-yes">حذف</button>
-          <button class="btn ghost" id="m-no">إلغاء</button>
-        </div>
-      `);
-      $("#m-no")?.addEventListener("click", closeModal);
-      $("#m-yes")?.addEventListener("click", () => {
-        state.errorBooks = state.errorBooks.filter(x => x.id !== eb.id);
-        closeModal();
-        closeNotebook();
-        saveState();
-        renderNotebooks();
-        toast("تم حذف دفتر الأخطاء.");
-      });
-    });
-  }
-
-  function coverName(type, coverId) {
-    const arr = type === "error" ? CATALOG.errorBookCovers : CATALOG.notebookCovers;
-    const item = arr.find(x => x.id === coverId);
-    return item ? item.name : "—";
-  }
-
-  function changeCoverFlow(type, bookId) {
-    const isError = type === "error";
-    const ownedMap = isError ? state.store.errorBookCovers.owned : state.store.notebookCovers.owned;
-    const catalog = isError ? CATALOG.errorBookCovers : CATALOG.notebookCovers;
-
-    const book = isError
-      ? state.errorBooks.find(x => x.id === bookId)
-      : state.notebooks.find(x => x.id === bookId);
-
-    if (!book) return;
-
-    openModal("تغيير الغلاف", `
-      <div class="storeGrid">
-        ${catalog.map(c => {
-          const owned = !!ownedMap[c.id];
-          const active = book.coverId === c.id;
-          return `
-            <div class="store-card" data-owned="${owned ? "1" : "0"}" data-active="${active ? "1" : "0"}" data-cover="${c.id}">
-              <div class="wallpaper-preview" style="background:${c.css}"></div>
-              <div class="store-title">${escapeHTML(c.name)}</div>
-              <div class="store-meta">${owned ? "مملوك" : "غير مملوك (اذهب للمتجر)"}</div>
-              <div class="store-actions">
-                <button class="btn primary">${active ? "مفعّل" : (owned ? "تفعيل" : "مقفول")}</button>
-              </div>
-            </div>
-          `;
-        }).join("")}
-      </div>
-      <div class="row" style="margin-top:12px">
-        <button class="btn ghost" id="m-close">إغلاق</button>
-      </div>
-    `);
-    $("#m-close")?.addEventListener("click", closeModal);
-
-    $$("[data-cover]").forEach(card => {
-      card.querySelector("button")?.addEventListener("click", () => {
-        const cid = card.getAttribute("data-cover");
-        if (!ownedMap[cid]) return toast("الغلاف غير مملوك. اشتريه من المتجر.");
-        book.coverId = cid;
-        saveState();
-        closeModal();
-        renderNotebooks();
-        toast("تم تغيير الغلاف.");
-      });
-    });
-  }
-
-  // add notebook button
-  els.btnAddNotebook?.addEventListener("click", () => {
-    ensureDefaultBooks();
-    openModal("دفتر جديد", `
-      <div class="row" style="margin-top:8px">
-        <label class="field" style="flex:1">
-          <span>اسم الدفتر</span>
-          <input id="m-nb-name" type="text" placeholder="مثال: ملخصات الفيزياء" />
-        </label>
-        <label class="field" style="flex:1">
-          <span>النوع</span>
-          <select id="m-nb-type" style="width:100%; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.05); color:var(--text); border-radius:14px; padding:10px 12px;">
-            <option value="normal">دفتر عادي</option>
-            <option value="error">دفتر أخطاء</option>
-          </select>
-        </label>
-      </div>
-      <div class="row" style="margin-top:10px">
-        <button class="btn primary" id="m-nb-create">إضافة</button>
-        <button class="btn ghost" id="m-nb-cancel">إلغاء</button>
-      </div>
-    `);
-    $("#m-nb-cancel")?.addEventListener("click", closeModal);
-    $("#m-nb-create")?.addEventListener("click", () => {
-      const name = ($("#m-nb-name")?.value || "").trim() || "دفتر جديد";
-      const type = $("#m-nb-type")?.value || "normal";
-      if (type === "error") {
-        state.errorBooks.push({ id: uid(), title: name, coverId: "ebc_01", errors: [] });
-      } else {
-        state.notebooks.push({ id: uid(), title: name, coverId: "nbc_01", pages: [{ id: uid(), txt: "", ts: nowISO() }] });
-      }
-      saveState();
-      closeModal();
-      renderNotebooks();
-      toast("تم إضافة دفتر.");
-    });
-  });
-
-  els.btnNotebookStore?.addEventListener("click", () => setTab("tab-store"));
-
-  /* =========================
-     Stats
-     ========================= */
-  function renderStats() {
-    renderCoins();
-    const t = state.stats.total;
-    const d = ensureDaily();
-
-    if (els.overallStats) {
-      els.overallStats.innerHTML = [
-        statCard("إجمالي الجلسات", t.sessions || 0),
-        statCard("إجمالي التركيز", formatMin(t.focusMin || 0)),
-        statCard("إجمالي الاستراحات", formatMin(t.breakMin || 0)),
-        statCard("إجمالي الأخطاء المصححة", t.fixes || 0),
-        statCard("كوينز مكتسبة", round1(t.coinsEarned || 0)),
-        statCard("كوينز مصروفة", round1(t.coinsSpent || 0)),
-        statCard("جلسات اليوم", d.sessions || 0),
-        statCard("تركيز اليوم", formatMin(d.focusMin || 0)),
-      ].join("");
-    }
-
-    if (els.subjectsStats) {
-      els.subjectsStats.innerHTML = "";
-      if (state.subjects.length === 0) {
-        const e = document.createElement("div");
-        e.className = "emptyState";
-        e.textContent = "أضف مواد لتظهر إحصائيات التوزيع.";
-        els.subjectsStats.appendChild(e);
-      } else {
-        state.subjects.forEach(s => {
-          const div = document.createElement("div");
-          div.className = "subject-item";
-          div.style.gridTemplateColumns = "1fr auto";
-          div.innerHTML = `
-            <div>
-              <div class="subject-title">${escapeHTML(s.name)}</div>
-              <div class="subject-meta">
-                جلسات: ${s.stats?.sessions || 0}
-                • تركيز: ${formatMin(s.stats?.focusMin || 0)}
-                • استراحات: ${formatMin(s.stats?.breakMin || 0)}
-                • مهام منجزة: ${s.stats?.tasksDone || 0}
-              </div>
-            </div>
-            <button class="btn tiny" data-open-sub="${s.id}">فتح</button>
-          `;
-          div.querySelector("[data-open-sub]")?.addEventListener("click", () => {
-            setTab("tab-subjects");
-            setTimeout(() => openSubjectEditor(s.id), 0);
-          });
-          els.subjectsStats.appendChild(div);
-        });
-      }
-    }
-  }
-
-  function statCard(k, v) {
-    return `
-      <div class="stat-card">
-        <div class="stat-k">${escapeHTML(k)}</div>
-        <div class="stat-v">${escapeHTML(String(v))}</div>
-      </div>
-    `;
-  }
-
-  /* =========================
-     Settings
-     ========================= */
-  function renderSettings() {
-    renderCoins();
-    if (els.fxToggle) els.fxToggle.checked = !!state.prefs.fxEnabled;
-    if (els.tiltToggle) els.tiltToggle.checked = !!state.prefs.tiltEnabled;
-    if (els.tiltSensitivity) els.tiltSensitivity.value = String(state.prefs.tiltSensitivity ?? 10);
-    if (els.reduceMotion) els.reduceMotion.checked = !!state.prefs.reduceMotion;
-  }
-
-  els.fxToggle?.addEventListener("change", () => {
-    state.prefs.fxEnabled = !!els.fxToggle.checked;
-    saveState();
-    if (state.prefs.fxEnabled) fxStart();
-    else fxStop();
-  });
-  els.tiltToggle?.addEventListener("change", () => {
-    state.prefs.tiltEnabled = !!els.tiltToggle.checked;
-    saveState();
-    toast(state.prefs.tiltEnabled ? "تم تفعيل 3D." : "تم تعطيل 3D.");
-  });
-  els.tiltSensitivity?.addEventListener("input", () => {
-    state.prefs.tiltSensitivity = clamp(parseInt(els.tiltSensitivity.value || "10", 10) || 10, 6, 18);
-    saveState();
-  });
-  els.reduceMotion?.addEventListener("change", () => {
-    state.prefs.reduceMotion = !!els.reduceMotion.checked;
-    saveState();
-    toast(state.prefs.reduceMotion ? "تم تفعيل تقليل الحركة." : "تم إلغاء تقليل الحركة.");
-  });
-
-  els.btnResetSoft?.addEventListener("click", () => {
-    openModal("تصفير الإحصائيات", `
-      <p class="p">سيتم تصفير الإحصائيات (Total + Daily) بدون حذف المواد/الدفاتر/المتجر.</p>
-      <div class="row" style="margin-top:12px">
-        <button class="btn danger" id="m-yes">تصفير</button>
-        <button class="btn ghost" id="m-no">إلغاء</button>
-      </div>
-    `);
-    $("#m-no")?.addEventListener("click", closeModal);
-    $("#m-yes")?.addEventListener("click", () => {
-      state.stats = defaultState().stats;
-      saveState();
-      closeModal();
-      renderHome();
-      renderStats();
-      toast("تم تصفير الإحصائيات.");
-    });
-  });
-
-  els.btnResetHard?.addEventListener("click", () => {
-    openModal("حذف كل شيء", `
-      <p class="p"><b>تحذير:</b> سيتم حذف كل بياناتك محليًا (مواد/دفاتر/متجر/إحصائيات/كوينز).</p>
-      <div class="row" style="margin-top:12px">
-        <button class="btn danger" id="m-yes">حذف</button>
-        <button class="btn ghost" id="m-no">إلغاء</button>
-      </div>
-    `);
-    $("#m-no")?.addEventListener("click", closeModal);
-    $("#m-yes")?.addEventListener("click", () => {
-      state = defaultState();
-      saveState();
-      closeModal();
-      applyWallpaper();
-      applyTimerSkin();
-      setTimerFromDurations();
-      renderAll();
-      toast("تم حذف كل شيء.");
-    });
-  });
-
-  /* =========================
-     Import / Export
-     ========================= */
-  els.exportBtn?.addEventListener("click", () => {
-    const data = JSON.stringify(state, null, 2);
-    const blob = new Blob([data], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
+  // ---------- Backup / Reset ----------
+  qs("#btnExport")?.addEventListener("click", () => {
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type:"application/json" });
     const a = document.createElement("a");
-    a.href = url;
-    a.download = `siraj-backup-${todayKey()}.json`;
+    a.href = URL.createObjectURL(blob);
+    a.download = "serag-backup.json";
     document.body.appendChild(a);
     a.click();
     a.remove();
-    URL.revokeObjectURL(url);
-    toast("تم التصدير.");
+    toast("تم التصدير.", "ok");
   });
 
-  els.importBtn?.addEventListener("click", async () => {
-    const f = els.importFile?.files?.[0];
-    if (!f) return toast("اختر ملف JSON أولاً.");
-    const txt = await f.text();
-    const obj = safeJSON(txt, null);
-    if (!obj || typeof obj !== "object") return toast("ملف غير صالح.");
-
-    // Merge with defaults to keep new fields
-    const merged = deepMerge(defaultState(), obj);
-
-    // sanity rules:
-    merged.subjects = Array.isArray(merged.subjects) ? merged.subjects.slice(0, 8) : [];
-    merged.coins = round1(Number(merged.coins ?? 240) || 240);
-
-    state = merged;
-    saveState();
-    applyWallpaper();
-    applyTimerSkin();
-    // stop running timers on import (safe)
-    state.timer.running = false;
-    state.timer.startTs = null;
-    state.timer.lastTickTs = null;
-    if (!state.timer.remainingSec || state.timer.remainingSec < 1) setTimerFromDurations();
-    saveState();
-
-    renderAll();
-    toast("تم الاستيراد بنجاح.");
+  qs("#importFile")?.addEventListener("change", async (e) => {
+    const file = e.target.files?.[0];
+    if(!file) return;
+    try{
+      const txt = await file.text();
+      const data = JSON.parse(txt);
+      // minimal validation
+      state = { ...defaults(), ...data };
+      save();
+      applyTheme();
+      toast("تم الاستيراد بنجاح.", "ok");
+      renderAll();
+    }catch{
+      toast("ملف JSON غير صالح.", "warn");
+    }finally{
+      e.target.value = "";
+    }
   });
 
-  /* =========================
-     3D Tilt (Pointer-based)
-     ========================= */
-  function attachTilt() {
-    const cards = $$(".tilt");
-    cards.forEach(card => {
-      // avoid multiple
-      if (card._tiltBound) return;
-      card._tiltBound = true;
-
-      card.addEventListener("pointermove", (e) => {
-        if (!state.prefs.tiltEnabled) return;
-        if (state.prefs.reduceMotion) return;
-
-        const rect = card.getBoundingClientRect();
-        const x = (e.clientX - rect.left) / rect.width; // 0..1
-        const y = (e.clientY - rect.top) / rect.height; // 0..1
-        const sens = clamp(state.prefs.tiltSensitivity ?? 10, 6, 18);
-        const rx = (0.5 - y) * sens;
-        const ry = (x - 0.5) * sens;
-        card.style.transform = `perspective(900px) rotateX(${rx}deg) rotateY(${ry}deg) translateZ(0)`;
-      }, { passive: true });
-
-      const reset = () => {
-        card.style.transform = "";
-      };
-      card.addEventListener("pointerleave", reset);
-      card.addEventListener("pointerdown", () => {
-        if (!state.prefs.tiltEnabled) return;
-        card.style.transform += " scale(0.995)";
-      });
-      card.addEventListener("pointerup", reset);
-      card.addEventListener("pointercancel", reset);
+  qs("#btnResetAll")?.addEventListener("click", () => {
+    openModal({
+      title: "Reset All",
+      bodyHTML: `<p>سيتم حذف كل البيانات (مواد/دفاتر/مهام/جلسات). هل أنت متأكد؟</p>`,
+      footerHTML: `
+        <button class="btn-ghost" type="button" data-m="cancel">إلغاء</button>
+        <button class="btn-danger" type="button" data-m="ok">حذف</button>
+      `
     });
-  }
 
-  /* =========================
-     Canvas FX (dots + lines)
-     ========================= */
-  let fxRAF = null;
-  let fxCtx = null;
-  let fxW = 0, fxH = 0;
-  let fxPts = [];
-
-  function fxResize() {
-    if (!els.fxCanvas) return;
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
-    fxW = Math.floor(window.innerWidth);
-    fxH = Math.floor(window.innerHeight);
-    els.fxCanvas.width = Math.floor(fxW * dpr);
-    els.fxCanvas.height = Math.floor(fxH * dpr);
-    els.fxCanvas.style.width = fxW + "px";
-    els.fxCanvas.style.height = fxH + "px";
-    fxCtx = els.fxCanvas.getContext("2d");
-    fxCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  }
-
-  function fxInitPoints() {
-    fxPts = [];
-    const count = clamp(Math.floor((fxW * fxH) / 28000), 24, 95);
-    for (let i = 0; i < count; i++) {
-      fxPts.push({
-        x: Math.random() * fxW,
-        y: Math.random() * fxH,
-        vx: (Math.random() - 0.5) * 0.35,
-        vy: (Math.random() - 0.5) * 0.35,
-        r: 1.2 + Math.random() * 1.8,
-      });
-    }
-  }
-
-  function fxDraw() {
-    if (!state.prefs.fxEnabled || !fxCtx) return;
-    fxCtx.clearRect(0, 0, fxW, fxH);
-
-    // update
-    for (const p of fxPts) {
-      p.x += p.vx;
-      p.y += p.vy;
-      if (p.x < -20) p.x = fxW + 20;
-      if (p.x > fxW + 20) p.x = -20;
-      if (p.y < -20) p.y = fxH + 20;
-      if (p.y > fxH + 20) p.y = -20;
-    }
-
-    // lines
-    fxCtx.globalAlpha = 0.6;
-    for (let i = 0; i < fxPts.length; i++) {
-      for (let j = i + 1; j < fxPts.length; j++) {
-        const a = fxPts[i], b = fxPts[j];
-        const dx = a.x - b.x, dy = a.y - b.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 140) {
-          fxCtx.globalAlpha = (1 - dist / 140) * 0.25;
-          fxCtx.beginPath();
-          fxCtx.moveTo(a.x, a.y);
-          fxCtx.lineTo(b.x, b.y);
-          fxCtx.strokeStyle = "rgba(255,255,255,1)";
-          fxCtx.lineWidth = 1;
-          fxCtx.stroke();
-        }
+    modalFooter.onclick = (ev) => {
+      const b = ev.target.closest?.("button");
+      if(!b) return;
+      const m = b.getAttribute("data-m");
+      if(m === "cancel") return closeModal();
+      if(m === "ok"){
+        state = defaults();
+        save();
+        applyTheme();
+        activeNotebookId = "";
+        setEditor(null);
+        setTimerFromInputs();
+        toast("تمت إعادة الضبط.", "ok");
+        closeModal();
+        renderAll();
       }
-    }
+    };
+  });
 
-    // dots
-    fxCtx.globalAlpha = 0.65;
-    for (const p of fxPts) {
-      fxCtx.beginPath();
-      fxCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      fxCtx.fillStyle = "rgba(255,255,255,1)";
-      fxCtx.fill();
-    }
-
-    fxRAF = requestAnimationFrame(fxDraw);
+  // ---------- Render All ----------
+  function renderDashboard(){
+    dashWeekMinutes.textContent = String(weekTotalMinutes());
+    dashTasksDone.textContent = `${tasksDoneRate()}%`;
+    dashSubjects.textContent = String(state.subjects.length);
+    drawWeekChart();
   }
 
-  function fxStart() {
-    if (!els.fxCanvas) return;
-    fxResize();
-    fxInitPoints();
-    cancelAnimationFrame(fxRAF);
-    fxRAF = requestAnimationFrame(fxDraw);
-  }
-
-  function fxStop() {
-    cancelAnimationFrame(fxRAF);
-    fxRAF = null;
-    if (fxCtx) fxCtx.clearRect(0, 0, fxW, fxH);
-  }
-
-  window.addEventListener("resize", () => {
-    fxResize();
-    fxInitPoints();
-  }, { passive: true });
-
-  /* =========================
-     Init
-     ========================= */
-  function renderAll() {
-    applyWallpaper();
-    applyTimerSkin();
-    renderCoins();
-    renderHome();
+  function renderAll(){
+    refreshSubjectSelects();
     renderSubjects();
-    renderTimerUI();
     renderNotebooks();
-    renderStore();
-    renderStats();
-    renderSettings();
-    attachTilt();
-
-    // open last tab
-    const tab = state.ui.activeTab || "tab-home";
-    setTab(tab);
+    renderTasks();
+    renderDashboard();
+    refreshTimerUI();
   }
 
-  // Bind store / stats / settings to reattach tilt after renders
-  const _renderStore = renderStore;
-  renderStore = function() {
-    _renderStore();
-    attachTilt();
-  };
-  const _renderNotebooks = renderNotebooks;
-  renderNotebooks = function() {
-    _renderNotebooks();
-    attachTilt();
-  };
-  const _renderHome = renderHome;
-  renderHome = function() {
-    _renderHome();
-    attachTilt();
-  };
-  const _renderSubjects = renderSubjects;
-  renderSubjects = function() {
-    _renderSubjects();
-    attachTilt();
-  };
+  // ---------- Init ----------
+  function init(){
+    applyTheme();
 
-  // start
-  ensureDaily();
-  applyWallpaper();
-  applyTimerSkin();
+    // init selects
+    refreshSubjectSelects();
 
-  // initialize timer remaining sec if missing
-  if (!state.timer.remainingSec || state.timer.remainingSec < 1) {
-    setTimerFromDurations();
-    saveState();
+    // timer
+    setTimerFromInputs();
+    mountTimer3D();
+
+    // initial editor
+    setEditor(null);
+
+    // initial tab already active in HTML
+    renderAll();
+
+    // resize chart
+    window.addEventListener("resize", () => drawWeekChart());
   }
 
-  // FX
-  if (state.prefs.fxEnabled) fxStart();
-  else fxStop();
-
-  // initial render
-  renderAll();
-
+  document.addEventListener("DOMContentLoaded", init);
 })();
