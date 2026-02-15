@@ -1,955 +1,1170 @@
-/* Serag Dashboard — Clean SPA Tabs + Subjects + Notebooks + Tasks + Timer + Stats
-   - No coins / No shop / No AI
-   - LocalStorage persistence
-   - Glitch-free modal (X + ESC + backdrop)
-*/
+/* =========================
+   Serag | سراج — Vanilla SPA
+   - RTL Tabs (sidebar right) + Drawer mobile
+   - Scroll fix handled by CSS (panels in flow)
+   - No store, no AI, no coins
+   - LocalStorage only
+   - Micro interactions + rAF background + tilt
+   ========================= */
 
-(() => {
-  "use strict";
+const $ = (s, el=document) => el.querySelector(s);
+const $$ = (s, el=document) => Array.from(el.querySelectorAll(s));
 
-  // ---------- Helpers ----------
-  const qs = (s, r = document) => r.querySelector(s);
-  const qsa = (s, r = document) => Array.from(r.querySelectorAll(s));
-  const uid = (p="id") => `${p}_${Math.random().toString(16).slice(2)}_${Date.now().toString(16)}`;
-  const clamp = (v,a,b) => Math.min(b, Math.max(a, v));
-  const pad2 = (n) => String(n).padStart(2,"0");
-  const escapeHtml = (s) => String(s)
-    .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+const LS_KEY = "serag_v1";
 
-  // ---------- Storage ----------
-  const KEY = "serag_dash_v2";
-  const defaults = () => ({
-    theme: "dark",
-    subjects: [], // {id,name}
-    notebooks: [], // {id,title,subjectId,notes,createdAt}
-    tasks: [], // {id,subjectId,text,done,createdAt,doneAt?}
-    sessions: [], // study sessions only: {id,subjectId,minutes,ts}
-  });
+const prefersReduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  let state = load();
-  function load(){
-    try{
-      const raw = localStorage.getItem(KEY);
-      if(!raw) return defaults();
-      const parsed = JSON.parse(raw);
-      return { ...defaults(), ...parsed };
-    }catch{
-      return defaults();
-    }
-  }
-  function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
+const uid = () => Math.random().toString(16).slice(2) + Date.now().toString(16);
 
-  // ---------- Tabs ----------
-  const tabButtons = qsa(".tab-btn");
-  const tabPanels  = qsa(".tab-panel");
-
-  function switchTab(tabId){
-    tabButtons.forEach(b => {
-      const on = b.dataset.tab === tabId;
-      b.classList.toggle("active", on);
-      b.setAttribute("aria-selected", on ? "true" : "false");
-    });
-    tabPanels.forEach(p => p.classList.toggle("active", p.id === tabId));
-
-    // on enter render
-    renderAll();
-  }
-
-  // delegation for tabs
-  qs(".tabs-nav")?.addEventListener("click", (e) => {
-    const btn = e.target.closest?.(".tab-btn");
-    if(!btn) return;
-    switchTab(btn.dataset.tab);
-  });
-
-  // quick actions
-  qs("#dashboard")?.addEventListener("click", (e) => {
-    const b = e.target.closest?.("[data-go]");
-    if(!b) return;
-    switchTab(b.dataset.go);
-  });
-
-  // ---------- Toast ----------
-  const toastsEl = qs("#toasts");
-  function toast(msg, type="info", ms=2500){
-    if(!toastsEl) return;
-    const el = document.createElement("div");
-    el.className = `toast ${type}`;
-    el.innerHTML = `<span class="dot"></span><div class="msg"></div><button class="x" type="button" aria-label="إغلاق">✕</button>`;
-    qs(".msg", el).textContent = msg;
-
-    const close = () => {
-      el.style.transition = "opacity .18s ease, transform .18s ease";
-      el.style.opacity = "0";
-      el.style.transform = "translateY(10px)";
-      setTimeout(() => el.remove(), 190);
+function loadState(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(!raw) return {
+      theme: "dark",
+      subjects: [], // {id,name,createdAt}
+      notebooks: [], // {id,name,subjectId:null,notes:"",createdAt,rotX,rotY}
+      tasks: [], // {id,subjectId,text,done,createdAt}
+      sessions: [] // {id,mode:"study"|"break",subjectId:null,minutes,endedAt}
     };
-    qs(".x", el).addEventListener("click", close);
-
-    toastsEl.appendChild(el);
-    setTimeout(close, ms);
+    const s = JSON.parse(raw);
+    // minimal sanitize
+    s.subjects ??= [];
+    s.notebooks ??= [];
+    s.tasks ??= [];
+    s.sessions ??= [];
+    s.theme ??= "dark";
+    return s;
+  }catch{
+    return {
+      theme:"dark",
+      subjects:[],
+      notebooks:[],
+      tasks:[],
+      sessions:[]
+    };
   }
+}
+function saveState(){
+  localStorage.setItem(LS_KEY, JSON.stringify(state));
+  renderMeta();
+  renderStats();
+}
 
-  // ---------- Modal (glitch-free) ----------
-  const modalBackdrop = qs("#modalBackdrop");
-  const modal = qs("#modal");
-  const modalTitle = qs("#modalTitle");
-  const modalBody = qs("#modalBody");
-  const modalFooter = qs("#modalFooter");
-  const modalClose = qs("#modalClose");
+let state = loadState();
 
-  let modalOnClose = null;
-
-  function openModal({title="", bodyHTML="", footerHTML="", onClose=null}){
-    modalTitle.textContent = title;
-    modalBody.innerHTML = bodyHTML;
-    modalFooter.innerHTML = footerHTML;
-
-    modalOnClose = onClose;
-
-    modalBackdrop.hidden = false;
-    modal.hidden = false;
-    modal.setAttribute("aria-hidden", "false");
-
-    // focus close
-    setTimeout(() => modalClose.focus(), 0);
+/* ---------- Theme ---------- */
+function applyTheme(){
+  const isLight = state.theme === "light";
+  document.documentElement.dataset.theme = isLight ? "light" : "";
+  // toggle UI
+  const toggle = $("#themeToggle");
+  if(toggle){
+    toggle.classList.toggle("on", isLight);
+    toggle.setAttribute("aria-pressed", String(isLight));
   }
+}
+function toggleTheme(){
+  state.theme = (state.theme === "light") ? "dark" : "light";
+  applyTheme();
+  saveState();
+  toast("🌓", "المظهر", state.theme === "light" ? "تم تفعيل الفاتح" : "تم تفعيل الداكن");
+}
 
-  function closeModal(){
-    modalBackdrop.hidden = true;
-    modal.hidden = true;
-    modal.setAttribute("aria-hidden", "true");
-    if(typeof modalOnClose === "function") modalOnClose();
-    modalOnClose = null;
-  }
+/* ---------- Toast ---------- */
+function toast(icon, title, text){
+  const wrap = $("#toasts");
+  const t = document.createElement("div");
+  t.className = "toast";
+  t.innerHTML = `
+    <div class="toastIcon" aria-hidden="true">${icon}</div>
+    <div>
+      <div class="toastTitle">${title}</div>
+      <div class="toastText">${text}</div>
+    </div>
+  `;
+  wrap.appendChild(t);
+  setTimeout(()=>{ t.style.opacity="0"; t.style.transform="translateY(10px)"; }, 2800);
+  setTimeout(()=>{ t.remove(); }, 3200);
+}
 
-  modalClose?.addEventListener("click", closeModal);
-  modalBackdrop?.addEventListener("click", closeModal);
-  document.addEventListener("keydown", (e) => {
-    if(e.key === "Escape" && !modal.hidden) closeModal();
+/* ---------- Navigation (Tabs + Drawer) ---------- */
+function setActiveTab(id){
+  $$(".tab-btn").forEach(b=>{
+    const on = b.dataset.tab === id;
+    b.classList.toggle("active", on);
+    b.setAttribute("aria-selected", String(on));
+  });
+  $$(".tab-panel").forEach(p=>{
+    p.classList.toggle("active", p.id === id);
   });
 
-  // ---------- Theme ----------
-  function applyTheme(){
-    document.documentElement.setAttribute("data-theme", state.theme === "light" ? "light" : "dark");
+  // close drawer on mobile
+  closeDrawer();
+
+  // small entrance
+  if(!prefersReduced){
+    const panel = document.getElementById(id);
+    panel?.scrollIntoView({block:"start", behavior:"smooth"});
   }
-  qs("#btnTheme")?.addEventListener("click", () => {
-    state.theme = (state.theme === "light") ? "dark" : "light";
-    save();
-    applyTheme();
-    toast(state.theme === "light" ? "تم تفعيل الثيم الفاتح" : "تم تفعيل الثيم الداكن", "ok");
+}
+
+function openDrawer(){
+  const d = $("#drawer");
+  const overlay = $("#overlay");
+  d.classList.add("open");
+  overlay.hidden = false;
+  $("#menuBtn")?.setAttribute("aria-expanded","true");
+}
+function closeDrawer(){
+  const d = $("#drawer");
+  const overlay = $("#overlay");
+  d.classList.remove("open");
+  overlay.hidden = true;
+  $("#menuBtn")?.setAttribute("aria-expanded","false");
+}
+
+/* ---------- Micro tilt (cards) ---------- */
+function initTilt(){
+  const tiltEls = $$("[data-tilt]");
+  tiltEls.forEach(el=>{
+    let rect = null;
+    const strength = 10;
+
+    function onMove(e){
+      if(prefersReduced) return;
+      rect = rect || el.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width;
+      const y = (e.clientY - rect.top) / rect.height;
+      const rx = (y - 0.5) * -strength;
+      const ry = (x - 0.5) * strength;
+      el.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg) translateY(-1px)`;
+      el.style.setProperty("--mx", `${x*100}%`);
+      el.style.setProperty("--my", `${y*100}%`);
+    }
+    function onLeave(){
+      rect = null;
+      el.style.transform = "";
+      el.style.setProperty("--mx", `50%`);
+      el.style.setProperty("--my", `50%`);
+    }
+    el.addEventListener("pointermove", onMove);
+    el.addEventListener("pointerleave", onLeave);
   });
+}
 
-  // ---------- Subjects ----------
-  const subjectName = qs("#subjectName");
-  const btnAddSubject = qs("#btnAddSubject");
-  const subjectsGrid = qs("#subjectsGrid");
-  const subjectsEmpty = qs("#subjectsEmpty");
-  const subjectsLeft = qs("#subjectsLeft");
+/* ---------- Background canvas ---------- */
+function initBackground(){
+  const c = $("#bgCanvas");
+  const ctx = c.getContext("2d", { alpha:true });
+  let w=0,h=0,dpr=1;
 
-  function addSubject(name){
-    name = (name || "").trim();
-    if(!name) return toast("اكتب اسم المادة.", "warn");
-    if(state.subjects.length >= 8) return toast("وصلت للحد الأقصى: 8 مواد.", "warn");
-    if(state.subjects.some(s => s.name.toLowerCase() === name.toLowerCase()))
-      return toast("هذه المادة موجودة مسبقًا.", "warn");
+  const blobs = [];
+  const blobCount = prefersReduced ? 8 : 14;
 
-    state.subjects.push({ id: uid("sub"), name });
-    save();
-    subjectName.value = "";
-    toast("تمت إضافة المادة.", "ok");
-    renderAll();
+  function resize(){
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    w = c.width = Math.floor(innerWidth*dpr);
+    h = c.height = Math.floor(innerHeight*dpr);
+    c.style.width = innerWidth + "px";
+    c.style.height = innerHeight + "px";
   }
+  resize();
+  addEventListener("resize", resize);
 
-  function deleteSubject(id){
-    // unlink notebooks/tasks/sessions keep sessions (for history) but subject may disappear gracefully
-    state.subjects = state.subjects.filter(s => s.id !== id);
-    state.notebooks = state.notebooks.map(n => n.subjectId === id ? ({...n, subjectId:""}) : n);
-    state.tasks = state.tasks.map(t => t.subjectId === id ? ({...t, subjectId:""}) : t);
-    save();
-    toast("تم حذف المادة.", "ok");
-    renderAll();
-  }
+  function rand(min,max){ return Math.random()*(max-min)+min; }
 
-  btnAddSubject?.addEventListener("click", () => addSubject(subjectName.value));
-  subjectName?.addEventListener("keydown", (e) => {
-    if(e.key === "Enter") addSubject(subjectName.value);
-  });
-
-  function renderSubjects(){
-    if(!subjectsGrid) return;
-
-    const left = Math.max(0, 8 - state.subjects.length);
-    subjectsLeft.textContent = `${left} left`;
-    subjectsEmpty.hidden = state.subjects.length !== 0;
-
-    subjectsGrid.innerHTML = state.subjects.map(s => `
-      <div class="content-card subject-card" data-sid="${s.id}">
-        <div class="subject-actions">
-          <button class="icon-btn danger" type="button" data-action="del-subject" aria-label="حذف">🗑️</button>
-        </div>
-        <div class="subject-name">${escapeHtml(s.name)}</div>
-        <div class="subject-meta">دفاتر: ${countNotebooks(s.id)} • مهام: ${countTasks(s.id)}</div>
-      </div>
-    `).join("");
-  }
-
-  function countNotebooks(subjectId){
-    return state.notebooks.filter(n => n.subjectId === subjectId).length;
-  }
-  function countTasks(subjectId){
-    return state.tasks.filter(t => t.subjectId === subjectId).length;
-  }
-
-  // ---------- Notebooks ----------
-  const nbTitle = qs("#nbTitle");
-  const nbSubject = qs("#nbSubject");
-  const btnAddNotebook = qs("#btnAddNotebook");
-  const notebooksGrid = qs("#notebooksGrid");
-  const notebooksEmpty = qs("#notebooksEmpty");
-  const notebooksLeft = qs("#notebooksLeft");
-
-  const editorTitle = qs("#editorTitle");
-  const editorSubject = qs("#editorSubject");
-  const editorText = qs("#editorText");
-  const saveIndicator = qs("#saveIndicator");
-
-  let activeNotebookId = "";
-  let saveTimer = 0;
-
-  function addNotebook(title, subjectId){
-    title = (title || "").trim();
-    if(!title) return toast("اكتب عنوان الدفتر.", "warn");
-    if(state.notebooks.length >= 8) return toast("وصلت للحد الأقصى: 8 دفاتر.", "warn");
-
-    state.notebooks.push({
-      id: uid("nb"),
-      title,
-      subjectId: subjectId || "",
-      notes: "",
-      createdAt: Date.now()
+  for(let i=0;i<blobCount;i++){
+    blobs.push({
+      x: rand(0,w), y: rand(0,h),
+      r: rand(140, 320)*dpr,
+      vx: rand(-.25,.25)*dpr,
+      vy: rand(-.25,.25)*dpr,
+      hue: rand(210, 320)
     });
-    save();
-    nbTitle.value = "";
-    toast("تمت إضافة الدفتر.", "ok");
-    renderAll();
   }
 
-  function deleteNotebook(id){
-    state.notebooks = state.notebooks.filter(n => n.id !== id);
-    if(activeNotebookId === id){
-      activeNotebookId = "";
-      setEditor(null);
-    }
-    save();
-    toast("تم حذف الدفتر.", "ok");
-    renderAll();
-  }
+  let last = performance.now();
+  function tick(now){
+    const dt = Math.min(33, now-last); last = now;
 
-  btnAddNotebook?.addEventListener("click", () => addNotebook(nbTitle.value, nbSubject.value));
-  nbTitle?.addEventListener("keydown", (e) => {
-    if(e.key === "Enter") addNotebook(nbTitle.value, nbSubject.value);
-  });
+    ctx.clearRect(0,0,w,h);
 
-  function setSaveIndicator(mode, text){
-    if(!saveIndicator) return;
-    saveIndicator.dataset.mode = mode;
-    qs(".txt", saveIndicator).textContent = text;
-  }
+    // subtle vignette
+    const vg = ctx.createRadialGradient(w*.5,h*.5, 0, w*.5,h*.5, Math.max(w,h)*.65);
+    vg.addColorStop(0, "rgba(0,0,0,0)");
+    vg.addColorStop(1, "rgba(0,0,0,0.28)");
+    ctx.fillStyle = vg;
+    ctx.fillRect(0,0,w,h);
 
-  function setEditor(nb){
-    if(!nb){
-      editorTitle.textContent = "Editor";
-      editorText.value = "";
-      editorText.disabled = true;
-      editorSubject.value = "";
-      editorSubject.disabled = true;
-      setSaveIndicator("idle", "اختر دفترًا");
-      return;
-    }
-    activeNotebookId = nb.id;
-    editorTitle.textContent = `Notebook: ${nb.title}`;
-    editorText.disabled = false;
-    editorSubject.disabled = false;
-    editorText.value = nb.notes || "";
-    editorSubject.value = nb.subjectId || "";
-    setSaveIndicator("saved", "تم الحفظ");
-  }
+    // blobs
+    ctx.globalCompositeOperation = "lighter";
+    blobs.forEach(b=>{
+      b.x += b.vx*dt;
+      b.y += b.vy*dt;
+      if(b.x < -b.r) b.x = w + b.r;
+      if(b.x > w + b.r) b.x = -b.r;
+      if(b.y < -b.r) b.y = h + b.r;
+      if(b.y > h + b.r) b.y = -b.r;
 
-  editorText?.addEventListener("input", () => {
-    if(!activeNotebookId) return;
-    clearTimeout(saveTimer);
-    setSaveIndicator("saving", "جار الحفظ...");
-    saveTimer = setTimeout(() => {
-      const nb = state.notebooks.find(n => n.id === activeNotebookId);
-      if(!nb) return;
-      nb.notes = editorText.value;
-      save();
-      setSaveIndicator("saved", "تم الحفظ");
-    }, 450);
-  });
-
-  editorSubject?.addEventListener("change", () => {
-    const nb = state.notebooks.find(n => n.id === activeNotebookId);
-    if(!nb) return;
-    nb.subjectId = editorSubject.value || "";
-    save();
-    setSaveIndicator("saving", "جار الحفظ...");
-    setTimeout(() => setSaveIndicator("saved", "تم الحفظ"), 180);
-    renderAll();
-  });
-
-  function renderNotebooks(){
-    if(!notebooksGrid) return;
-
-    const left = Math.max(0, 8 - state.notebooks.length);
-    notebooksLeft.textContent = `${left} left`;
-    notebooksEmpty.hidden = state.notebooks.length !== 0;
-
-    notebooksGrid.innerHTML = state.notebooks.map(n => {
-      const subj = state.subjects.find(s => s.id === n.subjectId)?.name || "—";
-      return `
-        <div class="notebook" data-nid="${n.id}">
-          <div class="row-between">
-            <div class="nb-title">${escapeHtml(n.title)}</div>
-            <button class="icon-btn danger" type="button" data-action="del-notebook" aria-label="حذف">🗑️</button>
-          </div>
-          <div class="nb-badge">${escapeHtml(subj)}</div>
-        </div>
-      `;
-    }).join("");
-
-    // keep editor consistent
-    if(activeNotebookId && !state.notebooks.some(n => n.id === activeNotebookId)){
-      activeNotebookId = "";
-      setEditor(null);
-    }
-    if(activeNotebookId){
-      const nb = state.notebooks.find(n => n.id === activeNotebookId);
-      if(nb) setEditor(nb);
-    }
-  }
-
-  // ---------- Tasks ----------
-  const taskSubject = qs("#taskSubject");
-  const taskText = qs("#taskText");
-  const btnAddTask = qs("#btnAddTask");
-  const tasksList = qs("#tasksList");
-  const tasksEmpty = qs("#tasksEmpty");
-  const tasksFilter = qs("#tasksFilter");
-  const tasksHint = qs("#tasksHint");
-  const tasksMeta = qs("#tasksMeta");
-
-  function addTask(subjectId, text){
-    if(state.subjects.length === 0){
-      tasksHint.hidden = false;
-      return toast("أضف مادة أولاً.", "warn");
-    }
-    text = (text || "").trim();
-    if(!text) return toast("اكتب نص المهمة.", "warn");
-
-    state.tasks.push({
-      id: uid("task"),
-      subjectId: subjectId || "",
-      text,
-      done: false,
-      createdAt: Date.now()
+      const g = ctx.createRadialGradient(b.x,b.y, 0, b.x,b.y, b.r);
+      g.addColorStop(0, `hsla(${b.hue}, 90%, 60%, 0.12)`);
+      g.addColorStop(1, `hsla(${b.hue}, 90%, 60%, 0)`);
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
+      ctx.fill();
     });
-    save();
-    taskText.value = "";
-    toast("تمت إضافة المهمة.", "ok");
-    renderAll();
+    ctx.globalCompositeOperation = "source-over";
+
+    requestAnimationFrame(tick);
   }
+  requestAnimationFrame(tick);
+}
 
-  function toggleTask(id){
-    const t = state.tasks.find(x => x.id === id);
-    if(!t) return;
-    t.done = !t.done;
-    t.doneAt = t.done ? Date.now() : null;
-    save();
-    renderAll();
-  }
+/* ---------- Subjects ---------- */
+function renderSubjects(){
+  const list = $("#subjectList");
+  const empty = $("#subjectsEmpty");
+  list.innerHTML = "";
 
-  function deleteTask(id){
-    state.tasks = state.tasks.filter(t => t.id !== id);
-    save();
-    toast("تم حذف المهمة.", "ok");
-    renderAll();
-  }
-
-  btnAddTask?.addEventListener("click", () => addTask(taskSubject.value, taskText.value));
-  taskText?.addEventListener("keydown", (e) => {
-    if(e.key === "Enter") addTask(taskSubject.value, taskText.value);
-  });
-  tasksFilter?.addEventListener("change", renderTasks);
-
-  function renderTasks(){
-    if(!tasksList) return;
-
-    tasksHint.hidden = state.subjects.length !== 0;
-
-    const filterSid = tasksFilter.value || "";
-    const list = state.tasks.filter(t => filterSid ? t.subjectId === filterSid : true);
-
-    const doneCount = state.tasks.filter(t => t.done).length;
-    tasksMeta.textContent = `${doneCount}/${state.tasks.length}`;
-
-    tasksEmpty.hidden = list.length !== 0;
-
-    tasksList.innerHTML = list.map(t => {
-      const subj = state.subjects.find(s => s.id === t.subjectId)?.name || "—";
-      return `
-        <div class="task ${t.done ? "done" : ""}" data-tid="${t.id}">
-          <div class="task-left">
-            <button class="task-check" type="button" data-action="toggle-task">${t.done ? "✓" : ""}</button>
-            <div>
-              <div class="task-title">${escapeHtml(t.text)}</div>
-              <div class="task-meta">${escapeHtml(subj)}</div>
-            </div>
-          </div>
-          <button class="icon-btn danger" type="button" data-action="del-task" aria-label="حذف">🗑️</button>
+  if(state.subjects.length === 0){
+    empty.style.display = "flex";
+  }else{
+    empty.style.display = "none";
+    state.subjects.forEach(s=>{
+      const item = document.createElement("div");
+      item.className = "subjectItem";
+      item.dataset.subjectId = s.id;
+      item.innerHTML = `
+        <div class="subDot" aria-hidden="true"></div>
+        <div class="subTxt">
+          <div class="subName">${escapeHtml(s.name)}</div>
+          <div class="subMeta">Drop دفتر هنا لربطه</div>
         </div>
+        <div class="subDrop" aria-hidden="true">Drop</div>
+        <button class="iconMini" title="حذف" aria-label="حذف المادة">🗑</button>
       `;
-    }).join("");
+
+      // Delete
+      item.querySelector(".iconMini").addEventListener("click", ()=>{
+        // remove subject + unlink notebooks + remove tasks subject mapping
+        state.subjects = state.subjects.filter(x=>x.id!==s.id);
+        state.notebooks.forEach(nb=>{ if(nb.subjectId===s.id) nb.subjectId = null; });
+        state.tasks = state.tasks.filter(t=>t.subjectId!==s.id);
+        saveState();
+        renderAll();
+        toast("🗑","تم الحذف","تم حذف المادة وتنظيف الروابط");
+      });
+
+      // Drop zone for notebook
+      item.addEventListener("dragover",(e)=>{
+        e.preventDefault();
+        item.classList.add("dragOver");
+      });
+      item.addEventListener("dragleave",()=> item.classList.remove("dragOver"));
+      item.addEventListener("drop",(e)=>{
+        e.preventDefault();
+        item.classList.remove("dragOver");
+        const nbId = e.dataTransfer.getData("text/notebook");
+        if(!nbId) return;
+        const nb = state.notebooks.find(n=>n.id===nbId);
+        if(!nb) return;
+        nb.subjectId = s.id;
+        saveState();
+        renderNotebooks();
+        toast("🧷","تم الربط", `تم ربط "${nb.name}" بـ "${s.name}"`);
+      });
+
+      list.appendChild(item);
+    });
   }
 
-  // ---------- Timer ----------
-  const studyMin = qs("#studyMin");
-  const breakMin = qs("#breakMin");
-  const timerSubject = qs("#timerSubject");
-  const timerHint = qs("#timerHint");
+  renderSubjectSelects();
+  renderHomeChips();
+}
 
-  const timer3d = qs("#timer3d");
-  const timerRing = qs("#timerRing");
-  const timerMode = qs("#timerMode");
-  const timerTextEl = qs("#timerText");
-  const timerSub = qs("#timerSub");
+function addSubject(){
+  const name = ($("#subjectName").value || "").trim();
+  if(!name) return toast("⚠","تنبيه","اكتب اسم المادة أولًا");
+  if(state.subjects.length >= 8) return toast("⚠","الحد الأقصى","8 مواد فقط");
+  if(state.subjects.some(s=>s.name === name)) return toast("⚠","مكرر","اسم المادة موجود");
+  state.subjects.push({id:uid(), name, createdAt: Date.now()});
+  $("#subjectName").value = "";
+  saveState();
+  renderAll();
+  toast("📚","تمت الإضافة", name);
+}
 
-  const btnStartPause = qs("#btnStartPause");
-  const btnReset = qs("#btnReset");
-  const btnSwitchMode = qs("#btnSwitchMode");
+/* ---------- Notebooks ---------- */
+let editorOpenId = null;
+let saveTimer = null;
 
-  const timer = {
-    mode: "study",   // study | break
-    running: false,
-    total: 25*60,
-    remaining: 25*60,
-    last: 0,
-    raf: 0,
-    sessionId: "",
-    rot: {x:-8, y:12},
-    vel: {x:0, y:0},
-    drag: null,
+function renderNotebooks(){
+  const grid = $("#notebookGrid");
+  const empty = $("#notebooksEmpty");
+  const editor = $("#editorCard");
+  grid.innerHTML = "";
+
+  if(state.notebooks.length === 0){
+    empty.style.display = "flex";
+    editor.hidden = true;
+    return;
+  }
+  empty.style.display = "none";
+
+  state.notebooks.forEach(nb=>{
+    const sName = nb.subjectId ? (state.subjects.find(s=>s.id===nb.subjectId)?.name || "—") : "غير مرتبط";
+    const el = document.createElement("div");
+    el.className = "book";
+    el.draggable = true;
+    el.dataset.nbId = nb.id;
+
+    const rx = nb.rotX ?? 0;
+    const ry = nb.rotY ?? 0;
+    el.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
+
+    el.innerHTML = `
+      <div class="bookCover"></div>
+      <div class="bookSpine"></div>
+      <div class="bookPages"></div>
+      <div class="bookTitle">${escapeHtml(nb.name)}</div>
+      <div class="bookLink">${escapeHtml(sName)}</div>
+      <div class="bookBadge">Drag</div>
+    `;
+
+    // Drag & drop
+    el.addEventListener("dragstart",(e)=>{
+      e.dataTransfer.setData("text/notebook", nb.id);
+      e.dataTransfer.effectAllowed = "move";
+    });
+
+    // Click to open editor
+    el.addEventListener("click", ()=>{
+      openEditor(nb.id);
+    });
+
+    // Rotate (pointer drag)
+    init3DRotate(el, nb);
+
+    grid.appendChild(el);
+  });
+
+  renderSubjectSelects();
+}
+
+function addNotebook(){
+  const name = ($("#notebookName").value || "").trim();
+  if(!name) return toast("⚠","تنبيه","اكتب اسم الدفتر أولًا");
+  if(state.notebooks.length >= 8) return toast("⚠","الحد الأقصى","8 دفاتر فقط");
+  state.notebooks.push({
+    id: uid(),
+    name,
+    subjectId: null,
+    notes: "",
+    createdAt: Date.now(),
+    rotX: 0,
+    rotY: 0
+  });
+  $("#notebookName").value = "";
+  saveState();
+  renderAll();
+  toast("📓","تمت الإضافة", name);
+}
+
+/* 3D rotate with inertia */
+function init3DRotate(el, nb){
+  let dragging = false;
+  let startX=0,startY=0;
+  let vx=0, vy=0;
+  let lastX=0,lastY=0;
+  let lastT=0;
+  let raf = null;
+
+  const clamp = (v,min,max)=> Math.max(min, Math.min(max, v));
+
+  function apply(){
+    nb.rotX = clamp(nb.rotX, -18, 18);
+    nb.rotY = clamp(nb.rotY, -22, 22);
+    el.style.transform = `rotateX(${nb.rotX}deg) rotateY(${nb.rotY}deg)`;
+  }
+
+  function onDown(e){
+    // don't interfere with drag&drop; right-click etc.
+    if(e.button !== undefined && e.button !== 0) return;
+    dragging = true;
+    el.setPointerCapture(e.pointerId);
+    startX = lastX = e.clientX;
+    startY = lastY = e.clientY;
+    lastT = performance.now();
+    vx = vy = 0;
+    cancelAnimationFrame(raf);
+  }
+
+  function onMove(e){
+    if(!dragging) return;
+    const now = performance.now();
+    const dt = Math.max(1, now-lastT);
+    const dx = e.clientX - lastX;
+    const dy = e.clientY - lastY;
+    lastX = e.clientX;
+    lastY = e.clientY;
+    lastT = now;
+
+    vx = dx / dt;
+    vy = dy / dt;
+
+    nb.rotY += dx * 0.08;
+    nb.rotX += dy * -0.08;
+    apply();
+  }
+
+  function inertia(){
+    // mild inertia
+    nb.rotY += vx * 14;
+    nb.rotX += vy * -14;
+    vx *= 0.92;
+    vy *= 0.92;
+    apply();
+
+    if(Math.abs(vx) + Math.abs(vy) > 0.02){
+      raf = requestAnimationFrame(inertia);
+    }else{
+      saveState();
+    }
+  }
+
+  function onUp(e){
+    if(!dragging) return;
+    dragging = false;
+    try{ el.releasePointerCapture(e.pointerId); }catch{}
+    if(prefersReduced){ saveState(); return; }
+    raf = requestAnimationFrame(inertia);
+  }
+
+  el.addEventListener("pointerdown", onDown);
+  el.addEventListener("pointermove", onMove);
+  el.addEventListener("pointerup", onUp);
+  el.addEventListener("pointercancel", onUp);
+}
+
+/* Editor */
+function openEditor(id){
+  editorOpenId = id;
+  const nb = state.notebooks.find(n=>n.id===id);
+  if(!nb) return;
+
+  $("#editorCard").hidden = false;
+  $("#editorTitle").textContent = nb.name;
+  $("#editorText").value = nb.notes || "";
+
+  const sName = nb.subjectId ? (state.subjects.find(s=>s.id===nb.subjectId)?.name || "—") : "غير مرتبط";
+  $("#editorLinked").textContent = sName;
+
+  // subject select
+  const sel = $("#editorSubjectSelect");
+  buildSubjectSelect(sel, true);
+  sel.value = nb.subjectId || "";
+  sel.onchange = ()=>{
+    nb.subjectId = sel.value || null;
+    $("#editorLinked").textContent = nb.subjectId ? (state.subjects.find(s=>s.id===nb.subjectId)?.name || "—") : "غير مرتبط";
+    saveState();
+    renderNotebooks();
+    toast("🧷","تم تحديث الربط","تم تغيير مادة الدفتر");
   };
 
-  function formatTime(sec){
-    sec = Math.max(0, Math.floor(sec));
-    const m = Math.floor(sec/60);
-    const s = sec % 60;
-    return `${pad2(m)}:${pad2(s)}`;
+  $("#saveState").textContent = "جاهز";
+
+  $("#editorText").oninput = ()=>{
+    $("#saveState").textContent = "جار الحفظ…";
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(()=>{
+      nb.notes = $("#editorText").value;
+      saveState();
+      $("#saveState").textContent = "تم الحفظ ✓";
+    }, 400);
+  };
+
+  $("#closeEditor").onclick = ()=>{
+    $("#editorCard").hidden = true;
+    editorOpenId = null;
+  };
+}
+
+/* ---------- Tasks ---------- */
+function renderTasks(){
+  const list = $("#taskList");
+  const empty = $("#tasksEmpty");
+  const subjectId = $("#tasksSubjectSelect").value || "";
+
+  list.innerHTML = "";
+
+  const tasks = state.tasks.filter(t=> t.subjectId === subjectId);
+  if(!subjectId || tasks.length === 0){
+    empty.style.display = "flex";
+    return;
   }
+  empty.style.display = "none";
 
-  function setTimerFromInputs(){
-    const sm = clamp(parseInt(studyMin.value || "25",10) || 25, 1, 180);
-    const bm = clamp(parseInt(breakMin.value || "5",10) || 5, 1, 60);
-    const mins = timer.mode === "study" ? sm : bm;
-    timer.total = mins * 60;
-    timer.remaining = timer.total;
-    timer.sessionId = "";
-    refreshTimerUI();
-  }
+  tasks.forEach(t=>{
+    const el = document.createElement("div");
+    el.className = "task" + (t.done ? " done" : "");
+    el.innerHTML = `
+      <div class="chk" role="button" tabindex="0" aria-label="إنهاء المهمة">${t.done ? "✓" : ""}</div>
+      <div class="taskText">${escapeHtml(t.text)}</div>
+      <div class="taskActions">
+        <button class="iconMini" aria-label="حذف المهمة" title="حذف">🗑</button>
+      </div>
+    `;
 
-  function refreshTimerUI(){
-    const p = timer.total ? 1 - (timer.remaining/timer.total) : 0;
-    timerRing.style.setProperty("--p", String(clamp(p,0,1)));
-
-    timerMode.textContent = timer.mode === "study" ? "Study" : "Break";
-    timerTextEl.textContent = formatTime(timer.remaining);
-
-    const sid = timerSubject.value || "";
-    const subj = state.subjects.find(s => s.id === sid)?.name || "—";
-    timerSub.textContent = subj;
-
-    btnStartPause.textContent = timer.running ? "إيقاف مؤقت" : "بدء";
-
-    timerHint.hidden = state.subjects.length !== 0;
-  }
-
-  function start(){
-    if(timer.running) return;
-    timer.running = true;
-    timer.last = performance.now();
-    if(!timer.sessionId) timer.sessionId = uid("sess");
-    loop();
-    refreshTimerUI();
-  }
-
-  function pause(){
-    timer.running = false;
-    cancelAnimationFrame(timer.raf);
-    timer.raf = 0;
-    refreshTimerUI();
-  }
-
-  function reset(){
-    pause();
-    setTimerFromInputs();
-    toast("تمت إعادة ضبط التايمر.", "info");
-  }
-
-  function complete(){
-    pause();
-
-    if(timer.mode === "study"){
-      // save session
-      const mins = Math.round(timer.total/60);
-      const sid = timerSubject.value || "";
-      state.sessions.push({
-        id: timer.sessionId,
-        subjectId: sid || "",
-        minutes: mins,
-        ts: Date.now()
-      });
-      save();
-      toast("انتهت جلسة الدراسة ✅", "ok");
-
-      // auto to break
-      timer.mode = "break";
-      setTimerFromInputs();
-    }else{
-      toast("انتهت الاستراحة. جاهز للدراسة؟", "ok");
-      timer.mode = "study";
-      setTimerFromInputs();
-    }
-
-    renderAll();
-  }
-
-  function loop(){
-    if(!timer.running) return;
-    const now = performance.now();
-    const dt = (now - timer.last)/1000;
-    timer.last = now;
-
-    timer.remaining -= dt;
-    if(timer.remaining <= 0){
-      timer.remaining = 0;
-      refreshTimerUI();
-      return complete();
-    }
-    refreshTimerUI();
-    timer.raf = requestAnimationFrame(loop);
-  }
-
-  btnStartPause?.addEventListener("click", () => timer.running ? pause() : start());
-  btnReset?.addEventListener("click", reset);
-  btnSwitchMode?.addEventListener("click", () => {
-    pause();
-    timer.mode = timer.mode === "study" ? "break" : "study";
-    setTimerFromInputs();
-  });
-
-  studyMin?.addEventListener("input", () => !timer.running && setTimerFromInputs());
-  breakMin?.addEventListener("input", () => !timer.running && setTimerFromInputs());
-  timerSubject?.addEventListener("change", refreshTimerUI);
-
-  // 3D drag + inertia (smooth, no glitches)
-  function mountTimer3D(){
-    if(!timer3d) return;
-    const applyRot = () => {
-      timer3d.style.transform = `rotateX(${timer.rot.x}deg) rotateY(${timer.rot.y}deg)`;
+    const chk = el.querySelector(".chk");
+    const toggleDone = ()=>{
+      t.done = !t.done;
+      saveState();
+      renderTasks();
+      toast("✅","تم التحديث", t.done ? "مهمة مكتملة" : "تم إلغاء الإكمال");
     };
-    applyRot();
-
-    const onDown = (e) => {
-      timer.drag = { id:e.pointerId, x:e.clientX, y:e.clientY, t:performance.now() };
-      timer.vel.x = 0; timer.vel.y = 0;
-      timer3d.setPointerCapture?.(e.pointerId);
-      timer3d.style.cursor = "grabbing";
-    };
-
-    const onMove = (e) => {
-      if(!timer.drag || e.pointerId !== timer.drag.id) return;
-      const dx = e.clientX - timer.drag.x;
-      const dy = e.clientY - timer.drag.y;
-      timer.drag.x = e.clientX;
-      timer.drag.y = e.clientY;
-
-      const now = performance.now();
-      const dt = Math.max(8, now - timer.drag.t);
-      timer.drag.t = now;
-
-      timer.rot.y += dx * 0.16;
-      timer.rot.x -= dy * 0.14;
-
-      timer.rot.x = clamp(timer.rot.x, -26, 18);
-      timer.rot.y = clamp(timer.rot.y, -40, 40);
-
-      timer.vel.y = (dx/dt) * 22;
-      timer.vel.x = (-dy/dt) * 22;
-
-      applyRot();
-    };
-
-    const inertia = () => {
-      timer.vel.x *= 0.92;
-      timer.vel.y *= 0.92;
-
-      timer.rot.x = clamp(timer.rot.x + timer.vel.x, -26, 18);
-      timer.rot.y = clamp(timer.rot.y + timer.vel.y, -40, 40);
-
-      applyRot();
-      if(Math.abs(timer.vel.x) + Math.abs(timer.vel.y) > 0.06){
-        requestAnimationFrame(inertia);
-      }
-    };
-
-    const onUp = (e) => {
-      if(!timer.drag || e.pointerId !== timer.drag.id) return;
-      timer.drag = null;
-      timer3d.style.cursor = "grab";
-      requestAnimationFrame(inertia);
-    };
-
-    timer3d.addEventListener("pointerdown", onDown);
-    timer3d.addEventListener("pointermove", onMove);
-    timer3d.addEventListener("pointerup", onUp);
-    timer3d.addEventListener("pointercancel", onUp);
-  }
-
-  // ---------- Stats / Dashboard ----------
-  const dashWeekMinutes = qs("#dashWeekMinutes");
-  const dashTasksDone = qs("#dashTasksDone");
-  const dashSubjects = qs("#dashSubjects");
-  const weekChart = qs("#weekChart");
-
-  function rangeStart(days){
-    const d = new Date();
-    d.setHours(0,0,0,0);
-    return d.getTime() - (days*24*60*60*1000);
-  }
-
-  function getWeekBuckets(){
-    const dayMs = 24*60*60*1000;
-    const start = rangeStart(6); // last 7 days including today
-    const buckets = new Array(7).fill(0);
-
-    for(const s of state.sessions){
-      const day = new Date(s.ts);
-      day.setHours(0,0,0,0);
-      const idx = Math.floor((day.getTime() - start)/dayMs);
-      if(idx >= 0 && idx < 7) buckets[idx] += s.minutes;
-    }
-    return buckets;
-  }
-
-  function tasksDoneRate(){
-    const total = state.tasks.length;
-    if(!total) return 0;
-    const done = state.tasks.filter(t => t.done).length;
-    return Math.round((done/total)*100);
-  }
-
-  function weekTotalMinutes(){
-    const from = rangeStart(6);
-    return state.sessions.filter(s => s.ts >= from).reduce((a,b)=>a+b.minutes,0);
-  }
-
-  function drawWeekChart(){
-    if(!weekChart) return;
-    const ctx = weekChart.getContext("2d");
-    const cssW = weekChart.clientWidth || 920;
-    const cssH = 260;
-    const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
-    weekChart.width = Math.floor(cssW * dpr);
-    weekChart.height = Math.floor(cssH * dpr);
-    ctx.setTransform(dpr,0,0,dpr,0,0);
-
-    const W = cssW, H = cssH;
-    ctx.clearRect(0,0,W,H);
-
-    const data = getWeekBuckets();
-    const max = Math.max(10, ...data);
-    const pad = 18;
-    const gap = (W - pad*2) / data.length;
-    const barW = gap * 0.62;
-
-    // grid lines
-    ctx.globalAlpha = 0.35;
-    ctx.strokeStyle = "rgba(255,255,255,0.10)";
-    for(let i=1;i<=4;i++){
-      const y = (H*i)/5;
-      ctx.beginPath();
-      ctx.moveTo(0,y);
-      ctx.lineTo(W,y);
-      ctx.stroke();
-    }
-    ctx.globalAlpha = 1;
-
-    for(let i=0;i<data.length;i++){
-      const v = data[i];
-      const h = (v/max) * (H - pad*2);
-      const x = pad + i*gap + (gap-barW)/2;
-      const y = H - pad - h;
-
-      const g = ctx.createLinearGradient(x,y,x,y+h);
-      g.addColorStop(0,"rgba(99,102,241,0.88)");
-      g.addColorStop(1,"rgba(168,85,247,0.55)");
-      ctx.fillStyle = g;
-
-      roundRect(ctx, x, y, barW, h, 12);
-      ctx.fill();
-
-      ctx.fillStyle = "rgba(255,255,255,0.08)";
-      roundRect(ctx, x, y, barW, 10, 12);
-      ctx.fill();
-    }
-
-    ctx.fillStyle = "rgba(255,255,255,0.65)";
-    ctx.font = "12px system-ui, sans-serif";
-    ctx.fillText("Study minutes (last 7 days)", 12, 18);
-  }
-
-  function roundRect(ctx,x,y,w,h,r){
-    r = Math.min(r, w/2, h/2);
-    ctx.beginPath();
-    ctx.moveTo(x+r, y);
-    ctx.arcTo(x+w, y, x+w, y+h, r);
-    ctx.arcTo(x+w, y+h, x, y+h, r);
-    ctx.arcTo(x, y+h, x, y, r);
-    ctx.arcTo(x, y, x+w, y, r);
-    ctx.closePath();
-  }
-
-  // ---------- Selects refresh ----------
-  function refreshSubjectSelects(){
-    const opts = [`<option value="">— بدون مادة —</option>`]
-      .concat(state.subjects.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`))
-      .join("");
-
-    if(timerSubject){
-      timerSubject.innerHTML = opts;
-    }
-    if(nbSubject){
-      nbSubject.innerHTML = opts;
-    }
-    if(editorSubject){
-      editorSubject.innerHTML = opts;
-      editorSubject.disabled = !activeNotebookId;
-    }
-    if(taskSubject){
-      taskSubject.innerHTML = opts;
-    }
-
-    // filter (tasks)
-    if(tasksFilter){
-      const prev = tasksFilter.value || "";
-      tasksFilter.innerHTML = `<option value="">كل المواد</option>` +
-        state.subjects.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join("");
-      tasksFilter.value = prev;
-    }
-  }
-
-  // ---------- Delegated actions (no glitch) ----------
-  document.addEventListener("click", (e) => {
-    const el = e.target.closest?.("[data-action]");
-    if(!el) return;
-    const action = el.dataset.action;
-
-    // subjects
-    if(action === "del-subject"){
-      const card = el.closest(".subject-card");
-      const id = card?.dataset.sid;
-      if(!id) return;
-
-      openModal({
-        title: "حذف مادة",
-        bodyHTML: `<p>هل أنت متأكد؟ سيتم فك الربط من الدفاتر والمهام.</p>`,
-        footerHTML: `
-          <button class="btn-ghost" type="button" data-m="cancel">إلغاء</button>
-          <button class="btn-danger" type="button" data-m="ok">حذف</button>
-        `,
-        onClose: null
-      });
-
-      modalFooter.onclick = (ev) => {
-        const b = ev.target.closest?.("button");
-        if(!b) return;
-        const m = b.getAttribute("data-m");
-        if(m === "cancel") return closeModal();
-        if(m === "ok"){
-          deleteSubject(id);
-          closeModal();
-        }
-      };
-    }
-
-    // notebooks
-    if(action === "del-notebook"){
-      const wrap = el.closest(".notebook");
-      const id = wrap?.dataset.nid;
-      if(!id) return;
-
-      openModal({
-        title: "حذف دفتر",
-        bodyHTML: `<p>حذف الدفتر سيحذف الملاحظات داخله.</p>`,
-        footerHTML: `
-          <button class="btn-ghost" type="button" data-m="cancel">إلغاء</button>
-          <button class="btn-danger" type="button" data-m="ok">حذف</button>
-        `
-      });
-
-      modalFooter.onclick = (ev) => {
-        const b = ev.target.closest?.("button");
-        if(!b) return;
-        const m = b.getAttribute("data-m");
-        if(m === "cancel") return closeModal();
-        if(m === "ok"){
-          deleteNotebook(id);
-          closeModal();
-        }
-      };
-    }
-
-    // tasks
-    if(action === "toggle-task"){
-      const row = el.closest(".task");
-      const id = row?.dataset.tid;
-      if(id) toggleTask(id);
-    }
-    if(action === "del-task"){
-      const row = el.closest(".task");
-      const id = row?.dataset.tid;
-      if(!id) return;
-
-      openModal({
-        title: "حذف مهمة",
-        bodyHTML: `<p>هل تريد حذف المهمة؟</p>`,
-        footerHTML: `
-          <button class="btn-ghost" type="button" data-m="cancel">إلغاء</button>
-          <button class="btn-danger" type="button" data-m="ok">حذف</button>
-        `
-      });
-
-      modalFooter.onclick = (ev) => {
-        const b = ev.target.closest?.("button");
-        if(!b) return;
-        const m = b.getAttribute("data-m");
-        if(m === "cancel") return closeModal();
-        if(m === "ok"){
-          deleteTask(id);
-          closeModal();
-        }
-      };
-    }
-
-    // open notebook editor
-    const nb = e.target.closest?.(".notebook");
-    if(nb && !e.target.closest?.("[data-action='del-notebook']")){
-      const id = nb.dataset.nid;
-      const n = state.notebooks.find(x => x.id === id);
-      if(n) setEditor(n);
-    }
-  });
-
-  // ---------- Backup / Reset ----------
-  qs("#btnExport")?.addEventListener("click", () => {
-    const blob = new Blob([JSON.stringify(state, null, 2)], { type:"application/json" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "serag-backup.json";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    toast("تم التصدير.", "ok");
-  });
-
-  qs("#importFile")?.addEventListener("change", async (e) => {
-    const file = e.target.files?.[0];
-    if(!file) return;
-    try{
-      const txt = await file.text();
-      const data = JSON.parse(txt);
-      // minimal validation
-      state = { ...defaults(), ...data };
-      save();
-      applyTheme();
-      toast("تم الاستيراد بنجاح.", "ok");
-      renderAll();
-    }catch{
-      toast("ملف JSON غير صالح.", "warn");
-    }finally{
-      e.target.value = "";
-    }
-  });
-
-  qs("#btnResetAll")?.addEventListener("click", () => {
-    openModal({
-      title: "Reset All",
-      bodyHTML: `<p>سيتم حذف كل البيانات (مواد/دفاتر/مهام/جلسات). هل أنت متأكد؟</p>`,
-      footerHTML: `
-        <button class="btn-ghost" type="button" data-m="cancel">إلغاء</button>
-        <button class="btn-danger" type="button" data-m="ok">حذف</button>
-      `
+    chk.addEventListener("click", toggleDone);
+    chk.addEventListener("keydown",(e)=>{
+      if(e.key==="Enter" || e.key===" "){ e.preventDefault(); toggleDone(); }
     });
 
-    modalFooter.onclick = (ev) => {
-      const b = ev.target.closest?.("button");
-      if(!b) return;
-      const m = b.getAttribute("data-m");
-      if(m === "cancel") return closeModal();
-      if(m === "ok"){
-        state = defaults();
-        save();
-        applyTheme();
-        activeNotebookId = "";
-        setEditor(null);
-        setTimerFromInputs();
-        toast("تمت إعادة الضبط.", "ok");
-        closeModal();
-        renderAll();
-      }
-    };
+    el.querySelector(".iconMini").addEventListener("click", ()=>{
+      state.tasks = state.tasks.filter(x=>x.id!==t.id);
+      saveState();
+      renderTasks();
+      toast("🗑","حذف","تم حذف المهمة");
+    });
+
+    list.appendChild(el);
+  });
+}
+
+function addTask(){
+  const subjectId = $("#tasksSubjectSelect").value || "";
+  const text = ($("#taskText").value || "").trim();
+  if(!subjectId) return toast("⚠","تنبيه","اختر مادة أولًا");
+  if(!text) return toast("⚠","تنبيه","اكتب نص المهمة");
+  state.tasks.push({id:uid(), subjectId, text, done:false, createdAt: Date.now()});
+  $("#taskText").value = "";
+  saveState();
+  renderTasks();
+  toast("✅","تمت الإضافة", text);
+}
+
+/* ---------- Timer (Dial) ---------- */
+const timer = {
+  mode: "study",
+  totalSec: 25*60,
+  remainingSec: 25*60,
+  running: false,
+  paused: false,
+  tickId: null,
+  last: 0,
+  angle: 0, // -150..150 maps to 5..120 min
+  v: 0
+};
+
+function setTimerMode(mode){
+  timer.mode = mode;
+  $$(".seg").forEach(b=> b.classList.toggle("active", b.dataset.mode===mode));
+  $("#dialSub").textContent = mode === "study" ? "دراسة" : "استراحة";
+  // default durations
+  const mins = mode === "study" ? 25 : 5;
+  setDialMinutes(mins);
+  toast("⏱","الوضع", mode === "study" ? "دراسة" : "استراحة");
+}
+
+function formatTime(sec){
+  const m = Math.floor(sec/60);
+  const s = sec%60;
+  return String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
+}
+
+function setDialMinutes(mins){
+  const clamped = Math.max(1, Math.min(180, mins));
+  timer.totalSec = clamped*60;
+  if(!timer.running) timer.remainingSec = timer.totalSec;
+  $("#dialTime").textContent = formatTime(timer.remainingSec);
+  // update needle by mapping minutes->angle
+  // map 5..120 -> -150..150
+  const a = map(clamped, 5, 120, -150, 150);
+  timer.angle = clamp(a, -150, 150);
+  renderDial();
+}
+
+function renderDial(){
+  const needle = $("#dialNeedle");
+  needle.style.transform = `translateX(-50%) rotate(${timer.angle}deg)`;
+  // ring subtle rotation
+  $("#dialRing").style.transform = `rotate(${timer.angle*0.25}deg)`;
+}
+
+function initDialDrag(){
+  const dial = $("#dial");
+  let dragging = false;
+  let lastX=0, lastT=0;
+
+  function angleToMins(a){
+    // inverse map -150..150 -> 5..120
+    return Math.round(map(a, -150, 150, 5, 120));
+  }
+
+  function onDown(e){
+    if(timer.running) return; // lock during run
+    dragging = true;
+    dial.setPointerCapture(e.pointerId);
+    lastX = e.clientX;
+    lastT = performance.now();
+    timer.v = 0;
+  }
+
+  function onMove(e){
+    if(!dragging) return;
+    const now = performance.now();
+    const dt = Math.max(1, now-lastT);
+    lastT = now;
+    const dx = e.clientX - lastX;
+    lastX = e.clientX;
+
+    // horizontal drag -> angle
+    timer.angle = clamp(timer.angle + dx*0.55, -150, 150);
+    timer.v = dx/dt;
+    renderDial();
+    const mins = angleToMins(timer.angle);
+    timer.totalSec = mins*60;
+    timer.remainingSec = timer.totalSec;
+    $("#dialTime").textContent = formatTime(timer.remainingSec);
+  }
+
+  function inertia(){
+    if(prefersReduced) return;
+    timer.angle = clamp(timer.angle + timer.v*18, -150, 150);
+    timer.v *= 0.90;
+    renderDial();
+    const mins = angleToMins(timer.angle);
+    timer.totalSec = mins*60;
+    timer.remainingSec = timer.totalSec;
+    $("#dialTime").textContent = formatTime(timer.remainingSec);
+
+    if(Math.abs(timer.v) > 0.02){
+      requestAnimationFrame(inertia);
+    }
+  }
+
+  function onUp(e){
+    if(!dragging) return;
+    dragging = false;
+    try{ dial.releasePointerCapture(e.pointerId); }catch{}
+    requestAnimationFrame(inertia);
+  }
+
+  dial.addEventListener("pointerdown", onDown);
+  dial.addEventListener("pointermove", onMove);
+  dial.addEventListener("pointerup", onUp);
+  dial.addEventListener("pointercancel", onUp);
+}
+
+function startTimer(){
+  if(timer.running) return;
+  timer.running = true;
+  timer.paused = false;
+  $("#startTimer").disabled = true;
+  $("#pauseTimer").disabled = false;
+  $("#timerState").textContent = "يعمل…";
+  toast("⏱","بدء","بدأت الجلسة");
+
+  timer.last = performance.now();
+  timer.tickId = requestAnimationFrame(tickTimer);
+}
+
+function pauseTimer(){
+  if(!timer.running) return;
+  timer.paused = !timer.paused;
+  $("#pauseTimer").textContent = timer.paused ? "متابعة" : "إيقاف مؤقت";
+  $("#timerState").textContent = timer.paused ? "متوقف مؤقتًا" : "يعمل…";
+}
+
+function resetTimer(){
+  if(timer.tickId) cancelAnimationFrame(timer.tickId);
+  timer.running = false;
+  timer.paused = false;
+  $("#pauseTimer").textContent = "إيقاف مؤقت";
+  $("#startTimer").disabled = false;
+  $("#pauseTimer").disabled = true;
+  $("#timerState").textContent = "جاهز";
+  timer.remainingSec = timer.totalSec;
+  $("#dialTime").textContent = formatTime(timer.remainingSec);
+  toast("🔄","إعادة","تمت إعادة التايمر");
+}
+
+function tickTimer(now){
+  if(!timer.running) return;
+
+  if(!timer.paused){
+    const dt = (now - timer.last) / 1000;
+    timer.last = now;
+    timer.remainingSec = Math.max(0, timer.remainingSec - dt);
+    $("#dialTime").textContent = formatTime(Math.ceil(timer.remainingSec));
+
+    if(timer.remainingSec <= 0){
+      finishTimer();
+      return;
+    }
+  }else{
+    timer.last = now;
+  }
+
+  timer.tickId = requestAnimationFrame(tickTimer);
+}
+
+function finishTimer(){
+  timer.running = false;
+  $("#startTimer").disabled = false;
+  $("#pauseTimer").disabled = true;
+  $("#pauseTimer").textContent = "إيقاف مؤقت";
+  $("#timerState").textContent = "انتهت";
+
+  // log session ONLY if study
+  const mins = Math.round(timer.totalSec/60);
+  const mode = timer.mode;
+  const subjectId = $("#timerSubjectSelect").value || null;
+
+  state.sessions.push({
+    id: uid(),
+    mode,
+    subjectId,
+    minutes: mins,
+    endedAt: Date.now()
   });
 
-  // ---------- Render All ----------
-  function renderDashboard(){
-    dashWeekMinutes.textContent = String(weekTotalMinutes());
-    dashTasksDone.textContent = `${tasksDoneRate()}%`;
-    dashSubjects.textContent = String(state.subjects.length);
-    drawWeekChart();
+  saveState();
+  toast("🎉","انتهى", mode==="study" ? `سجلنا ${mins} دقيقة` : "استراحة انتهت");
+  // reset remaining
+  timer.remainingSec = timer.totalSec;
+  $("#dialTime").textContent = formatTime(timer.remainingSec);
+}
+
+/* ---------- Stats (Canvas) ---------- */
+function minutesToday(){
+  const start = new Date();
+  start.setHours(0,0,0,0);
+  const t0 = start.getTime();
+  return state.sessions
+    .filter(s=>s.mode==="study" && s.endedAt >= t0)
+    .reduce((a,b)=>a + (b.minutes||0), 0);
+}
+
+function minutesBetween(startMs, endMs){
+  return state.sessions
+    .filter(s=>s.mode==="study" && s.endedAt >= startMs && s.endedAt < endMs)
+    .reduce((a,b)=>a + (b.minutes||0), 0);
+}
+
+function renderStats(){
+  // totals
+  const total = state.sessions.filter(s=>s.mode==="study").reduce((a,b)=>a+(b.minutes||0),0);
+
+  const now = new Date();
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - ((now.getDay()+6)%7)); // Mon
+  weekStart.setHours(0,0,0,0);
+
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  monthStart.setHours(0,0,0,0);
+
+  $("#statTotal") && ($("#statTotal").textContent = total);
+  $("#statWeek") && ($("#statWeek").textContent = minutesBetween(weekStart.getTime(), Date.now()+1));
+  $("#statMonth") && ($("#statMonth").textContent = minutesBetween(monthStart.getTime(), Date.now()+1));
+
+  // overall chart: last 7 days
+  drawOverallChart();
+
+  // subject chart
+  drawSubjectChart();
+}
+
+function drawOverallChart(){
+  const c = $("#overallChart");
+  if(!c) return;
+  const ctx = c.getContext("2d");
+  const W = c.width, H = c.height;
+
+  ctx.clearRect(0,0,W,H);
+
+  // build last 7 days data
+  const days = [];
+  const now = new Date();
+  for(let i=6;i>=0;i--){
+    const d = new Date(now);
+    d.setDate(now.getDate()-i);
+    d.setHours(0,0,0,0);
+    const start = d.getTime();
+    const end = start + 86400000;
+    const val = minutesBetween(start,end);
+    days.push({label: d.toLocaleDateString("ar", {weekday:"short"}), val});
   }
 
-  function renderAll(){
-    refreshSubjectSelects();
-    renderSubjects();
-    renderNotebooks();
-    renderTasks();
-    renderDashboard();
-    refreshTimerUI();
+  const maxV = Math.max(30, ...days.map(x=>x.val));
+  // axes
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = "rgba(255,255,255,0.04)";
+  roundRect(ctx, 0,0,W,H, 18); ctx.fill();
+
+  // grid
+  ctx.strokeStyle = "rgba(255,255,255,0.10)";
+  ctx.lineWidth = 1;
+  for(let i=1;i<=3;i++){
+    const y = 30 + (H-70)*(i/4);
+    ctx.beginPath(); ctx.moveTo(18,y); ctx.lineTo(W-18,y); ctx.stroke();
   }
 
-  // ---------- Init ----------
-  function init(){
-    applyTheme();
+  const padX = 40, padYTop=26, padYBot=42;
+  const chartW = W - padX*2;
+  const chartH = H - padYTop - padYBot;
 
-    // init selects
-    refreshSubjectSelects();
+  // bars
+  const barW = chartW / days.length * 0.55;
+  days.forEach((d, i)=>{
+    const x = padX + (chartW/days.length)*i + (chartW/days.length - barW)/2;
+    const h = (d.val / maxV) * chartH;
+    const y = padYTop + (chartH - h);
 
-    // timer
-    setTimerFromInputs();
-    mountTimer3D();
+    const grad = ctx.createLinearGradient(0,y,0,y+h);
+    grad.addColorStop(0,"rgba(168,85,247,0.85)");
+    grad.addColorStop(1,"rgba(34,211,238,0.40)");
 
-    // initial editor
-    setEditor(null);
+    ctx.fillStyle = grad;
+    roundRect(ctx, x, y, barW, h, 10); ctx.fill();
 
-    // initial tab already active in HTML
-    renderAll();
+    // label
+    ctx.fillStyle = "rgba(255,255,255,0.55)";
+    ctx.font = "700 18px ui-sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(d.val.toString(), x + barW/2, y - 6);
 
-    // resize chart
-    window.addEventListener("resize", () => drawWeekChart());
+    ctx.fillStyle = "rgba(255,255,255,0.45)";
+    ctx.font = "700 16px ui-sans-serif";
+    ctx.fillText(d.label, x + barW/2, H - 18);
+  });
+}
+
+function drawSubjectChart(){
+  const c = $("#subjectChart");
+  if(!c) return;
+  const ctx = c.getContext("2d");
+  const W = c.width, H = c.height;
+  ctx.clearRect(0,0,W,H);
+
+  const per = new Map();
+  state.sessions.filter(s=>s.mode==="study").forEach(s=>{
+    const key = s.subjectId || "none";
+    per.set(key, (per.get(key)||0) + (s.minutes||0));
+  });
+
+  // Only show if there's data
+  const hasData = Array.from(per.values()).some(v=>v>0);
+  const empty = $("#perSubjectEmpty");
+  if(empty) empty.style.display = hasData ? "none" : "flex";
+  if(!hasData) return;
+
+  ctx.fillStyle = "rgba(255,255,255,0.04)";
+  roundRect(ctx, 0,0,W,H, 18); ctx.fill();
+
+  const entries = Array.from(per.entries())
+    .filter(([k,v])=>v>0)
+    .map(([k,v])=>({
+      name: k==="none" ? "بدون مادة" : (state.subjects.find(s=>s.id===k)?.name || "مادة محذوفة"),
+      val: v
+    }))
+    .sort((a,b)=>b.val-a.val)
+    .slice(0, 6);
+
+  const maxV = Math.max(...entries.map(e=>e.val), 10);
+
+  const padX=36, padYTop=30, padYBot=40;
+  const chartW=W-padX*2, chartH=H-padYTop-padYBot;
+
+  // horizontal bars
+  ctx.textAlign="right";
+  entries.forEach((e, i)=>{
+    const rowH = chartH/entries.length;
+    const y = padYTop + i*rowH + rowH*0.22;
+    const h = rowH*0.56;
+    const w = (e.val/maxV) * chartW;
+
+    const g = ctx.createLinearGradient(W-padX-w, 0, W-padX, 0);
+    g.addColorStop(0,"rgba(34,211,238,0.35)");
+    g.addColorStop(1,"rgba(168,85,247,0.85)");
+
+    ctx.fillStyle = "rgba(255,255,255,0.08)";
+    roundRect(ctx, padX, y, chartW, h, 12); ctx.fill();
+
+    ctx.fillStyle = g;
+    roundRect(ctx, W-padX-w, y, w, h, 12); ctx.fill();
+
+    ctx.fillStyle = "rgba(255,255,255,0.82)";
+    ctx.font = "900 18px ui-sans-serif";
+    ctx.fillText(e.name, W-padX, y-6);
+
+    ctx.fillStyle = "rgba(255,255,255,0.55)";
+    ctx.font = "900 16px ui-sans-serif";
+    ctx.fillText(e.val + " د", W-padX, y+h+18);
+  });
+}
+
+function roundRect(ctx, x,y,w,h,r){
+  const rr = Math.min(r, w/2, h/2);
+  ctx.beginPath();
+  ctx.moveTo(x+rr, y);
+  ctx.arcTo(x+w, y, x+w, y+h, rr);
+  ctx.arcTo(x+w, y+h, x, y+h, rr);
+  ctx.arcTo(x, y+h, x, y, rr);
+  ctx.arcTo(x, y, x+w, y, rr);
+  ctx.closePath();
+}
+
+/* ---------- Select builders ---------- */
+function buildSubjectSelect(selectEl, allowEmpty){
+  selectEl.innerHTML = "";
+  if(allowEmpty){
+    const opt = document.createElement("option");
+    opt.value = "";
+    opt.textContent = "غير مرتبط";
+    selectEl.appendChild(opt);
+  }
+  state.subjects.forEach(s=>{
+    const opt = document.createElement("option");
+    opt.value = s.id;
+    opt.textContent = s.name;
+    selectEl.appendChild(opt);
+  });
+}
+
+function renderSubjectSelects(){
+  const timerSel = $("#timerSubjectSelect");
+  const tasksSel = $("#tasksSubjectSelect");
+  const editorSel = $("#editorSubjectSelect");
+
+  if(timerSel){
+    buildSubjectSelect(timerSel, true);
+    // keep selection if exists
+    if(timerSel.value && !state.subjects.find(s=>s.id===timerSel.value)) timerSel.value = "";
   }
 
-  document.addEventListener("DOMContentLoaded", init);
-})();
+  if(tasksSel){
+    buildSubjectSelect(tasksSel, false);
+    // if no subjects, make empty
+    if(state.subjects.length === 0){
+      tasksSel.innerHTML = "";
+      const opt = document.createElement("option");
+      opt.value = "";
+      opt.textContent = "لا توجد مواد";
+      tasksSel.appendChild(opt);
+      tasksSel.disabled = true;
+    }else{
+      tasksSel.disabled = false;
+      if(!tasksSel.value) tasksSel.value = state.subjects[0].id;
+    }
+  }
+
+  if(editorSel){
+    buildSubjectSelect(editorSel, true);
+  }
+
+  // home chips
+  renderHomeChips();
+}
+
+function renderHomeChips(){
+  const chips = $("#homeSubjectsChips");
+  const empty = $("#homeSubjectsEmpty");
+  if(!chips || !empty) return;
+
+  chips.innerHTML = "";
+  if(state.subjects.length === 0){
+    empty.style.display = "block";
+  }else{
+    empty.style.display = "none";
+    state.subjects.slice(0,6).forEach(s=>{
+      const c = document.createElement("div");
+      c.className = "chip";
+      c.textContent = s.name;
+      chips.appendChild(c);
+    });
+  }
+}
+
+/* ---------- Meta ---------- */
+function renderMeta(){
+  const today = minutesToday();
+  const done = state.tasks.filter(t=>t.done).length;
+
+  $("#todayMinutes") && ($("#todayMinutes").textContent = String(today));
+  $("#tasksDone") && ($("#tasksDone").textContent = String(done));
+  $("#homeToday") && ($("#homeToday").textContent = String(today));
+
+  // streak (very simple: consecutive days with >=1 minute study)
+  const daysWith = new Set();
+  state.sessions.filter(s=>s.mode==="study").forEach(s=>{
+    const d = new Date(s.endedAt);
+    d.setHours(0,0,0,0);
+    daysWith.add(d.getTime());
+  });
+  let streak=0;
+  const d0 = new Date(); d0.setHours(0,0,0,0);
+  let cur = d0.getTime();
+  while(daysWith.has(cur)){
+    streak++;
+    cur -= 86400000;
+  }
+  $("#homeStreak") && ($("#homeStreak").textContent = String(streak));
+}
+
+/* ---------- Export/Import/Reset ---------- */
+function exportJSON(){
+  const blob = new Blob([JSON.stringify(state,null,2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "serag-data.json";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  toast("🗃","تصدير","تم تنزيل ملف JSON");
+}
+
+function importJSON(file){
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    try{
+      const next = JSON.parse(reader.result);
+      // basic validate
+      if(!next || typeof next !== "object") throw new Error("bad");
+      state = {
+        theme: next.theme === "light" ? "light" : "dark",
+        subjects: Array.isArray(next.subjects) ? next.subjects : [],
+        notebooks: Array.isArray(next.notebooks) ? next.notebooks : [],
+        tasks: Array.isArray(next.tasks) ? next.tasks : [],
+        sessions: Array.isArray(next.sessions) ? next.sessions : []
+      };
+      applyTheme();
+      saveState();
+      renderAll();
+      toast("✅","استيراد","تم استيراد البيانات");
+    }catch{
+      toast("⚠","خطأ","ملف JSON غير صالح");
+    }
+  };
+  reader.readAsText(file);
+}
+
+function resetAll(){
+  if(!confirm("متأكد بدك حذف كل البيانات؟")) return;
+  localStorage.removeItem(LS_KEY);
+  state = loadState(); // fresh
+  applyTheme();
+  saveState();
+  renderAll();
+  toast("🗑","تم الحذف","تمت إعادة ضبط كل شيء");
+}
+
+/* ---------- Utilities ---------- */
+function escapeHtml(str){
+  return String(str)
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+function map(v, inMin, inMax, outMin, outMax){
+  const t = (v - inMin) / (inMax - inMin);
+  return outMin + t*(outMax - outMin);
+}
+
+/* ---------- Render all ---------- */
+function renderAll(){
+  renderSubjects();
+  renderNotebooks();
+  renderTasks();
+  renderMeta();
+  renderStats();
+}
+
+/* ---------- Boot ---------- */
+document.addEventListener("DOMContentLoaded", ()=>{
+  // Apply theme
+  applyTheme();
+
+  // Skeleton
+  const sk = $("#skeleton");
+  sk.classList.add("on");
+  setTimeout(()=>{
+    sk.classList.remove("on");
+  }, 450);
+
+  // Tabs
+  $$(".tab-btn").forEach(btn=>{
+    btn.addEventListener("click", ()=> setActiveTab(btn.dataset.tab));
+  });
+
+  // Home quick nav
+  $$("[data-go]").forEach(b=>{
+    b.addEventListener("click", ()=> setActiveTab(b.dataset.go));
+  });
+
+  // Drawer hooks
+  $("#menuBtn")?.addEventListener("click", openDrawer);
+  $("#closeDrawer")?.addEventListener("click", closeDrawer);
+  $("#overlay")?.addEventListener("click", closeDrawer);
+  document.addEventListener("keydown",(e)=>{
+    if(e.key==="Escape") closeDrawer();
+  });
+
+  // Theme buttons
+  $("#themeBtn")?.addEventListener("click", toggleTheme);
+  $("#themeBtn2")?.addEventListener("click", toggleTheme);
+  $("#themeToggle")?.addEventListener("click", toggleTheme);
+
+  // Subjects actions
+  $("#addSubject")?.addEventListener("click", addSubject);
+  $("#subjectName")?.addEventListener("keydown",(e)=>{ if(e.key==="Enter") addSubject(); });
+
+  // Notebooks actions
+  $("#addNotebook")?.addEventListener("click", addNotebook);
+  $("#notebookName")?.addEventListener("keydown",(e)=>{ if(e.key==="Enter") addNotebook(); });
+
+  // Tasks actions
+  $("#addTask")?.addEventListener("click", addTask);
+  $("#taskText")?.addEventListener("keydown",(e)=>{ if(e.key==="Enter") addTask(); });
+  $("#tasksSubjectSelect")?.addEventListener("change", renderTasks);
+
+  // Settings
+  $("#exportBtn")?.addEventListener("click", exportJSON);
+  $("#importFile")?.addEventListener("change", (e)=>{
+    const f = e.target.files?.[0];
+    if(f) importJSON(f);
+    e.target.value = "";
+  });
+  $("#resetBtn")?.addEventListener("click", resetAll);
+
+  // Timer
+  $$(".seg").forEach(b=>{
+    b.addEventListener("click", ()=> setTimerMode(b.dataset.mode));
+  });
+  $("#startTimer")?.addEventListener("click", startTimer);
+  $("#pauseTimer")?.addEventListener("click", pauseTimer);
+  $("#resetTimer")?.addEventListener("click", resetTimer);
+
+  initDialDrag();
+  setTimerMode("study"); // default
+
+  // Init visuals
+  initBackground();
+  initTilt();
+
+  // Initial render
+  renderAll();
+});
