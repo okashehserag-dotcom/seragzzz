@@ -2,454 +2,593 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#0f0f1a" />
-  <title>Serag — Dashboard</title>
-
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="color-scheme" content="dark light" />
+  <title>Serag | سراج</title>
   <link rel="stylesheet" href="style.css" />
-  <script src="app.js" defer></script>
 </head>
 
 <body>
-  <div class="main-container">
-    <!-- Tabs Navigation -->
-    <nav class="tabs-nav" aria-label="التنقل">
-      <div class="nav-header">
-        <h2>Serag</h2>
-        <p>Premium Dashboard</p>
+  <!-- Animated Background Canvas (no external files) -->
+  <canvas id="bgCanvas" aria-hidden="true"></canvas>
+
+  <!-- Top bar (mobile) -->
+  <header class="topbar" aria-label="Top bar">
+    <button class="icon-btn" id="menuBtn" aria-label="فتح القائمة" aria-expanded="false" aria-controls="drawer">
+      ☰
+    </button>
+    <div class="brand">
+      <div class="brandMark" aria-hidden="true"></div>
+      <div class="brandText">
+        <div class="brandTitle">Serag</div>
+        <div class="brandSub">سراج — Study Dashboard</div>
       </div>
+    </div>
+    <button class="icon-btn" id="themeBtn" aria-label="تبديل الوضع" title="Dark/Light">
+      ◐
+    </button>
+  </header>
 
-      <button class="tab-btn active" type="button" data-tab="dashboard" aria-controls="dashboard" aria-selected="true" role="tab">
-        <div class="tab-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="7" height="7" rx="1"></rect>
-            <rect x="14" y="3" width="7" height="7" rx="1"></rect>
-            <rect x="3" y="14" width="7" height="7" rx="1"></rect>
-            <rect x="14" y="14" width="7" height="7" rx="1"></rect>
-          </svg>
-        </div>
-        <div class="tab-text">
-          <div class="tab-title">Dashboard</div>
-          <div class="tab-subtitle">Overview & Stats</div>
-        </div>
-        <div class="tab-arrow">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
-        </div>
-      </button>
+  <!-- Drawer overlay (mobile) -->
+  <div class="overlay" id="overlay" hidden></div>
 
-      <button class="tab-btn" type="button" data-tab="timer" aria-controls="timer" aria-selected="false" role="tab">
-        <div class="tab-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"></circle>
-            <polyline points="12 6 12 12 16 14"></polyline>
-          </svg>
-        </div>
-        <div class="tab-text">
-          <div class="tab-title">Timer</div>
-          <div class="tab-subtitle">Study & Break</div>
-        </div>
-        <div class="tab-arrow">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
-        </div>
-      </button>
-
-      <button class="tab-btn" type="button" data-tab="subjects" aria-controls="subjects" aria-selected="false" role="tab">
-        <div class="tab-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5V4.5A2.5 2.5 0 0 1 6.5 2z"></path>
-          </svg>
-        </div>
-        <div class="tab-text">
-          <div class="tab-title">Subjects</div>
-          <div class="tab-subtitle">Manage Materials</div>
-        </div>
-        <div class="tab-arrow">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
-        </div>
-      </button>
-
-      <button class="tab-btn" type="button" data-tab="notebooks" aria-controls="notebooks" aria-selected="false" role="tab">
-        <div class="tab-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5V4.5A2.5 2.5 0 0 1 6.5 2z"></path>
-            <path d="M8 6h8"></path>
-            <path d="M8 10h8"></path>
-            <path d="M8 14h6"></path>
-          </svg>
-        </div>
-        <div class="tab-text">
-          <div class="tab-title">Notebooks</div>
-          <div class="tab-subtitle">Write & Organize</div>
-        </div>
-        <div class="tab-arrow">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
-        </div>
-      </button>
-
-      <button class="tab-btn" type="button" data-tab="tasks" aria-controls="tasks" aria-selected="false" role="tab">
-        <div class="tab-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 11l3 3L22 4"></path>
-            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-          </svg>
-        </div>
-        <div class="tab-text">
-          <div class="tab-title">Tasks</div>
-          <div class="tab-subtitle">To-do & Progress</div>
-        </div>
-        <div class="tab-arrow">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
-        </div>
-      </button>
-
-      <button class="tab-btn" type="button" data-tab="settings" aria-controls="settings" aria-selected="false" role="tab">
-        <div class="tab-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="3"></circle>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-          </svg>
-        </div>
-        <div class="tab-text">
-          <div class="tab-title">Settings</div>
-          <div class="tab-subtitle">Preferences</div>
-        </div>
-        <div class="tab-arrow">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
-        </div>
-      </button>
-    </nav>
-
-    <!-- Content -->
-    <div class="tabs-content">
-      <!-- Dashboard -->
-      <section class="tab-panel active" id="dashboard" role="tabpanel" aria-label="Dashboard">
-        <div class="panel-header">
-          <span class="panel-badge">Overview</span>
-          <h1 class="panel-title">Dashboard</h1>
-          <p class="panel-description">واجهة نظيفة وخفيفة—تعطيك ملخص سريع عن الدراسة والمهام.</p>
-        </div>
-
-        <div class="panel-content">
-          <div class="stats-grid">
-            <div class="stat-item">
-              <div class="stat-value" id="dashWeekMinutes">0</div>
-              <div class="stat-label">Minutes / Week</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-value" id="dashTasksDone">0%</div>
-              <div class="stat-label">Tasks Done</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-value" id="dashSubjects">0</div>
-              <div class="stat-label">Subjects</div>
-            </div>
-          </div>
-
-          <div class="content-card">
-            <div class="card-header">
-              <div class="card-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-                  <polyline points="17 6 23 6 23 12"></polyline>
-                </svg>
+  <!-- Main App -->
+  <main class="appShell" role="application">
+    <section class="main-container" id="app">
+      <!-- Sidebar / Tabs Nav (RTL right) -->
+      <nav class="tabs-nav" id="drawer" aria-label="التنقل">
+        <div class="navTop">
+          <div class="nav-header">
+            <div class="logoRow">
+              <div class="logoOrb" aria-hidden="true"></div>
+              <div>
+                <h2>Serag | سراج</h2>
+                <p>Modern Minimal • Glass • RTL</p>
               </div>
-              <h3 class="card-title">Weekly Activity</h3>
             </div>
 
-            <p class="card-text">الرسم تحت يبين دقائق الدراسة لآخر 7 أيام.</p>
-            <div class="chart-wrap">
-              <canvas id="weekChart" width="920" height="260"></canvas>
+            <div class="navActions">
+              <button class="pill" id="closeDrawer" type="button" aria-label="إغلاق القائمة">✕</button>
+              <button class="pill" id="themeBtn2" type="button" aria-label="تبديل الوضع">◐</button>
             </div>
           </div>
 
-          <div class="quick-actions">
-            <button class="qa-btn" type="button" data-go="timer">ابدأ تايمر</button>
-            <button class="qa-btn" type="button" data-go="subjects">أضف مادة</button>
-            <button class="qa-btn" type="button" data-go="tasks">أضف مهمة</button>
+          <div class="quickMeta">
+            <div class="metaCard">
+              <div class="metaLabel">الدراسة اليوم</div>
+              <div class="metaValue" id="todayMinutes">—</div>
+              <div class="metaHint">دقيقة</div>
+            </div>
+            <div class="metaCard">
+              <div class="metaLabel">المهام</div>
+              <div class="metaValue" id="tasksDone">—</div>
+              <div class="metaHint">مكتملة</div>
+            </div>
           </div>
         </div>
-      </section>
 
-      <!-- Timer -->
-      <section class="tab-panel" id="timer" role="tabpanel" aria-label="Timer">
-        <div class="panel-header">
-          <span class="panel-badge">Focus</span>
-          <h1 class="panel-title">Timer</h1>
-          <p class="panel-description">تايمر أنيق (Study/Break) مع حفظ الجلسات للإحصائيات.</p>
+        <div class="navBtns" role="tablist" aria-label="الأقسام">
+          <button class="tab-btn active" data-tab="home" role="tab" aria-selected="true">
+            <span class="tab-icon">⌂</span>
+            <span class="tab-text">
+              <span class="tab-title">الرئيسية</span>
+              <span class="tab-subtitle">نظرة عامة</span>
+            </span>
+            <span class="tab-arrow">›</span>
+          </button>
+
+          <button class="tab-btn" data-tab="timer" role="tab" aria-selected="false">
+            <span class="tab-icon">⏱</span>
+            <span class="tab-text">
+              <span class="tab-title">التايمر</span>
+              <span class="tab-subtitle">دراسة/استراحة</span>
+            </span>
+            <span class="tab-arrow">›</span>
+          </button>
+
+          <button class="tab-btn" data-tab="subjects" role="tab" aria-selected="false">
+            <span class="tab-icon">📚</span>
+            <span class="tab-text">
+              <span class="tab-title">المواد</span>
+              <span class="tab-subtitle">إنشاء وإدارة</span>
+            </span>
+            <span class="tab-arrow">›</span>
+          </button>
+
+          <button class="tab-btn" data-tab="notebooks" role="tab" aria-selected="false">
+            <span class="tab-icon">📓</span>
+            <span class="tab-text">
+              <span class="tab-title">الدفاتر</span>
+              <span class="tab-subtitle">ملاحظات وربط</span>
+            </span>
+            <span class="tab-arrow">›</span>
+          </button>
+
+          <button class="tab-btn" data-tab="tasks" role="tab" aria-selected="false">
+            <span class="tab-icon">✅</span>
+            <span class="tab-text">
+              <span class="tab-title">المهام</span>
+              <span class="tab-subtitle">قائمة لكل مادة</span>
+            </span>
+            <span class="tab-arrow">›</span>
+          </button>
+
+          <button class="tab-btn" data-tab="stats" role="tab" aria-selected="false">
+            <span class="tab-icon">📈</span>
+            <span class="tab-text">
+              <span class="tab-title">الإحصائيات</span>
+              <span class="tab-subtitle">رسوم Canvas</span>
+            </span>
+            <span class="tab-arrow">›</span>
+          </button>
+
+          <button class="tab-btn" data-tab="settings" role="tab" aria-selected="false">
+            <span class="tab-icon">⚙</span>
+            <span class="tab-text">
+              <span class="tab-title">الإعدادات</span>
+              <span class="tab-subtitle">تصدير/استيراد</span>
+            </span>
+            <span class="tab-arrow">›</span>
+          </button>
         </div>
 
-        <div class="panel-content">
-          <div class="timer-grid">
-            <div class="content-card timer-card">
-              <div class="timer-3d" id="timer3d">
-                <div class="timer-ring" id="timerRing" style="--p:0"></div>
-                <div class="timer-center">
-                  <div class="timer-mode" id="timerMode">Study</div>
-                  <div class="timer-time" id="timerText">25:00</div>
-                  <div class="timer-sub" id="timerSub">—</div>
+        <footer class="navFooter">
+          <div class="privacy">
+            <span class="dot" aria-hidden="true"></span>
+            <span>كل البيانات محليًا فقط — لا يوجد إرسال</span>
+          </div>
+          <small class="disclaimer">
+            إخلاء مسؤولية: ليس نصيحة طبية/قانونية/مالية.
+          </small>
+        </footer>
+      </nav>
+
+      <!-- Content -->
+      <div class="tabs-content" id="content">
+        <!-- Skeleton (loading) -->
+        <section class="skeleton" id="skeleton">
+          <div class="skRow">
+            <div class="sk skTitle"></div>
+            <div class="sk skLine"></div>
+            <div class="sk skLine"></div>
+          </div>
+          <div class="skGrid">
+            <div class="sk skCard"></div>
+            <div class="sk skCard"></div>
+            <div class="sk skCard"></div>
+          </div>
+        </section>
+
+        <!-- HOME -->
+        <section class="tab-panel active" id="home" role="tabpanel" aria-label="الرئيسية">
+          <div class="panel-header">
+            <span class="panel-badge">Start</span>
+            <h1 class="panel-title">سراج — لوحة دراسة أنيقة</h1>
+            <p class="panel-description">
+              واجهة شبابّية Minimal مع Glassmorphism + 3D لمسات خفيفة. كل شيء محلي.
+            </p>
+          </div>
+
+          <div class="hero">
+            <div class="heroGlow" aria-hidden="true"></div>
+            <div class="heroContent">
+              <h2 class="heroTitle">
+                ابدأ جلسة تركيز<br/>
+                <span class="gradText">بلمسة واحدة</span>
+              </h2>
+              <p class="heroText">
+                أضف موادك ودفاترك من الصفر، سجّل دقائق الدراسة، وراجع إحصائياتك.
+              </p>
+
+              <div class="heroActions">
+                <button class="btn primary" data-go="timer">ابدأ تايمر</button>
+                <button class="btn ghost" data-go="subjects">أضف مادة</button>
+              </div>
+
+              <div class="actionsGrid">
+                <button class="actionCard" data-go="tasks">
+                  <div class="acIcon">✅</div>
+                  <div class="acTxt">
+                    <div class="acTitle">المهام</div>
+                    <div class="acSub">نظم واجباتك</div>
+                  </div>
+                  <div class="acArrow">›</div>
+                </button>
+
+                <button class="actionCard" data-go="notebooks">
+                  <div class="acIcon">📓</div>
+                  <div class="acTxt">
+                    <div class="acTitle">دفاتر 3D</div>
+                    <div class="acSub">ملاحظات سريعة</div>
+                  </div>
+                  <div class="acArrow">›</div>
+                </button>
+
+                <button class="actionCard" data-go="stats">
+                  <div class="acIcon">📈</div>
+                  <div class="acTxt">
+                    <div class="acTitle">إحصائيات</div>
+                    <div class="acSub">Canvas بدون مكتبات</div>
+                  </div>
+                  <div class="acArrow">›</div>
+                </button>
+              </div>
+            </div>
+
+            <div class="heroCards">
+              <div class="content-card tilt" data-tilt>
+                <div class="card-header">
+                  <div class="card-icon">⏱</div>
+                  <h3 class="card-title">جلسات اليوم</h3>
                 </div>
-                <div class="timer-glow"></div>
+                <p class="card-text">تابع دقائق الدراسة والاستراحة بسهولة.</p>
+                <div class="statRow">
+                  <div class="miniStat">
+                    <div class="miniVal" id="homeToday">0</div>
+                    <div class="miniLab">دقيقة</div>
+                  </div>
+                  <div class="miniStat">
+                    <div class="miniVal" id="homeStreak">0</div>
+                    <div class="miniLab">أيام</div>
+                  </div>
+                </div>
               </div>
 
-              <div class="timer-actions">
-                <button class="btn-primary" type="button" id="btnStartPause">بدء</button>
-                <button class="btn-ghost" type="button" id="btnReset">Reset</button>
-                <button class="btn-ghost" type="button" id="btnSwitchMode">Switch</button>
+              <div class="content-card tilt" data-tilt>
+                <div class="card-header">
+                  <div class="card-icon">📚</div>
+                  <h3 class="card-title">موادك</h3>
+                </div>
+                <p class="card-text">لا يوجد مواد افتراضية — أنت تضيف من الصفر.</p>
+                <div class="emptyMini" id="homeSubjectsEmpty">ابدأ بإضافة مادة…</div>
+                <div class="chips" id="homeSubjectsChips"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="sectionTitle">
+            <h3>نصائح سريعة</h3>
+            <p>Micro-interactions + حركة محترمة مع prefers-reduced-motion</p>
+          </div>
+
+          <div class="grid2">
+            <div class="content-card">
+              <div class="card-header">
+                <div class="card-icon">✨</div>
+                <h3 class="card-title">جمالية</h3>
+              </div>
+              <p class="card-text">
+                Hover ناعم + Glass + Gradient خفيف + ظل عميق يعطي Depth.
+              </p>
+            </div>
+
+            <div class="content-card">
+              <div class="card-header">
+                <div class="card-icon">🔒</div>
+                <h3 class="card-title">خصوصية</h3>
+              </div>
+              <p class="card-text">
+                التخزين localStorage فقط. لا يوجد اتصالات خارجية.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- TIMER -->
+        <section class="tab-panel" id="timer" role="tabpanel" aria-label="التايمر">
+          <div class="panel-header">
+            <span class="panel-badge">Focus</span>
+            <h1 class="panel-title">التايمر 3D</h1>
+            <p class="panel-description">
+              اسحب الحلقة لضبط الوقت (Pointer Events + Inertia خفيف).
+            </p>
+          </div>
+
+          <div class="timerWrap">
+            <div class="dialCard content-card">
+              <div class="dialTop">
+                <div class="dialMode">
+                  <button class="seg active" data-mode="study">دراسة</button>
+                  <button class="seg" data-mode="break">استراحة</button>
+                </div>
+                <div class="dialMeta">
+                  <span class="pillTag" id="dialHint">اسحب الحلقة</span>
+                </div>
+              </div>
+
+              <div class="dialStage">
+                <div class="dial tilt" id="dial" data-tilt>
+                  <div class="dialRing" id="dialRing" aria-hidden="true"></div>
+                  <div class="dialInner">
+                    <div class="dialTime" id="dialTime">25:00</div>
+                    <div class="dialSub" id="dialSub">دراسة</div>
+                  </div>
+                  <div class="dialNeedle" id="dialNeedle" aria-hidden="true"></div>
+                </div>
+              </div>
+
+              <div class="timerControls">
+                <div class="field">
+                  <label>المادة (اختياري)</label>
+                  <select id="timerSubjectSelect"></select>
+                </div>
+
+                <div class="row">
+                  <button class="btn primary" id="startTimer">ابدأ</button>
+                  <button class="btn ghost" id="pauseTimer" disabled>إيقاف مؤقت</button>
+                  <button class="btn danger" id="resetTimer">إعادة</button>
+                </div>
+
+                <div class="smallHint" id="timerState">جاهز</div>
               </div>
             </div>
 
             <div class="content-card">
               <div class="card-header">
-                <div class="card-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                  </svg>
-                </div>
-                <h3 class="card-title">Session Setup</h3>
+                <div class="card-icon">🧠</div>
+                <h3 class="card-title">ملاحظة</h3>
+              </div>
+              <p class="card-text">
+                سجلات الدراسة تُستخدم للإحصائيات فقط (بدون كوينز).
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- SUBJECTS -->
+        <section class="tab-panel" id="subjects" role="tabpanel" aria-label="المواد">
+          <div class="panel-header">
+            <span class="panel-badge">Library</span>
+            <h1 class="panel-title">المواد</h1>
+            <p class="panel-description">
+              أنشئ موادك بنفسك (حد أقصى 8) — لا توجد مواد افتراضية.
+            </p>
+          </div>
+
+          <div class="grid2">
+            <div class="content-card">
+              <div class="card-header">
+                <div class="card-icon">＋</div>
+                <h3 class="card-title">إضافة مادة</h3>
               </div>
 
-              <div class="form-grid">
+              <div class="formRow">
                 <div class="field">
-                  <label>Study (min)</label>
-                  <input class="input" id="studyMin" type="number" min="1" max="180" value="25" />
+                  <label>اسم المادة</label>
+                  <input id="subjectName" type="text" placeholder="مثال: رياضيات" maxlength="22" />
                 </div>
+                <button class="btn primary" id="addSubject">إضافة</button>
+              </div>
+
+              <p class="smallHint">يمكنك سحب دفتر على المادة لربطه بها (من صفحة الدفاتر).</p>
+            </div>
+
+            <div class="content-card">
+              <div class="card-header">
+                <div class="card-icon">📚</div>
+                <h3 class="card-title">قائمة المواد</h3>
+              </div>
+
+              <div id="subjectsEmpty" class="emptyState">
+                <div class="emptyIcon">📦</div>
+                <div class="emptyTitle">لا توجد مواد بعد</div>
+                <div class="emptySub">ابدأ بإضافة أول مادة</div>
+              </div>
+
+              <div class="subjectList" id="subjectList" aria-label="قائمة المواد (Drop zones)"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- NOTEBOOKS -->
+        <section class="tab-panel" id="notebooks" role="tabpanel" aria-label="الدفاتر">
+          <div class="panel-header">
+            <span class="panel-badge">Notes</span>
+            <h1 class="panel-title">الدفاتر 3D</h1>
+            <p class="panel-description">
+              أنشئ دفاتر (حد 8) — اسحب لتدوير 3D، واسحب/افلت لربط دفتر بمادة.
+            </p>
+          </div>
+
+          <div class="grid2">
+            <div class="content-card">
+              <div class="card-header">
+                <div class="card-icon">＋</div>
+                <h3 class="card-title">إضافة دفتر</h3>
+              </div>
+
+              <div class="formRow">
                 <div class="field">
-                  <label>Break (min)</label>
-                  <input class="input" id="breakMin" type="number" min="1" max="60" value="5" />
+                  <label>اسم الدفتر</label>
+                  <input id="notebookName" type="text" placeholder="مثال: ملخصات" maxlength="22" />
                 </div>
-                <div class="field field-wide">
-                  <label>Subject</label>
-                  <select class="input" id="timerSubject"></select>
-                  <div class="hint" id="timerHint" hidden>لازم تضيف مادة أولاً.</div>
-                </div>
+                <button class="btn primary" id="addNotebook">إضافة</button>
               </div>
 
-              <div class="mini-note">
-                الجلسة تنحفظ تلقائيًا عند الانتهاء (Study فقط) لتظهر بالإحصائيات.
+              <div id="notebooksEmpty" class="emptyState">
+                <div class="emptyIcon">📓</div>
+                <div class="emptyTitle">لا توجد دفاتر</div>
+                <div class="emptySub">أضف دفتر ثم افتحه للكتابة</div>
               </div>
             </div>
+
+            <div class="content-card">
+              <div class="card-header">
+                <div class="card-icon">🧷</div>
+                <h3 class="card-title">دفاتر</h3>
+              </div>
+              <div class="notebookGrid" id="notebookGrid"></div>
+            </div>
           </div>
-        </div>
-      </section>
 
-      <!-- Subjects -->
-      <section class="tab-panel" id="subjects" role="tabpanel" aria-label="Subjects">
-        <div class="panel-header">
-          <span class="panel-badge">Workspace</span>
-          <h1 class="panel-title">Subjects</h1>
-          <p class="panel-description">أضف موادك (حد أقصى 8) بدون مواد افتراضية.</p>
-        </div>
-
-        <div class="panel-content">
-          <div class="content-card">
-            <div class="row-between">
+          <!-- Notebook Editor -->
+          <div class="content-card editorCard" id="editorCard" hidden>
+            <div class="editorTop">
               <div>
-                <h3 class="card-title">Add Subject</h3>
-                <p class="card-text">اكتب اسم المادة وبس.</p>
-              </div>
-              <div class="badge" id="subjectsLeft">8 left</div>
-            </div>
-
-            <div class="add-row">
-              <input class="input" id="subjectName" placeholder="مثال: رياضيات" maxlength="22" />
-              <button class="btn-primary" type="button" id="btnAddSubject">إضافة</button>
-            </div>
-          </div>
-
-          <div class="subjects-grid" id="subjectsGrid"></div>
-
-          <div class="empty-state" id="subjectsEmpty">
-            <div class="empty-icon">📚</div>
-            <div class="empty-title">لا يوجد مواد</div>
-            <div class="empty-desc">ابدأ بإضافة أول مادة لتفعيل كل الأقسام.</div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Notebooks -->
-      <section class="tab-panel" id="notebooks" role="tabpanel" aria-label="Notebooks">
-        <div class="panel-header">
-          <span class="panel-badge">Notes</span>
-          <h1 class="panel-title">Notebooks</h1>
-          <p class="panel-description">دفاتر 3D جميلة + محرر ملاحظات مع حفظ تلقائي.</p>
-        </div>
-
-        <div class="panel-content">
-          <div class="content-card">
-            <div class="row-between">
-              <div>
-                <h3 class="card-title">Create Notebook</h3>
-                <p class="card-text">حد أقصى 8 دفاتر.</p>
-              </div>
-              <div class="badge" id="notebooksLeft">8 left</div>
-            </div>
-
-            <div class="form-grid">
-              <div class="field field-wide">
-                <label>Title</label>
-                <input class="input" id="nbTitle" placeholder="مثال: ملخص الوحدة الأولى" maxlength="28" />
-              </div>
-              <div class="field field-wide">
-                <label>Subject (optional)</label>
-                <select class="input" id="nbSubject"></select>
-              </div>
-            </div>
-            <button class="btn-primary" type="button" id="btnAddNotebook">إضافة الدفتر</button>
-          </div>
-
-          <div class="notebooks-layout">
-            <div class="notebooks-grid" id="notebooksGrid"></div>
-
-            <div class="content-card editor-card">
-              <div class="row-between">
-                <h3 class="card-title" id="editorTitle">Editor</h3>
-                <div class="save-indicator" id="saveIndicator">
-                  <span class="dot"></span>
-                  <span class="txt">اختر دفترًا</span>
+                <div class="editorTitle" id="editorTitle">دفتر</div>
+                <div class="editorMeta">
+                  <span class="pillTag" id="editorLinked">غير مرتبط</span>
+                  <span class="saveState" id="saveState">—</span>
                 </div>
               </div>
 
+              <div class="editorActions">
+                <select id="editorSubjectSelect" class="miniSelect" title="ربط المادة"></select>
+                <button class="btn ghost" id="closeEditor">إغلاق</button>
+              </div>
+            </div>
+
+            <textarea id="editorText" class="editor" placeholder="اكتب ملاحظاتك هنا..."></textarea>
+          </div>
+        </section>
+
+        <!-- TASKS -->
+        <section class="tab-panel" id="tasks" role="tabpanel" aria-label="المهام">
+          <div class="panel-header">
+            <span class="panel-badge">Todo</span>
+            <h1 class="panel-title">المهام</h1>
+            <p class="panel-description">لكل مادة مهامها الخاصة — بدون كوينز.</p>
+          </div>
+
+          <div class="content-card">
+            <div class="formRow">
               <div class="field">
-                <label>Subject</label>
-                <select class="input" id="editorSubject"></select>
+                <label>اختر مادة</label>
+                <select id="tasksSubjectSelect"></select>
               </div>
-
-              <textarea class="textarea" id="editorText" placeholder="اكتب ملاحظاتك هنا..." disabled></textarea>
-
-              <div class="mini-note">الحفظ يتم تلقائيًا، بدون ما يصير “قليتش”.</div>
+              <div class="field">
+                <label>مهمة جديدة</label>
+                <input id="taskText" type="text" placeholder="مثال: حل واجب 3" maxlength="60" />
+              </div>
+              <button class="btn primary" id="addTask">إضافة</button>
             </div>
+
+            <div id="tasksEmpty" class="emptyState">
+              <div class="emptyIcon">✅</div>
+              <div class="emptyTitle">لا توجد مهام</div>
+              <div class="emptySub">اختر مادة وأضف أول مهمة</div>
+            </div>
+
+            <div class="taskList" id="taskList"></div>
+          </div>
+        </section>
+
+        <!-- STATS -->
+        <section class="tab-panel" id="stats" role="tabpanel" aria-label="الإحصائيات">
+          <div class="panel-header">
+            <span class="panel-badge">Insights</span>
+            <h1 class="panel-title">الإحصائيات</h1>
+            <p class="panel-description">Canvas Charts بدون أي مكتبات خارجية.</p>
           </div>
 
-          <div class="empty-state" id="notebooksEmpty">
-            <div class="empty-icon">📓</div>
-            <div class="empty-title">لا يوجد دفاتر</div>
-            <div class="empty-desc">أضف دفتر عشان تبدأ تكتب ملاحظات.</div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Tasks -->
-      <section class="tab-panel" id="tasks" role="tabpanel" aria-label="Tasks">
-        <div class="panel-header">
-          <span class="panel-badge">To-do</span>
-          <h1 class="panel-title">Tasks</h1>
-          <p class="panel-description">مهام بسيطة وأنيقة مع فلترة حسب المادة.</p>
-        </div>
-
-        <div class="panel-content">
-          <div class="content-card">
-            <div class="row-between">
-              <div>
-                <h3 class="card-title">Add Task</h3>
-                <p class="card-text">حدد المادة + اكتب المهمة.</p>
+          <div class="grid2">
+            <div class="content-card">
+              <div class="card-header">
+                <div class="card-icon">📊</div>
+                <h3 class="card-title">إجمالي</h3>
               </div>
-              <div class="badge" id="tasksMeta">0/0</div>
-            </div>
-
-            <div class="form-grid">
-              <div class="field field-wide">
-                <label>Subject</label>
-                <select class="input" id="taskSubject"></select>
-                <div class="hint" id="tasksHint" hidden>لازم تضيف مادة أولاً.</div>
+              <div class="statsGrid">
+                <div class="statItem">
+                  <div class="statValue" id="statTotal">0</div>
+                  <div class="statLabel">دقائق (كل الوقت)</div>
+                </div>
+                <div class="statItem">
+                  <div class="statValue" id="statWeek">0</div>
+                  <div class="statLabel">هذا الأسبوع</div>
+                </div>
+                <div class="statItem">
+                  <div class="statValue" id="statMonth">0</div>
+                  <div class="statLabel">هذا الشهر</div>
+                </div>
               </div>
-              <div class="field field-wide">
-                <label>Task</label>
-                <input class="input" id="taskText" maxlength="44" placeholder="مثال: حل واجب 3" />
+              <div class="canvasWrap">
+                <canvas id="overallChart" width="900" height="320" aria-label="Overall chart"></canvas>
               </div>
             </div>
-            <button class="btn-primary" type="button" id="btnAddTask">إضافة</button>
-          </div>
 
-          <div class="content-card">
-            <div class="row-between">
-              <h3 class="card-title">Your Tasks</h3>
-              <select class="input input-sm" id="tasksFilter">
-                <option value="">كل المواد</option>
-              </select>
-            </div>
-
-            <div class="tasks-list" id="tasksList"></div>
-
-            <div class="empty-state" id="tasksEmpty">
-              <div class="empty-icon">✅</div>
-              <div class="empty-title">لا يوجد مهام</div>
-              <div class="empty-desc">أضف أول مهمة وبلّش.</div>
+            <div class="content-card">
+              <div class="card-header">
+                <div class="card-icon">📚</div>
+                <h3 class="card-title">حسب المادة</h3>
+              </div>
+              <div id="perSubjectEmpty" class="emptyState">
+                <div class="emptyIcon">📦</div>
+                <div class="emptyTitle">لا يوجد بيانات بعد</div>
+                <div class="emptySub">ابدأ جلسة من صفحة التايمر</div>
+              </div>
+              <div class="canvasWrap">
+                <canvas id="subjectChart" width="900" height="320" aria-label="Subjects chart"></canvas>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <!-- Settings -->
-      <section class="tab-panel" id="settings" role="tabpanel" aria-label="Settings">
-        <div class="panel-header">
-          <span class="panel-badge">Config</span>
-          <h1 class="panel-title">Settings</h1>
-          <p class="panel-description">ثيم + تصدير/استيراد + Reset.</p>
-        </div>
+        <!-- SETTINGS -->
+        <section class="tab-panel" id="settings" role="tabpanel" aria-label="الإعدادات">
+          <div class="panel-header">
+            <span class="panel-badge">Config</span>
+            <h1 class="panel-title">الإعدادات</h1>
+            <p class="panel-description">تصدير/استيراد بيانات JSON + حذف كل شيء.</p>
+          </div>
 
-        <div class="panel-content">
-          <div class="content-card">
-            <div class="row-between">
-              <div>
-                <h3 class="card-title">Appearance</h3>
-                <p class="card-text">تبديل الوضع المظلم/الفاتح.</p>
+          <div class="grid2">
+            <div class="content-card">
+              <div class="card-header">
+                <div class="card-icon">🌓</div>
+                <h3 class="card-title">المظهر</h3>
               </div>
-              <button class="btn-ghost" type="button" id="btnTheme">Toggle Theme</button>
+
+              <div class="toggleRow">
+                <div class="toggleInfo">
+                  <div class="tTitle">الوضع الداكن</div>
+                  <div class="tSub">افتراضيًا داكن أنيق</div>
+                </div>
+                <button class="toggle" id="themeToggle" aria-pressed="true">
+                  <span class="knob"></span>
+                </button>
+              </div>
+
+              <div class="smallHint">يحترم prefers-reduced-motion تلقائيًا.</div>
+            </div>
+
+            <div class="content-card">
+              <div class="card-header">
+                <div class="card-icon">🗃</div>
+                <h3 class="card-title">البيانات</h3>
+              </div>
+
+              <div class="row">
+                <button class="btn ghost" id="exportBtn">تصدير JSON</button>
+                <label class="btn ghost fileBtn">
+                  استيراد JSON
+                  <input type="file" id="importFile" accept="application/json" hidden />
+                </label>
+                <button class="btn danger" id="resetBtn">حذف كل البيانات</button>
+              </div>
+
+              <div class="smallHint">
+                الخصوصية: كل شيء محفوظ محليًا فقط (localStorage).
+              </div>
             </div>
           </div>
 
           <div class="content-card">
             <div class="card-header">
-              <div class="card-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                </svg>
-              </div>
-              <h3 class="card-title">Backup</h3>
+              <div class="card-icon">⚠</div>
+              <h3 class="card-title">إخلاء مسؤولية</h3>
             </div>
-
-            <div class="row-between wrap">
-              <button class="btn-primary" type="button" id="btnExport">Export JSON</button>
-              <label class="btn-ghost file-btn">
-                Import JSON
-                <input type="file" id="importFile" accept="application/json" hidden />
-              </label>
-              <button class="btn-danger" type="button" id="btnResetAll">Reset All</button>
-            </div>
-
-            <p class="mini-note">كل البيانات بتنحفظ محليًا (LocalStorage) على جهازك.</p>
+            <p class="card-text">
+              هذا الموقع لأغراض التنظيم فقط، ولا يعتبر نصيحة طبية/قانونية/مالية.
+            </p>
           </div>
-        </div>
-      </section>
-    </div>
-  </div>
+        </section>
+      </div>
+    </section>
+  </main>
 
   <!-- Toasts -->
   <div class="toasts" id="toasts" aria-live="polite" aria-atomic="true"></div>
 
-  <!-- Modal (fixed & glitch-free) -->
-  <div class="modal-backdrop" id="modalBackdrop" hidden></div>
-  <div class="modal" id="modal" role="dialog" aria-modal="true" aria-hidden="true" hidden>
-    <div class="modal-header">
-      <div class="modal-title" id="modalTitle">Modal</div>
-      <button class="modal-close" id="modalClose" type="button" aria-label="إغلاق">✕</button>
-    </div>
-    <div class="modal-body" id="modalBody"></div>
-    <div class="modal-footer" id="modalFooter"></div>
-  </div>
+  <script src="app.js"></script>
 </body>
 </html>
