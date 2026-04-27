@@ -1,594 +1,1766 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="color-scheme" content="dark light" />
-  <title>Serag | سراج</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<title>سراج — لوحة الدراسة الاحترافية</title>
+<link href="https://fonts.googleapis.com/css2?family=Zain:wght@200;300;400;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ================================================================
+   DESIGN TOKENS
+   ================================================================ */
+:root {
+  --blue:       #1236D8;
+  --blue-dark:  #0D2AAA;
+  --blue-glow:  rgba(18,54,216,.45);
+  --red:        #E10600;
+  --red-glow:   rgba(225,6,0,.45);
+  --cyan:       #00C6FF;
+  --cyan-dark:  #0094C8;
+  --cyan-glow:  rgba(0,198,255,.45);
+  --carbon:     #0E0E12;
+  --carbon-1:   #111116;
+  --carbon-2:   #15151D;
+  --carbon-3:   #1B1B26;
+  --carbon-4:   #21212F;
+  --text:       #E8EEFF;
+  --text-2:     #B0BCDE;
+  --muted:      #606890;
+  --border:     rgba(18,54,216,.22);
+  --border-c:   rgba(0,198,255,.18);
+  --sidebar-w:  252px;
+}
+
+/* ================================================================
+   RESET
+   ================================================================ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-size:16px}
+body{
+  background:var(--carbon);
+  color:var(--text);
+  font-family:'Zain',sans-serif;
+  min-height:100vh;
+  display:flex;
+  direction:rtl;
+  overflow-x:hidden;
+}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:var(--carbon-1)}
+::-webkit-scrollbar-thumb{background:var(--blue);border-radius:4px}
+button{font-family:'Zain',sans-serif}
+
+/* ================================================================
+   SIDEBAR
+   ================================================================ */
+.sidebar{
+  width:var(--sidebar-w);
+  min-height:100vh;
+  background:var(--carbon-1);
+  border-left:1px solid var(--border);
+  position:fixed;
+  right:0;top:0;bottom:0;
+  z-index:100;
+  display:flex;
+  flex-direction:column;
+  transition:transform .35s cubic-bezier(.4,0,.2,1);
+}
+
+.sb-brand{
+  padding:30px 22px 22px;
+  border-bottom:1px solid var(--border);
+  background:linear-gradient(180deg,rgba(18,54,216,.06) 0%,transparent 100%);
+}
+.sb-en{
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:5px;
+  color:var(--muted);
+  text-transform:uppercase;
+  margin-bottom:4px;
+}
+.sb-ar{
+  font-size:32px;
+  font-weight:900;
+  line-height:1;
+  background:linear-gradient(135deg,var(--blue) 0%,var(--cyan) 60%,#80DFFF 100%);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.sb-tagline{
+  font-size:12px;
+  color:var(--muted);
+  font-weight:300;
+  margin-top:5px;
+  line-height:1.4;
+}
+
+.sb-quick-stats{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  padding:14px 14px;
+  border-bottom:1px solid var(--border);
+}
+.sq-item{
+  background:var(--carbon-2);
+  border-radius:10px;
+  padding:10px 10px;
+  border:1px solid var(--border);
+  text-align:center;
+  position:relative;
+  overflow:hidden;
+}
+.sq-item::before{
+  content:'';position:absolute;
+  bottom:0;left:0;right:0;height:2px;
+}
+.sq-item.b::before{background:var(--blue)}
+.sq-item.c::before{background:var(--cyan)}
+.sq-val{
+  display:block;
+  font-size:22px;font-weight:900;line-height:1;
+  margin-bottom:2px;
+}
+.sq-item.b .sq-val{color:var(--blue)}
+.sq-item.c .sq-val{color:var(--cyan)}
+.sq-lab{font-size:11px;color:var(--muted);font-weight:300}
+
+.sb-nav{
+  flex:1;
+  padding:10px 10px;
+  overflow-y:auto;
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+}
+.nav-link{
+  display:flex;align-items:center;gap:12px;
+  padding:13px 14px;
+  border-radius:12px;
+  cursor:pointer;
+  transition:all .22s ease;
+  border:1px solid transparent;
+  position:relative;
+  overflow:hidden;
+  user-select:none;
+}
+.nav-link-bg{
+  position:absolute;inset:0;border-radius:12px;
+  background:linear-gradient(90deg,var(--blue),var(--cyan));
+  opacity:0;transition:opacity .22s;
+}
+.nav-link:hover .nav-link-bg{opacity:.08}
+.nav-link.active .nav-link-bg{opacity:.14}
+.nav-link.active{
+  border-color:rgba(18,54,216,.35);
+  box-shadow:0 0 16px rgba(18,54,216,.2),inset 0 0 20px rgba(0,198,255,.03);
+}
+.nav-icon{
+  font-size:18px;
+  position:relative;z-index:1;
+  min-width:22px;text-align:center;
+  filter:grayscale(.6);
+  transition:filter .22s;
+}
+.nav-link.active .nav-icon,
+.nav-link:hover .nav-icon{filter:grayscale(0)}
+.nav-texts{position:relative;z-index:1;flex:1}
+.nav-main{font-size:15px;font-weight:800;display:block;line-height:1.2}
+.nav-sub{font-size:11px;color:var(--muted);font-weight:300}
+.nav-dot{
+  width:5px;height:5px;border-radius:50%;
+  background:var(--cyan);
+  box-shadow:0 0 6px var(--cyan);
+  position:relative;z-index:1;
+  opacity:0;transition:opacity .22s;
+  flex-shrink:0;
+  margin-right:auto;
+}
+.nav-link.active .nav-dot{opacity:1}
+
+.sb-footer{
+  padding:14px 18px;
+  border-top:1px solid var(--border);
+  font-size:11px;color:var(--muted);
+  line-height:1.5;text-align:center;
+  font-weight:300;
+}
+
+/* ================================================================
+   MAIN
+   ================================================================ */
+.main-wrap{
+  margin-right:var(--sidebar-w);
+  flex:1;
+  min-height:100vh;
+  padding:44px 52px;
+  max-width:calc(100vw - var(--sidebar-w));
+}
+
+/* ================================================================
+   SECTIONS
+   ================================================================ */
+.sec{display:none}
+.sec.active{
+  display:block;
+  animation:secIn .38s cubic-bezier(.4,0,.2,1);
+}
+@keyframes secIn{
+  from{opacity:0;transform:translateY(18px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+.sec-header{margin-bottom:44px}
+.sec-tag{
+  display:block;
+  font-size:10px;font-weight:700;
+  letter-spacing:4px;text-transform:uppercase;
+  color:var(--cyan);margin-bottom:10px;
+}
+.sec-title{
+  font-size:46px;font-weight:900;line-height:1.05;
+  background:linear-gradient(135deg,var(--text) 0%,#9BB0FF 60%,var(--cyan) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.sec-sub{font-size:16px;color:var(--muted);font-weight:300;margin-top:8px}
+
+/* ================================================================
+   CARDS
+   ================================================================ */
+.card{
+  background:var(--carbon-2);
+  border-radius:20px;padding:28px;
+  border:1px solid var(--border);
+  position:relative;overflow:hidden;
+  transition:all .28s ease;
+}
+.card::after{
+  content:'';position:absolute;
+  top:0;right:0;width:50%;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(0,198,255,.4));
+}
+.card:hover{
+  border-color:rgba(0,198,255,.28);
+  box-shadow:0 6px 36px rgba(0,198,255,.08);
+  transform:translateY(-2px);
+}
+.card-head{
+  font-size:16px;font-weight:800;
+  display:flex;align-items:center;gap:10px;
+  margin-bottom:20px;color:var(--text);
+}
+.card-icon{
+  width:32px;height:32px;border-radius:9px;
+  background:linear-gradient(135deg,var(--blue),var(--cyan));
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;flex-shrink:0;
+}
+
+/* ================================================================
+   BUTTONS
+   ================================================================ */
+.btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:12px 26px;border-radius:12px;
+  font-family:'Zain',sans-serif;
+  font-size:15px;font-weight:800;
+  cursor:pointer;border:none;
+  transition:all .22s cubic-bezier(.4,0,.2,1);
+  position:relative;overflow:hidden;white-space:nowrap;
+}
+.btn::after{
+  content:'';position:absolute;inset:0;
+  background:rgba(255,255,255,.18);opacity:0;
+  transition:opacity .14s;
+}
+.btn:hover::after{opacity:1}
+.btn:active{transform:scale(.96)!important}
+
+.btn-blue{
+  background:linear-gradient(135deg,var(--blue),var(--blue-dark));
+  color:#fff;
+  box-shadow:0 4px 18px var(--blue-glow);
+}
+.btn-blue:hover{box-shadow:0 6px 28px var(--blue-glow);transform:translateY(-1px)}
+
+.btn-cyan{
+  background:linear-gradient(135deg,var(--cyan),var(--cyan-dark));
+  color:#05080F;
+  box-shadow:0 4px 18px var(--cyan-glow);
+}
+.btn-cyan:hover{box-shadow:0 6px 28px var(--cyan-glow);transform:translateY(-1px)}
+
+.btn-red{
+  background:linear-gradient(135deg,var(--red),#991100);
+  color:#fff;
+  box-shadow:0 4px 18px var(--red-glow);
+}
+.btn-red:hover{box-shadow:0 6px 28px var(--red-glow);transform:translateY(-1px)}
+
+.btn-ghost{
+  background:transparent;
+  color:var(--muted);
+  border:1px solid var(--border);
+}
+.btn-ghost:hover{border-color:var(--cyan);color:var(--cyan);transform:translateY(-1px)}
+
+.btn-sm{padding:8px 18px;font-size:13px;border-radius:9px}
+
+/* ================================================================
+   INPUTS
+   ================================================================ */
+.inp{
+  background:var(--carbon-3);
+  border:1px solid var(--border);
+  border-radius:12px;padding:12px 16px;
+  color:var(--text);font-family:'Zain',sans-serif;
+  font-size:15px;font-weight:400;
+  outline:none;transition:all .22s;width:100%;
+}
+.inp:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,198,255,.1)}
+.inp::placeholder{color:var(--muted)}
+select.inp{cursor:pointer;-webkit-appearance:none}
+.form-label{
+  display:block;font-size:12px;font-weight:700;
+  color:var(--muted);margin-bottom:7px;letter-spacing:.5px;
+  text-transform:uppercase;
+}
+
+/* ================================================================
+   HOME
+   ================================================================ */
+.home-kpi{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:20px;
+  margin-bottom:28px;
+}
+.kpi{
+  background:var(--carbon-2);
+  border-radius:20px;padding:28px 24px;
+  border:1px solid var(--border);
+  position:relative;overflow:hidden;
+  transition:all .28s ease;
+}
+.kpi:hover{transform:translateY(-3px);box-shadow:0 10px 36px rgba(0,0,0,.3)}
+.kpi-glow{
+  position:absolute;top:-50%;right:-30%;
+  width:200px;height:200px;border-radius:50%;
+  opacity:.06;filter:blur(40px);
+  pointer-events:none;
+}
+.kpi.b .kpi-glow{background:var(--blue)}
+.kpi.c .kpi-glow{background:var(--cyan)}
+.kpi.r .kpi-glow{background:var(--red)}
+.kpi-bar{
+  position:absolute;bottom:0;left:0;right:0;height:3px;
+}
+.kpi.b .kpi-bar{background:linear-gradient(90deg,transparent,var(--blue),transparent)}
+.kpi.c .kpi-bar{background:linear-gradient(90deg,transparent,var(--cyan),transparent)}
+.kpi.r .kpi-bar{background:linear-gradient(90deg,transparent,var(--red),transparent)}
+.kpi-icon{font-size:26px;margin-bottom:14px;display:block}
+.kpi-val{font-size:48px;font-weight:900;line-height:1;margin-bottom:6px}
+.kpi.b .kpi-val{color:var(--blue)}
+.kpi.c .kpi-val{color:var(--cyan)}
+.kpi.r .kpi-val{color:var(--red)}
+.kpi-label{font-size:13px;color:var(--muted);font-weight:300}
+
+.home-actions{
+  display:grid;grid-template-columns:1fr 1fr;gap:20px;
+  margin-bottom:28px;
+}
+.action-card{
+  background:var(--carbon-2);
+  border-radius:20px;padding:32px 28px;
+  border:1px solid var(--border);
+  cursor:pointer;position:relative;overflow:hidden;
+  transition:all .28s ease;
+  display:flex;flex-direction:column;gap:14px;
+}
+.action-card:hover{
+  border-color:rgba(0,198,255,.3);
+  box-shadow:0 10px 40px rgba(0,198,255,.1);
+  transform:translateY(-3px);
+}
+.action-num{
+  position:absolute;top:18px;left:18px;
+  font-size:64px;font-weight:900;color:var(--blue);
+  opacity:.07;line-height:1;pointer-events:none;
+}
+.action-icon{font-size:34px;display:block}
+.action-title{font-size:20px;font-weight:900;color:var(--text)}
+.action-desc{font-size:14px;color:var(--muted);font-weight:300;line-height:1.6}
+
+.home-bottom{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+
+/* ================================================================
+   TIMER — THE SPECTACLE ⭐
+   ================================================================ */
+.timer-wrap{
+  display:flex;flex-direction:column;align-items:center;
+  padding:20px 0 40px;
+}
+.timer-mode-row{
+  display:flex;gap:10px;margin-bottom:36px;
+}
+.mode-tab{
+  padding:9px 28px;border-radius:22px;
+  font-family:'Zain',sans-serif;
+  font-size:14px;font-weight:800;
+  cursor:pointer;
+  border:1px solid var(--border);
+  background:transparent;color:var(--muted);
+  transition:all .22s;
+}
+.mode-tab.active-study{
+  background:linear-gradient(135deg,var(--blue),var(--cyan-dark));
+  border-color:transparent;color:#fff;
+  box-shadow:0 4px 20px var(--cyan-glow);
+}
+.mode-tab.active-break{
+  background:linear-gradient(135deg,#991100,var(--red));
+  border-color:transparent;color:#fff;
+  box-shadow:0 4px 20px var(--red-glow);
+}
+
+/* 3D CARD */
+.timer-3d-scene{
+  perspective:1100px;
+  perspective-origin:50% 35%;
+  margin-bottom:40px;
+  position:relative;
+}
+.timer-card{
+  width:380px;height:380px;
+  position:relative;
+  transform-style:preserve-3d;
+  animation:timerDrift 9s ease-in-out infinite;
+  cursor:pointer;
+  border-radius:50%;
+}
+.timer-card:hover{
+  animation-play-state:paused;
+  transition:transform .5s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes timerDrift{
+  0%  {transform:rotateX(9deg) rotateY(-5deg) translateY(0)}
+  25% {transform:rotateX(13deg) rotateY(5deg) translateY(-10px)}
+  50% {transform:rotateX(7deg) rotateY(-7deg) translateY(-16px)}
+  75% {transform:rotateX(11deg) rotateY(3deg) translateY(-7px)}
+  100%{transform:rotateX(9deg) rotateY(-5deg) translateY(0)}
+}
+
+/* Drop shadow */
+.timer-shadow{
+  position:absolute;
+  bottom:-28px;left:15%;right:15%;height:20px;
+  background:radial-gradient(ellipse,rgba(0,198,255,.35) 0%,rgba(18,54,216,.2) 40%,transparent 70%);
+  filter:blur(18px);
+  border-radius:50%;
+  pointer-events:none;
+  animation:shadowPulse 9s ease-in-out infinite;
+}
+@keyframes shadowPulse{
+  0%,100%{transform:scaleX(1);opacity:.7}
+  50%{transform:scaleX(.8);opacity:.45}
+}
+
+/* Background disc */
+.timer-disc{
+  position:absolute;inset:0;border-radius:50%;
+  background:
+    radial-gradient(ellipse at 35% 28%, rgba(18,54,216,.35) 0%, transparent 55%),
+    radial-gradient(ellipse at 70% 75%, rgba(0,198,255,.12) 0%, transparent 45%),
+    radial-gradient(ellipse at 50% 50%, #161628 0%, #0D0D16 55%, #08080E 100%);
+  border:1px solid rgba(0,198,255,.12);
+  box-shadow:
+    0 0 0 1px rgba(0,198,255,.06),
+    0 30px 70px rgba(0,0,0,.9),
+    0 0 60px rgba(18,54,216,.25),
+    0 0 120px rgba(0,198,255,.1),
+    inset 0 2px 0 rgba(255,255,255,.07),
+    inset 0 -2px 0 rgba(0,0,0,.6);
+}
+/* Specular highlight */
+.timer-disc::before{
+  content:'';position:absolute;
+  top:8%;left:15%;
+  width:40%;height:35%;
+  background:radial-gradient(ellipse,rgba(255,255,255,.08) 0%,transparent 70%);
+  border-radius:50%;
+  pointer-events:none;
+}
+
+/* SVG Ring */
+.timer-svg{
+  position:absolute;inset:0;
+  border-radius:50%;
+  transform:rotate(-90deg);
+  z-index:2;
+  pointer-events:none;
+}
+.t-track{fill:none;stroke:rgba(0,198,255,.07);stroke-width:7}
+.t-glow{
+  fill:none;stroke-width:3;stroke-linecap:round;
+  opacity:.35;filter:blur(5px);
+}
+.t-prog{
+  fill:none;stroke-width:7;stroke-linecap:round;
+  transition:stroke-dashoffset .6s cubic-bezier(.4,0,.2,1);
+}
+
+/* Center content */
+.timer-center{
+  position:absolute;inset:0;z-index:3;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  border-radius:50%;
+  pointer-events:none;
+}
+.timer-digits{
+  font-size:72px;font-weight:900;
+  letter-spacing:-3px;line-height:1;
+  color:var(--text);
+  text-shadow:
+    0 0 40px rgba(0,198,255,.5),
+    0 2px 6px rgba(0,0,0,.9);
+  position:relative;
+}
+.timer-mode-txt{
+  font-size:13px;font-weight:700;
+  letter-spacing:4px;text-transform:uppercase;
+  margin-top:9px;
+  transition:color .4s;
+}
+.timer-mode-txt.study{
+  color:var(--cyan);
+  text-shadow:0 0 16px var(--cyan);
+}
+.timer-mode-txt.break{
+  color:var(--red);
+  text-shadow:0 0 16px var(--red);
+}
+.timer-subj-txt{
+  font-size:12px;color:var(--muted);
+  margin-top:5px;font-weight:300;
+  font-style:italic;
+}
+
+/* Orbit system */
+.orbit-ring{
+  position:absolute;inset:-22px;
+  border-radius:50%;
+  pointer-events:none;z-index:1;
+}
+.orb-dot{
+  position:absolute;
+  top:50%;left:50%;
+  transform-origin:0 0;
+  border-radius:50%;
+}
+.orb-dot::after{
+  content:'';display:block;
+  border-radius:50%;
+}
+.orb-1{animation:orbA 7s linear infinite}
+.orb-1::after{
+  width:7px;height:7px;
+  background:var(--cyan);
+  box-shadow:0 0 10px var(--cyan),0 0 20px rgba(0,198,255,.4);
+  margin:-3.5px 0 0 -3.5px;
+}
+.orb-2{animation:orbB 11s linear infinite}
+.orb-2::after{
+  width:4px;height:4px;
+  background:var(--blue);
+  box-shadow:0 0 8px var(--blue);
+  margin:-2px 0 0 -2px;
+}
+.orb-3{animation:orbC 15s linear infinite}
+.orb-3::after{
+  width:3px;height:3px;
+  background:var(--red);
+  box-shadow:0 0 6px var(--red);
+  margin:-1.5px 0 0 -1.5px;
+}
+
+@keyframes orbA{
+  from{transform:rotate(0deg) translateX(213px) rotate(0deg)}
+  to{transform:rotate(360deg) translateX(213px) rotate(-360deg)}
+}
+@keyframes orbB{
+  from{transform:rotate(120deg) translateX(206px) rotate(-120deg)}
+  to{transform:rotate(480deg) translateX(206px) rotate(-480deg)}
+}
+@keyframes orbC{
+  from{transform:rotate(240deg) translateX(210px) rotate(-240deg)}
+  to{transform:rotate(600deg) translateX(210px) rotate(-600deg)}
+}
+
+/* Pulse rings */
+.pulse-r{
+  position:absolute;inset:0;border-radius:50%;
+  border:2px solid var(--cyan);
+  pointer-events:none;z-index:0;
+  animation:pulsePop 3.5s ease-out infinite;
+  opacity:0;
+}
+.pulse-r:nth-child(2){animation-delay:1.75s}
+@keyframes pulsePop{
+  0%{transform:scale(1);opacity:.5}
+  100%{transform:scale(1.28);opacity:0}
+}
+
+/* Break mode recolor */
+.timer-card.break-mode .pulse-r{border-color:var(--red)}
+.timer-card.break-mode .orb-1::after{
+  background:var(--red);box-shadow:0 0 10px var(--red),0 0 20px rgba(225,6,0,.4);
+}
+
+/* Timer controls */
+.timer-presets{
+  display:flex;gap:8px;flex-wrap:wrap;
+  justify-content:center;margin-bottom:24px;
+}
+.preset{
+  padding:7px 18px;border-radius:20px;
+  font-family:'Zain',sans-serif;font-size:13px;font-weight:700;
+  cursor:pointer;border:1px solid var(--border);
+  background:transparent;color:var(--muted);
+  transition:all .2s;
+}
+.preset:hover,.preset.on{
+  border-color:var(--cyan);color:var(--cyan);
+  background:rgba(0,198,255,.08);
+}
+.timer-subj-sel{width:280px;margin-bottom:22px}
+.timer-btns{display:flex;gap:14px;align-items:center;justify-content:center}
+.timer-status{
+  font-size:14px;color:var(--muted);
+  margin-top:16px;text-align:center;
+  min-height:22px;transition:color .3s;
+  font-weight:700;letter-spacing:.5px;
+}
+.timer-status.on{color:var(--cyan)}
+.timer-status.br{color:var(--red)}
+
+/* ================================================================
+   SUBJECTS
+   ================================================================ */
+.add-bar{
+  background:var(--carbon-2);border-radius:16px;
+  padding:22px 24px;border:1px solid var(--border);
+  margin-bottom:28px;
+  display:flex;gap:12px;align-items:flex-end;
+}
+.add-bar .ff{flex:1}
+.subj-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(270px,1fr));
+  gap:18px;
+}
+.subj-card{
+  background:var(--carbon-2);border-radius:18px;
+  padding:24px;border:1px solid var(--border);
+  position:relative;overflow:hidden;
+  transition:all .28s ease;
+}
+.subj-card::before{
+  content:'';position:absolute;
+  top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--blue),var(--cyan));
+  border-radius:18px 18px 0 0;
+}
+.subj-card:hover{
+  transform:translateY(-4px);
+  box-shadow:0 12px 40px rgba(18,54,216,.18);
+  border-color:rgba(0,198,255,.25);
+}
+.subj-name{font-size:20px;font-weight:900;margin-bottom:10px;color:var(--text)}
+.subj-meta{display:flex;gap:16px;margin-bottom:18px}
+.subj-stat{font-size:13px;color:var(--muted)}
+.subj-stat strong{color:var(--cyan)}
+.subj-acts{display:flex;gap:8px}
+
+/* ================================================================
+   TASKS
+   ================================================================ */
+.tasks-top{
+  display:flex;gap:14px;flex-wrap:wrap;
+  align-items:flex-end;margin-bottom:28px;
+}
+.tasks-top .ff1{flex:1;min-width:180px}
+.tasks-top .ff2{flex:2;min-width:220px}
+
+.task-item{
+  background:var(--carbon-2);
+  border-radius:13px;padding:16px 20px;
+  border:1px solid var(--border);
+  display:flex;align-items:center;gap:14px;
+  margin-bottom:9px;transition:all .25s ease;
+  animation:taskIn .3s ease;
+}
+@keyframes taskIn{
+  from{opacity:0;transform:translateX(16px)}
+  to{opacity:1;transform:translateX(0)}
+}
+.task-item:hover{border-color:rgba(0,198,255,.18);background:var(--carbon-3)}
+.task-item.done{opacity:.52}
+.task-item.done .task-txt{text-decoration:line-through;color:var(--muted)}
+.t-check{
+  width:22px;height:22px;border-radius:6px;
+  border:2px solid var(--border);background:transparent;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:900;flex-shrink:0;
+  transition:all .2s;color:#fff;
+}
+.t-check:hover{border-color:var(--cyan)}
+.task-item.done .t-check{
+  background:linear-gradient(135deg,var(--blue),var(--cyan));
+  border-color:transparent;
+}
+.task-txt{flex:1;font-size:16px;font-weight:400;color:var(--text)}
+.task-del{
+  background:transparent;border:none;
+  color:var(--muted);cursor:pointer;font-size:15px;
+  padding:4px 6px;border-radius:6px;
+  transition:all .18s;
+}
+.task-del:hover{color:var(--red);background:rgba(225,6,0,.1)}
+
+/* ================================================================
+   STATS
+   ================================================================ */
+.stats-kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:24px}
+.stats-charts{display:grid;grid-template-columns:2fr 1fr;gap:20px}
+
+/* ================================================================
+   SETTINGS
+   ================================================================ */
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.info-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 0;border-bottom:1px solid var(--border);
+}
+.info-row:last-child{border-bottom:none}
+.info-lab{font-size:15px;font-weight:700;color:var(--text-2)}
+.info-val{font-size:22px;font-weight:900}
+
+/* ================================================================
+   EMPTY STATE
+   ================================================================ */
+.empty{
+  text-align:center;padding:64px 20px;
+}
+.empty-ico{font-size:52px;display:block;margin-bottom:14px;opacity:.3}
+.empty-t{font-size:18px;font-weight:800;color:var(--text-2);margin-bottom:8px}
+.empty-s{font-size:14px;font-weight:300;color:var(--muted)}
+
+/* ================================================================
+   PARTICLES
+   ================================================================ */
+#ptcls{position:fixed;inset:0;pointer-events:none;z-index:9999}
+.ptcl{
+  position:absolute;border-radius:50%;
+  animation:ptcBurst 1.6s ease-out forwards;
+}
+@keyframes ptcBurst{
+  0%{opacity:1;transform:scale(1) translate(0,0)}
+  100%{opacity:0;transform:scale(0) var(--pt)}
+}
+
+/* ================================================================
+   MOBILE
+   ================================================================ */
+.mob-toggle{
+  display:none;
+  position:fixed;top:14px;right:14px;z-index:200;
+  background:var(--carbon-2);border:1px solid var(--border);
+  border-radius:10px;width:40px;height:40px;
+  align-items:center;justify-content:center;
+  cursor:pointer;font-size:17px;color:var(--text);
+}
+.overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.65);z-index:90;
+  backdrop-filter:blur(4px);
+}
+
+@media(max-width:960px){
+  :root{--sidebar-w:0px}
+  .main-wrap{margin-right:0;padding:24px;max-width:100vw}
+  .sidebar{transform:translateX(100%);--sidebar-w:252px}
+  .sidebar.open{transform:translateX(0)}
+  .mob-toggle{display:flex}
+  .overlay.show{display:block}
+  .home-kpi,.stats-kpi{grid-template-columns:1fr 1fr}
+  .home-actions,.stats-charts,.home-bottom,.settings-grid{grid-template-columns:1fr}
+  .timer-card{width:300px;height:300px}
+  .timer-digits{font-size:58px}
+}
+@media(max-width:540px){
+  .home-kpi,.stats-kpi{grid-template-columns:1fr}
+  .timer-card{width:260px;height:260px}
+  .timer-digits{font-size:48px}
+  .main-wrap{padding:18px}
+  .sec-title{font-size:34px}
+}
+</style>
 </head>
-
 <body>
-  <!-- Animated Background Canvas (no external files) -->
-  <canvas id="bgCanvas" aria-hidden="true"></canvas>
 
-  <!-- Top bar (mobile) -->
-  <header class="topbar" aria-label="Top bar">
-    <button class="icon-btn" id="menuBtn" aria-label="فتح القائمة" aria-expanded="false" aria-controls="drawer">
-      ☰
-    </button>
-    <div class="brand">
-      <div class="brandMark" aria-hidden="true"></div>
-      <div class="brandText">
-        <div class="brandTitle">Serag</div>
-        <div class="brandSub">سراج — Study Dashboard</div>
+<button class="mob-toggle" id="mobToggle">☰</button>
+<div class="overlay" id="overlay"></div>
+
+<!-- ==================== SIDEBAR ==================== -->
+<nav class="sidebar" id="sidebar">
+  <div class="sb-brand">
+    <div class="sb-en">Study Dashboard</div>
+    <div class="sb-ar">سراج</div>
+    <div class="sb-tagline">لوحة دراسة احترافية · كل شيء محلي</div>
+  </div>
+
+  <div class="sb-quick-stats">
+    <div class="sq-item b">
+      <span class="sq-val" id="sb-mins">0</span>
+      <span class="sq-lab">دقيقة اليوم</span>
+    </div>
+    <div class="sq-item c">
+      <span class="sq-val" id="sb-tasks">0</span>
+      <span class="sq-lab">مهمة مكتملة</span>
+    </div>
+  </div>
+
+  <div class="sb-nav">
+    <div class="nav-link active" data-s="home">
+      <div class="nav-link-bg"></div>
+      <span class="nav-icon">⌂</span>
+      <span class="nav-texts">
+        <span class="nav-main">الرئيسية</span>
+        <span class="nav-sub">نظرة عامة</span>
+      </span>
+      <span class="nav-dot"></span>
+    </div>
+    <div class="nav-link" data-s="timer">
+      <div class="nav-link-bg"></div>
+      <span class="nav-icon">⏱</span>
+      <span class="nav-texts">
+        <span class="nav-main">التايمر</span>
+        <span class="nav-sub">دراسة / استراحة</span>
+      </span>
+      <span class="nav-dot"></span>
+    </div>
+    <div class="nav-link" data-s="subjects">
+      <div class="nav-link-bg"></div>
+      <span class="nav-icon">📚</span>
+      <span class="nav-texts">
+        <span class="nav-main">المواد</span>
+        <span class="nav-sub">إنشاء وإدارة</span>
+      </span>
+      <span class="nav-dot"></span>
+    </div>
+    <div class="nav-link" data-s="tasks">
+      <div class="nav-link-bg"></div>
+      <span class="nav-icon">✅</span>
+      <span class="nav-texts">
+        <span class="nav-main">المهام</span>
+        <span class="nav-sub">قائمة لكل مادة</span>
+      </span>
+      <span class="nav-dot"></span>
+    </div>
+    <div class="nav-link" data-s="stats">
+      <div class="nav-link-bg"></div>
+      <span class="nav-icon">📈</span>
+      <span class="nav-texts">
+        <span class="nav-main">الإحصائيات</span>
+        <span class="nav-sub">رسوم Canvas</span>
+      </span>
+      <span class="nav-dot"></span>
+    </div>
+    <div class="nav-link" data-s="settings">
+      <div class="nav-link-bg"></div>
+      <span class="nav-icon">⚙</span>
+      <span class="nav-texts">
+        <span class="nav-main">الإعدادات</span>
+        <span class="nav-sub">تصدير / استيراد</span>
+      </span>
+      <span class="nav-dot"></span>
+    </div>
+  </div>
+
+  <div class="sb-footer">🔒 كل البيانات محلية فقط<br>لا يوجد إرسال خارجي</div>
+</nav>
+
+<!-- ==================== MAIN ==================== -->
+<main class="main-wrap">
+
+  <!-- HOME -->
+  <section class="sec active" id="sec-home">
+    <div class="sec-header">
+      <span class="sec-tag">Dashboard · لوحة التحكم</span>
+      <h1 class="sec-title">سراج — لوحة الدراسة</h1>
+      <p class="sec-sub">واجهة احترافية للتركيز والتنظيم — بدون اتصال خارجي</p>
+    </div>
+
+    <div class="home-kpi">
+      <div class="kpi b">
+        <div class="kpi-glow"></div>
+        <div class="kpi-bar"></div>
+        <span class="kpi-icon">⏱</span>
+        <div class="kpi-val" id="h-mins">0</div>
+        <div class="kpi-label">دقيقة الدراسة اليوم</div>
+      </div>
+      <div class="kpi c">
+        <div class="kpi-glow"></div>
+        <div class="kpi-bar"></div>
+        <span class="kpi-icon">✅</span>
+        <div class="kpi-val" id="h-tdone">0</div>
+        <div class="kpi-label">مهمة مكتملة</div>
+      </div>
+      <div class="kpi r">
+        <div class="kpi-glow"></div>
+        <div class="kpi-bar"></div>
+        <span class="kpi-icon">📚</span>
+        <div class="kpi-val" id="h-subj">0</div>
+        <div class="kpi-label">مادة مضافة</div>
       </div>
     </div>
-    <button class="icon-btn" id="themeBtn" aria-label="تبديل الوضع" title="Dark/Light">
-      ◐
-    </button>
-  </header>
 
-  <!-- Drawer overlay (mobile) -->
-  <div class="overlay" id="overlay" hidden></div>
-
-  <!-- Main App -->
-  <main class="appShell" role="application">
-    <section class="main-container" id="app">
-      <!-- Sidebar / Tabs Nav (RTL right) -->
-      <nav class="tabs-nav" id="drawer" aria-label="التنقل">
-        <div class="navTop">
-          <div class="nav-header">
-            <div class="logoRow">
-              <div class="logoOrb" aria-hidden="true"></div>
-              <div>
-                <h2>Serag | سراج</h2>
-                <p>Modern Minimal • Glass • RTL</p>
-              </div>
-            </div>
-
-            <div class="navActions">
-              <button class="pill" id="closeDrawer" type="button" aria-label="إغلاق القائمة">✕</button>
-              <button class="pill" id="themeBtn2" type="button" aria-label="تبديل الوضع">◐</button>
-            </div>
-          </div>
-
-          <div class="quickMeta">
-            <div class="metaCard">
-              <div class="metaLabel">الدراسة اليوم</div>
-              <div class="metaValue" id="todayMinutes">—</div>
-              <div class="metaHint">دقيقة</div>
-            </div>
-            <div class="metaCard">
-              <div class="metaLabel">المهام</div>
-              <div class="metaValue" id="tasksDone">—</div>
-              <div class="metaHint">مكتملة</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="navBtns" role="tablist" aria-label="الأقسام">
-          <button class="tab-btn active" data-tab="home" role="tab" aria-selected="true">
-            <span class="tab-icon">⌂</span>
-            <span class="tab-text">
-              <span class="tab-title">الرئيسية</span>
-              <span class="tab-subtitle">نظرة عامة</span>
-            </span>
-            <span class="tab-arrow">›</span>
-          </button>
-
-          <button class="tab-btn" data-tab="timer" role="tab" aria-selected="false">
-            <span class="tab-icon">⏱</span>
-            <span class="tab-text">
-              <span class="tab-title">التايمر</span>
-              <span class="tab-subtitle">دراسة/استراحة</span>
-            </span>
-            <span class="tab-arrow">›</span>
-          </button>
-
-          <button class="tab-btn" data-tab="subjects" role="tab" aria-selected="false">
-            <span class="tab-icon">📚</span>
-            <span class="tab-text">
-              <span class="tab-title">المواد</span>
-              <span class="tab-subtitle">إنشاء وإدارة</span>
-            </span>
-            <span class="tab-arrow">›</span>
-          </button>
-
-          <button class="tab-btn" data-tab="notebooks" role="tab" aria-selected="false">
-            <span class="tab-icon">📓</span>
-            <span class="tab-text">
-              <span class="tab-title">الدفاتر</span>
-              <span class="tab-subtitle">ملاحظات وربط</span>
-            </span>
-            <span class="tab-arrow">›</span>
-          </button>
-
-          <button class="tab-btn" data-tab="tasks" role="tab" aria-selected="false">
-            <span class="tab-icon">✅</span>
-            <span class="tab-text">
-              <span class="tab-title">المهام</span>
-              <span class="tab-subtitle">قائمة لكل مادة</span>
-            </span>
-            <span class="tab-arrow">›</span>
-          </button>
-
-          <button class="tab-btn" data-tab="stats" role="tab" aria-selected="false">
-            <span class="tab-icon">📈</span>
-            <span class="tab-text">
-              <span class="tab-title">الإحصائيات</span>
-              <span class="tab-subtitle">رسوم Canvas</span>
-            </span>
-            <span class="tab-arrow">›</span>
-          </button>
-
-          <button class="tab-btn" data-tab="settings" role="tab" aria-selected="false">
-            <span class="tab-icon">⚙</span>
-            <span class="tab-text">
-              <span class="tab-title">الإعدادات</span>
-              <span class="tab-subtitle">تصدير/استيراد</span>
-            </span>
-            <span class="tab-arrow">›</span>
-          </button>
-        </div>
-
-        <footer class="navFooter">
-          <div class="privacy">
-            <span class="dot" aria-hidden="true"></span>
-            <span>كل البيانات محليًا فقط — لا يوجد إرسال</span>
-          </div>
-          <small class="disclaimer">
-            إخلاء مسؤولية: ليس نصيحة طبية/قانونية/مالية.
-          </small>
-        </footer>
-      </nav>
-
-      <!-- Content -->
-      <div class="tabs-content" id="content">
-        <!-- Skeleton (loading) -->
-        <section class="skeleton" id="skeleton">
-          <div class="skRow">
-            <div class="sk skTitle"></div>
-            <div class="sk skLine"></div>
-            <div class="sk skLine"></div>
-          </div>
-          <div class="skGrid">
-            <div class="sk skCard"></div>
-            <div class="sk skCard"></div>
-            <div class="sk skCard"></div>
-          </div>
-        </section>
-
-        <!-- HOME -->
-        <section class="tab-panel active" id="home" role="tabpanel" aria-label="الرئيسية">
-          <div class="panel-header">
-            <span class="panel-badge">Start</span>
-            <h1 class="panel-title">سراج — لوحة دراسة أنيقة</h1>
-            <p class="panel-description">
-              واجهة شبابّية Minimal مع Glassmorphism + 3D لمسات خفيفة. كل شيء محلي.
-            </p>
-          </div>
-
-          <div class="hero">
-            <div class="heroGlow" aria-hidden="true"></div>
-            <div class="heroContent">
-              <h2 class="heroTitle">
-                ابدأ جلسة تركيز<br/>
-                <span class="gradText">بلمسة واحدة</span>
-              </h2>
-              <p class="heroText">
-                أضف موادك ودفاترك من الصفر، سجّل دقائق الدراسة، وراجع إحصائياتك.
-              </p>
-
-              <div class="heroActions">
-                <button class="btn primary" data-go="timer">ابدأ تايمر</button>
-                <button class="btn ghost" data-go="subjects">أضف مادة</button>
-              </div>
-
-              <div class="actionsGrid">
-                <button class="actionCard" data-go="tasks">
-                  <div class="acIcon">✅</div>
-                  <div class="acTxt">
-                    <div class="acTitle">المهام</div>
-                    <div class="acSub">نظم واجباتك</div>
-                  </div>
-                  <div class="acArrow">›</div>
-                </button>
-
-                <button class="actionCard" data-go="notebooks">
-                  <div class="acIcon">📓</div>
-                  <div class="acTxt">
-                    <div class="acTitle">دفاتر 3D</div>
-                    <div class="acSub">ملاحظات سريعة</div>
-                  </div>
-                  <div class="acArrow">›</div>
-                </button>
-
-                <button class="actionCard" data-go="stats">
-                  <div class="acIcon">📈</div>
-                  <div class="acTxt">
-                    <div class="acTitle">إحصائيات</div>
-                    <div class="acSub">Canvas بدون مكتبات</div>
-                  </div>
-                  <div class="acArrow">›</div>
-                </button>
-              </div>
-            </div>
-
-            <div class="heroCards">
-              <div class="content-card tilt" data-tilt>
-                <div class="card-header">
-                  <div class="card-icon">⏱</div>
-                  <h3 class="card-title">جلسات اليوم</h3>
-                </div>
-                <p class="card-text">تابع دقائق الدراسة والاستراحة بسهولة.</p>
-                <div class="statRow">
-                  <div class="miniStat">
-                    <div class="miniVal" id="homeToday">0</div>
-                    <div class="miniLab">دقيقة</div>
-                  </div>
-                  <div class="miniStat">
-                    <div class="miniVal" id="homeStreak">0</div>
-                    <div class="miniLab">أيام</div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="content-card tilt" data-tilt>
-                <div class="card-header">
-                  <div class="card-icon">📚</div>
-                  <h3 class="card-title">موادك</h3>
-                </div>
-                <p class="card-text">لا يوجد مواد افتراضية — أنت تضيف من الصفر.</p>
-                <div class="emptyMini" id="homeSubjectsEmpty">ابدأ بإضافة مادة…</div>
-                <div class="chips" id="homeSubjectsChips"></div>
-              </div>
-            </div>
-          </div>
-
-          <div class="sectionTitle">
-            <h3>نصائح سريعة</h3>
-            <p>Micro-interactions + حركة محترمة مع prefers-reduced-motion</p>
-          </div>
-
-          <div class="grid2">
-            <div class="content-card">
-              <div class="card-header">
-                <div class="card-icon">✨</div>
-                <h3 class="card-title">جمالية</h3>
-              </div>
-              <p class="card-text">
-                Hover ناعم + Glass + Gradient خفيف + ظل عميق يعطي Depth.
-              </p>
-            </div>
-
-            <div class="content-card">
-              <div class="card-header">
-                <div class="card-icon">🔒</div>
-                <h3 class="card-title">خصوصية</h3>
-              </div>
-              <p class="card-text">
-                التخزين localStorage فقط. لا يوجد اتصالات خارجية.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <!-- TIMER -->
-        <section class="tab-panel" id="timer" role="tabpanel" aria-label="التايمر">
-          <div class="panel-header">
-            <span class="panel-badge">Focus</span>
-            <h1 class="panel-title">التايمر 3D</h1>
-            <p class="panel-description">
-              اسحب الحلقة لضبط الوقت (Pointer Events + Inertia خفيف).
-            </p>
-          </div>
-
-          <div class="timerWrap">
-            <div class="dialCard content-card">
-              <div class="dialTop">
-                <div class="dialMode">
-                  <button class="seg active" data-mode="study">دراسة</button>
-                  <button class="seg" data-mode="break">استراحة</button>
-                </div>
-                <div class="dialMeta">
-                  <span class="pillTag" id="dialHint">اسحب الحلقة</span>
-                </div>
-              </div>
-
-              <div class="dialStage">
-                <div class="dial tilt" id="dial" data-tilt>
-                  <div class="dialRing" id="dialRing" aria-hidden="true"></div>
-                  <div class="dialInner">
-                    <div class="dialTime" id="dialTime">25:00</div>
-                    <div class="dialSub" id="dialSub">دراسة</div>
-                  </div>
-                  <div class="dialNeedle" id="dialNeedle" aria-hidden="true"></div>
-                </div>
-              </div>
-
-              <div class="timerControls">
-                <div class="field">
-                  <label>المادة (اختياري)</label>
-                  <select id="timerSubjectSelect"></select>
-                </div>
-
-                <div class="row">
-                  <button class="btn primary" id="startTimer">ابدأ</button>
-                  <button class="btn ghost" id="pauseTimer" disabled>إيقاف مؤقت</button>
-                  <button class="btn danger" id="resetTimer">إعادة</button>
-                </div>
-
-                <div class="smallHint" id="timerState">جاهز</div>
-              </div>
-            </div>
-
-            <div class="content-card">
-              <div class="card-header">
-                <div class="card-icon">🧠</div>
-                <h3 class="card-title">ملاحظة</h3>
-              </div>
-              <p class="card-text">
-                سجلات الدراسة تُستخدم للإحصائيات فقط (بدون كوينز).
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <!-- SUBJECTS -->
-        <section class="tab-panel" id="subjects" role="tabpanel" aria-label="المواد">
-          <div class="panel-header">
-            <span class="panel-badge">Library</span>
-            <h1 class="panel-title">المواد</h1>
-            <p class="panel-description">
-              أنشئ موادك بنفسك (حد أقصى 8) — لا توجد مواد افتراضية.
-            </p>
-          </div>
-
-          <div class="grid2">
-            <div class="content-card">
-              <div class="card-header">
-                <div class="card-icon">＋</div>
-                <h3 class="card-title">إضافة مادة</h3>
-              </div>
-
-              <div class="formRow">
-                <div class="field">
-                  <label>اسم المادة</label>
-                  <input id="subjectName" type="text" placeholder="مثال: رياضيات" maxlength="22" />
-                </div>
-                <button class="btn primary" id="addSubject">إضافة</button>
-              </div>
-
-              <p class="smallHint">يمكنك سحب دفتر على المادة لربطه بها (من صفحة الدفاتر).</p>
-            </div>
-
-            <div class="content-card">
-              <div class="card-header">
-                <div class="card-icon">📚</div>
-                <h3 class="card-title">قائمة المواد</h3>
-              </div>
-
-              <div id="subjectsEmpty" class="emptyState">
-                <div class="emptyIcon">📦</div>
-                <div class="emptyTitle">لا توجد مواد بعد</div>
-                <div class="emptySub">ابدأ بإضافة أول مادة</div>
-              </div>
-
-              <div class="subjectList" id="subjectList" aria-label="قائمة المواد (Drop zones)"></div>
-            </div>
-          </div>
-        </section>
-
-        <!-- NOTEBOOKS -->
-        <section class="tab-panel" id="notebooks" role="tabpanel" aria-label="الدفاتر">
-          <div class="panel-header">
-            <span class="panel-badge">Notes</span>
-            <h1 class="panel-title">الدفاتر 3D</h1>
-            <p class="panel-description">
-              أنشئ دفاتر (حد 8) — اسحب لتدوير 3D، واسحب/افلت لربط دفتر بمادة.
-            </p>
-          </div>
-
-          <div class="grid2">
-            <div class="content-card">
-              <div class="card-header">
-                <div class="card-icon">＋</div>
-                <h3 class="card-title">إضافة دفتر</h3>
-              </div>
-
-              <div class="formRow">
-                <div class="field">
-                  <label>اسم الدفتر</label>
-                  <input id="notebookName" type="text" placeholder="مثال: ملخصات" maxlength="22" />
-                </div>
-                <button class="btn primary" id="addNotebook">إضافة</button>
-              </div>
-
-              <div id="notebooksEmpty" class="emptyState">
-                <div class="emptyIcon">📓</div>
-                <div class="emptyTitle">لا توجد دفاتر</div>
-                <div class="emptySub">أضف دفتر ثم افتحه للكتابة</div>
-              </div>
-            </div>
-
-            <div class="content-card">
-              <div class="card-header">
-                <div class="card-icon">🧷</div>
-                <h3 class="card-title">دفاتر</h3>
-              </div>
-              <div class="notebookGrid" id="notebookGrid"></div>
-            </div>
-          </div>
-
-          <!-- Notebook Editor -->
-          <div class="content-card editorCard" id="editorCard" hidden>
-            <div class="editorTop">
-              <div>
-                <div class="editorTitle" id="editorTitle">دفتر</div>
-                <div class="editorMeta">
-                  <span class="pillTag" id="editorLinked">غير مرتبط</span>
-                  <span class="saveState" id="saveState">—</span>
-                </div>
-              </div>
-
-              <div class="editorActions">
-                <select id="editorSubjectSelect" class="miniSelect" title="ربط المادة"></select>
-                <button class="btn ghost" id="closeEditor">إغلاق</button>
-              </div>
-            </div>
-
-            <textarea id="editorText" class="editor" placeholder="اكتب ملاحظاتك هنا..."></textarea>
-          </div>
-        </section>
-
-        <!-- TASKS -->
-        <section class="tab-panel" id="tasks" role="tabpanel" aria-label="المهام">
-          <div class="panel-header">
-            <span class="panel-badge">Todo</span>
-            <h1 class="panel-title">المهام</h1>
-            <p class="panel-description">لكل مادة مهامها الخاصة — بدون كوينز.</p>
-          </div>
-
-          <div class="content-card">
-            <div class="formRow">
-              <div class="field">
-                <label>اختر مادة</label>
-                <select id="tasksSubjectSelect"></select>
-              </div>
-              <div class="field">
-                <label>مهمة جديدة</label>
-                <input id="taskText" type="text" placeholder="مثال: حل واجب 3" maxlength="60" />
-              </div>
-              <button class="btn primary" id="addTask">إضافة</button>
-            </div>
-
-            <div id="tasksEmpty" class="emptyState">
-              <div class="emptyIcon">✅</div>
-              <div class="emptyTitle">لا توجد مهام</div>
-              <div class="emptySub">اختر مادة وأضف أول مهمة</div>
-            </div>
-
-            <div class="taskList" id="taskList"></div>
-          </div>
-        </section>
-
-        <!-- STATS -->
-        <section class="tab-panel" id="stats" role="tabpanel" aria-label="الإحصائيات">
-          <div class="panel-header">
-            <span class="panel-badge">Insights</span>
-            <h1 class="panel-title">الإحصائيات</h1>
-            <p class="panel-description">Canvas Charts بدون أي مكتبات خارجية.</p>
-          </div>
-
-          <div class="grid2">
-            <div class="content-card">
-              <div class="card-header">
-                <div class="card-icon">📊</div>
-                <h3 class="card-title">إجمالي</h3>
-              </div>
-              <div class="statsGrid">
-                <div class="statItem">
-                  <div class="statValue" id="statTotal">0</div>
-                  <div class="statLabel">دقائق (كل الوقت)</div>
-                </div>
-                <div class="statItem">
-                  <div class="statValue" id="statWeek">0</div>
-                  <div class="statLabel">هذا الأسبوع</div>
-                </div>
-                <div class="statItem">
-                  <div class="statValue" id="statMonth">0</div>
-                  <div class="statLabel">هذا الشهر</div>
-                </div>
-              </div>
-              <div class="canvasWrap">
-                <canvas id="overallChart" width="900" height="320" aria-label="Overall chart"></canvas>
-              </div>
-            </div>
-
-            <div class="content-card">
-              <div class="card-header">
-                <div class="card-icon">📚</div>
-                <h3 class="card-title">حسب المادة</h3>
-              </div>
-              <div id="perSubjectEmpty" class="emptyState">
-                <div class="emptyIcon">📦</div>
-                <div class="emptyTitle">لا يوجد بيانات بعد</div>
-                <div class="emptySub">ابدأ جلسة من صفحة التايمر</div>
-              </div>
-              <div class="canvasWrap">
-                <canvas id="subjectChart" width="900" height="320" aria-label="Subjects chart"></canvas>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- SETTINGS -->
-        <section class="tab-panel" id="settings" role="tabpanel" aria-label="الإعدادات">
-          <div class="panel-header">
-            <span class="panel-badge">Config</span>
-            <h1 class="panel-title">الإعدادات</h1>
-            <p class="panel-description">تصدير/استيراد بيانات JSON + حذف كل شيء.</p>
-          </div>
-
-          <div class="grid2">
-            <div class="content-card">
-              <div class="card-header">
-                <div class="card-icon">🌓</div>
-                <h3 class="card-title">المظهر</h3>
-              </div>
-
-              <div class="toggleRow">
-                <div class="toggleInfo">
-                  <div class="tTitle">الوضع الداكن</div>
-                  <div class="tSub">افتراضيًا داكن أنيق</div>
-                </div>
-                <button class="toggle" id="themeToggle" aria-pressed="true">
-                  <span class="knob"></span>
-                </button>
-              </div>
-
-              <div class="smallHint">يحترم prefers-reduced-motion تلقائيًا.</div>
-            </div>
-
-            <div class="content-card">
-              <div class="card-header">
-                <div class="card-icon">🗃</div>
-                <h3 class="card-title">البيانات</h3>
-              </div>
-
-              <div class="row">
-                <button class="btn ghost" id="exportBtn">تصدير JSON</button>
-                <label class="btn ghost fileBtn">
-                  استيراد JSON
-                  <input type="file" id="importFile" accept="application/json" hidden />
-                </label>
-                <button class="btn danger" id="resetBtn">حذف كل البيانات</button>
-              </div>
-
-              <div class="smallHint">
-                الخصوصية: كل شيء محفوظ محليًا فقط (localStorage).
-              </div>
-            </div>
-          </div>
-
-          <div class="content-card">
-            <div class="card-header">
-              <div class="card-icon">⚠</div>
-              <h3 class="card-title">إخلاء مسؤولية</h3>
-            </div>
-            <p class="card-text">
-              هذا الموقع لأغراض التنظيم فقط، ولا يعتبر نصيحة طبية/قانونية/مالية.
-            </p>
-          </div>
-        </section>
+    <div class="home-actions">
+      <div class="action-card" onclick="goto('timer')">
+        <span class="action-num">01</span>
+        <span class="action-icon">⏱</span>
+        <div class="action-title">ابدأ جلسة تركيز</div>
+        <div class="action-desc">تايمر بومودورو ثلاثي الأبعاد مع تتبع تلقائي للدقائق والإشعار عند انتهاء الجلسة.</div>
+        <span class="btn btn-cyan btn-sm" style="width:fit-content;pointer-events:none;margin-top:4px">ابدأ الآن ←</span>
       </div>
-    </section>
-  </main>
+      <div class="action-card" onclick="goto('tasks')">
+        <span class="action-num">02</span>
+        <span class="action-icon">✅</span>
+        <div class="action-title">مراجعة المهام</div>
+        <div class="action-desc">نظّم واجباتك ومهامك لكل مادة وتابع مستوى الإنجاز بشكل واضح.</div>
+        <span class="btn btn-blue btn-sm" style="width:fit-content;pointer-events:none;margin-top:4px">افتح المهام ←</span>
+      </div>
+    </div>
 
-  <!-- Toasts -->
-  <div class="toasts" id="toasts" aria-live="polite" aria-atomic="true"></div>
+    <div class="home-bottom">
+      <div class="card">
+        <div class="card-head"><span class="card-icon">💡</span>نصائح الدراسة</div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <span style="color:var(--cyan);font-size:16px;margin-top:3px;flex-shrink:0">◆</span>
+            <span style="font-size:14px;color:var(--muted);font-weight:300;line-height:1.6">استخدم تقنية بومودورو: 25 دقيقة تركيز ثم 5 دقائق استراحة لزيادة الإنتاجية.</span>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <span style="color:var(--blue);font-size:16px;margin-top:3px;flex-shrink:0">◆</span>
+            <span style="font-size:14px;color:var(--muted);font-weight:300;line-height:1.6">اربط كل جلسة تايمر بمادة محددة لتتبع دقائقك بدقة في الإحصائيات.</span>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <span style="color:var(--red);font-size:16px;margin-top:3px;flex-shrink:0">◆</span>
+            <span style="font-size:14px;color:var(--muted);font-weight:300;line-height:1.6">راجع الإحصائيات أسبوعيًا لتحديد المواد التي تحتاج انتباهًا أكبر.</span>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-icon">🔒</span>الخصوصية التامة</div>
+        <p style="font-size:14px;color:var(--muted);font-weight:300;line-height:1.9">
+          جميع بياناتك محفوظة في <strong style="color:var(--cyan)">localStorage</strong> فقط داخل متصفحك.<br>
+          لا يوجد أي اتصال بخوادم خارجية من أي نوع.<br>
+          يمكنك تصدير بياناتك كـ JSON متى شئت من صفحة الإعدادات.
+        </p>
+      </div>
+    </div>
+  </section>
 
-  <script src="app.js"></script>
+  <!-- TIMER -->
+  <section class="sec" id="sec-timer">
+    <div class="sec-header">
+      <span class="sec-tag">Focus Timer · تايمر التركيز</span>
+      <h1 class="sec-title">التايمر ثلاثي الأبعاد</h1>
+      <p class="sec-sub">حرّك الفأرة فوق التايمر لتفاعل ثلاثي الأبعاد — تتبع تلقائي للدقائق</p>
+    </div>
+
+    <div class="timer-wrap">
+      <!-- Mode tabs -->
+      <div class="timer-mode-row">
+        <button class="mode-tab active-study" id="tab-st" onclick="setMode('study')">🧠 دراسة</button>
+        <button class="mode-tab" id="tab-br" onclick="setMode('break')">☕ استراحة</button>
+      </div>
+
+      <!-- 3D Timer -->
+      <div class="timer-3d-scene">
+        <div class="timer-card" id="tCard"
+             onmousemove="tMouseMove(event)"
+             onmouseleave="tMouseLeave()">
+
+          <!-- Background disc -->
+          <div class="timer-disc"></div>
+
+          <!-- SVG ring -->
+          <svg class="timer-svg" id="tSvg" viewBox="0 0 380 380">
+            <defs>
+              <linearGradient id="gStudy" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#1236D8"/>
+                <stop offset="50%" stop-color="#00C6FF"/>
+                <stop offset="100%" stop-color="#1236D8"/>
+              </linearGradient>
+              <linearGradient id="gBreak" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#E10600"/>
+                <stop offset="100%" stop-color="#FF5500"/>
+              </linearGradient>
+            </defs>
+            <!-- Track -->
+            <circle class="t-track" cx="190" cy="190" r="178"/>
+            <!-- Glow -->
+            <circle class="t-glow" cx="190" cy="190" r="178"
+                    id="tGlow" stroke="url(#gStudy)"
+                    stroke-dasharray="1119" stroke-dashoffset="0"/>
+            <!-- Progress -->
+            <circle class="t-prog" cx="190" cy="190" r="178"
+                    id="tProg" stroke="url(#gStudy)"
+                    stroke-dasharray="1119" stroke-dashoffset="0"/>
+          </svg>
+
+          <!-- Orbiting dots -->
+          <div class="orbit-ring">
+            <div class="orb-dot orb-1"></div>
+            <div class="orb-dot orb-2"></div>
+            <div class="orb-dot orb-3"></div>
+          </div>
+
+          <!-- Pulse rings -->
+          <div class="pulse-r" id="pr1"></div>
+          <div class="pulse-r" id="pr2"></div>
+
+          <!-- Center display -->
+          <div class="timer-center">
+            <div class="timer-digits" id="tDisplay">25:00</div>
+            <div class="timer-mode-txt study" id="tModeLbl">دراسة</div>
+            <div class="timer-subj-txt" id="tSubjBadge">لم تختر مادة</div>
+          </div>
+        </div>
+        <div class="timer-shadow"></div>
+      </div>
+
+      <!-- Presets -->
+      <div class="timer-presets">
+        <button class="preset on" data-m="25" onclick="setPreset(25,this)">25 دقيقة</button>
+        <button class="preset" data-m="45" onclick="setPreset(45,this)">45 دقيقة</button>
+        <button class="preset" data-m="60" onclick="setPreset(60,this)">60 دقيقة</button>
+        <button class="preset" data-m="90" onclick="setPreset(90,this)">90 دقيقة</button>
+      </div>
+
+      <!-- Subject selector -->
+      <select class="inp timer-subj-sel" id="tSubjSel" onchange="updateSubjBadge()">
+        <option value="">المادة (اختياري)</option>
+      </select>
+
+      <!-- Controls -->
+      <div class="timer-btns">
+        <button class="btn btn-cyan" id="btnStart" onclick="tStart()">▶ ابدأ</button>
+        <button class="btn btn-ghost" id="btnPause" onclick="tPause()" style="display:none">⏸ توقف</button>
+        <button class="btn btn-ghost" onclick="tReset()">↺ إعادة</button>
+      </div>
+
+      <div class="timer-status" id="tStatus">جاهز للانطلاق</div>
+    </div>
+  </section>
+
+  <!-- SUBJECTS -->
+  <section class="sec" id="sec-subjects">
+    <div class="sec-header">
+      <span class="sec-tag">Library · المكتبة</span>
+      <h1 class="sec-title">المواد الدراسية</h1>
+      <p class="sec-sub">أنشئ موادك الخاصة (حد أقصى 8) — لا مواد افتراضية</p>
+    </div>
+
+    <div class="add-bar">
+      <div class="ff">
+        <label class="form-label">اسم المادة الجديدة</label>
+        <input class="inp" id="subjInp" placeholder="مثال: رياضيات، فيزياء، إنجليزي..."
+               onkeydown="if(event.key==='Enter')addSubj()">
+      </div>
+      <button class="btn btn-cyan" onclick="addSubj()">＋ إضافة</button>
+    </div>
+
+    <div id="subjList"></div>
+  </section>
+
+  <!-- TASKS -->
+  <section class="sec" id="sec-tasks">
+    <div class="sec-header">
+      <span class="sec-tag">Todo · المهام</span>
+      <h1 class="sec-title">قائمة المهام</h1>
+      <p class="sec-sub">لكل مادة مهامها المستقلة — نظّم واجباتك بدقة</p>
+    </div>
+
+    <div class="tasks-top">
+      <div class="ff1">
+        <label class="form-label">المادة</label>
+        <select class="inp" id="taskSel" onchange="renderTasks()">
+          <option value="">— اختر مادة —</option>
+        </select>
+      </div>
+      <div class="ff2">
+        <label class="form-label">مهمة جديدة</label>
+        <input class="inp" id="taskInp" placeholder="أدخل مهمة جديدة..."
+               onkeydown="if(event.key==='Enter')addTask()">
+      </div>
+      <button class="btn btn-cyan" onclick="addTask()">＋ إضافة</button>
+    </div>
+
+    <div id="taskList"></div>
+  </section>
+
+  <!-- STATS -->
+  <section class="sec" id="sec-stats">
+    <div class="sec-header">
+      <span class="sec-tag">Insights · الإحصائيات</span>
+      <h1 class="sec-title">الإحصائيات</h1>
+      <p class="sec-sub">Canvas Charts بدون أي مكتبات خارجية</p>
+    </div>
+
+    <div class="stats-kpi">
+      <div class="kpi b" style="padding:22px">
+        <div class="kpi-glow"></div>
+        <div class="kpi-bar"></div>
+        <div class="kpi-val" id="st-total">0</div>
+        <div class="kpi-label">إجمالي الدقائق</div>
+      </div>
+      <div class="kpi c" style="padding:22px">
+        <div class="kpi-glow"></div>
+        <div class="kpi-bar"></div>
+        <div class="kpi-val" id="st-week">0</div>
+        <div class="kpi-label">هذا الأسبوع</div>
+      </div>
+      <div class="kpi r" style="padding:22px">
+        <div class="kpi-glow"></div>
+        <div class="kpi-bar"></div>
+        <div class="kpi-val" id="st-month">0</div>
+        <div class="kpi-label">هذا الشهر</div>
+      </div>
+    </div>
+
+    <div class="stats-charts">
+      <div class="card">
+        <div class="card-head"><span class="card-icon">📈</span>آخر 7 أيام</div>
+        <canvas id="cWeek" height="200"></canvas>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-icon">🍕</span>حسب المادة</div>
+        <canvas id="cSubj" height="200"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section class="sec" id="sec-settings">
+    <div class="sec-header">
+      <span class="sec-tag">Config · الإعدادات</span>
+      <h1 class="sec-title">الإعدادات</h1>
+      <p class="sec-sub">تصدير واستيراد البيانات · إدارة التخزين المحلي</p>
+    </div>
+
+    <div class="settings-grid">
+      <div class="card">
+        <div class="card-head"><span class="card-icon">🗃</span>إدارة البيانات</div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <button class="btn btn-blue" onclick="exportData()">⬇ تصدير JSON</button>
+          <button class="btn btn-ghost" onclick="document.getElementById('impFile').click()">⬆ استيراد JSON</button>
+          <input type="file" id="impFile" accept=".json" style="display:none" onchange="importData(event)">
+          <button class="btn btn-red" onclick="deleteAll()">🗑 حذف كل البيانات</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><span class="card-icon">ℹ</span>إحصائيات التخزين</div>
+        <div class="info-row">
+          <span class="info-lab">المواد</span>
+          <span class="info-val" id="inf-s" style="color:var(--cyan)">0</span>
+        </div>
+        <div class="info-row">
+          <span class="info-lab">إجمالي المهام</span>
+          <span class="info-val" id="inf-t" style="color:var(--blue)">0</span>
+        </div>
+        <div class="info-row">
+          <span class="info-lab">جلسات الدراسة</span>
+          <span class="info-val" id="inf-ss" style="color:var(--red)">0</span>
+        </div>
+      </div>
+
+      <div class="card" style="grid-column:1/-1">
+        <div class="card-head"><span class="card-icon">⚠</span>إخلاء المسؤولية</div>
+        <p style="font-size:14px;color:var(--muted);font-weight:300;line-height:1.9">
+          هذا التطبيق مخصص للأغراض التنظيمية والدراسية فقط. لا يُعتبر نصيحة طبية أو قانونية أو مالية من أي نوع.
+          جميع البيانات محفوظة محليًا داخل متصفحك (localStorage) ولا يتم إرسالها لأي خادم خارجي.
+          يمكنك حذف جميع بياناتك في أي وقت من خلال الزر أعلاه.
+        </p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- Particles layer -->
+<div id="ptcls"></div>
+
+<script>
+/* ================================================================
+   DATA LAYER
+   ================================================================ */
+const K = k => 'serag_' + k;
+const load = (k, d) => { try { const v = localStorage.getItem(K(k)); return v ? JSON.parse(v) : d; } catch { return d; } };
+const save = (k, v) => { try { localStorage.setItem(K(k), JSON.stringify(v)); } catch {} };
+
+let subjects = load('subjects', []);
+let tasks    = load('tasks', {});
+let sessions = load('sessions', []);
+
+function persist() {
+  save('subjects', subjects);
+  save('tasks', tasks);
+  save('sessions', sessions);
+}
+
+const today = () => new Date().toISOString().slice(0, 10);
+const esc   = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+/* ================================================================
+   NAVIGATION
+   ================================================================ */
+function goto(id) {
+  document.querySelectorAll('.sec').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(n => n.classList.toggle('active', n.dataset.s === id));
+  const el = document.getElementById('sec-' + id);
+  if (el) el.classList.add('active');
+  const actions = {
+    home:     refreshHome,
+    timer:    () => fillSubjSelect('tSubjSel'),
+    subjects: renderSubjects,
+    tasks:    () => { fillSubjSelect('taskSel'); renderTasks(); },
+    stats:    renderStats,
+    settings: refreshSettings,
+  };
+  (actions[id] || (() => {}))();
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+
+document.querySelectorAll('.nav-link').forEach(n => n.addEventListener('click', () => goto(n.dataset.s)));
+
+/* ================================================================
+   HOME
+   ================================================================ */
+function refreshHome() {
+  const todayMins = sessions.filter(s => s.date === today()).reduce((a, s) => a + s.minutes, 0);
+  const doneTasks = Object.values(tasks).flat().filter(t => t.done).length;
+  [['h-mins', todayMins], ['h-tdone', doneTasks], ['h-subj', subjects.length],
+   ['sb-mins', todayMins], ['sb-tasks', doneTasks]].forEach(([id, v]) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = v;
+  });
+}
+
+/* ================================================================
+   TIMER
+   ================================================================ */
+const CIRC = 2 * Math.PI * 178; // ~1119.0
+let tSecs    = 25 * 60;
+let tTotal   = 25 * 60;
+let tMode    = 'study';
+let tRunning = false;
+let tIval    = null;
+
+function setMode(m) {
+  tMode = m;
+  document.getElementById('tab-st').className = 'mode-tab' + (m === 'study' ? ' active-study' : '');
+  document.getElementById('tab-br').className = 'mode-tab' + (m === 'break' ? ' active-break' : '');
+
+  const lbl = document.getElementById('tModeLbl');
+  lbl.className = 'timer-mode-txt ' + m;
+  lbl.textContent = m === 'study' ? 'دراسة' : 'استراحة';
+
+  const grad = m === 'study' ? 'url(#gStudy)' : 'url(#gBreak)';
+  document.getElementById('tProg').setAttribute('stroke', grad);
+  document.getElementById('tGlow').setAttribute('stroke', grad);
+
+  const card = document.getElementById('tCard');
+  card.classList.toggle('break-mode', m === 'break');
+
+  // Pulse ring color
+  document.querySelectorAll('.pulse-r').forEach(r => {
+    r.style.borderColor = m === 'break' ? 'var(--red)' : 'var(--cyan)';
+  });
+
+  if (!tRunning) {
+    const active = document.querySelector('.preset.on');
+    const mins = active ? parseInt(active.dataset.m) : (m === 'study' ? 25 : 5);
+    tSecs = mins * 60; tTotal = mins * 60;
+    updateDisplay(); updateRing();
+  }
+}
+
+function setPreset(mins, btn) {
+  document.querySelectorAll('.preset').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  if (!tRunning) {
+    tSecs = mins * 60; tTotal = mins * 60;
+    updateDisplay(); updateRing();
+  }
+}
+
+function updateSubjBadge() {
+  const v = document.getElementById('tSubjSel').value;
+  const s = subjects.find(s => s.id === v);
+  document.getElementById('tSubjBadge').textContent = s ? s.name : 'لم تختر مادة';
+}
+
+function tStart() {
+  if (tRunning) return;
+  tRunning = true;
+  document.getElementById('btnStart').style.display = 'none';
+  document.getElementById('btnPause').style.display = '';
+  const st = document.getElementById('tStatus');
+  st.className = 'timer-status on';
+  st.textContent = tMode === 'study' ? '🔴 جلسة دراسة نشطة...' : '☕ استراحة نشطة...';
+  tIval = setInterval(() => {
+    tSecs--;
+    if (tSecs <= 0) { tSecs = 0; clearInterval(tIval); tRunning = false; tDone(); }
+    updateDisplay(); updateRing();
+  }, 1000);
+}
+
+function tPause() {
+  clearInterval(tIval); tRunning = false;
+  document.getElementById('btnStart').style.display = '';
+  document.getElementById('btnPause').style.display = 'none';
+  const st = document.getElementById('tStatus');
+  st.className = 'timer-status';
+  st.textContent = '⏸ متوقف مؤقتًا';
+}
+
+function tReset() {
+  clearInterval(tIval); tRunning = false;
+  const active = document.querySelector('.preset.on');
+  const mins = active ? parseInt(active.dataset.m) : (tMode === 'study' ? 25 : 5);
+  tSecs = mins * 60; tTotal = mins * 60;
+  document.getElementById('btnStart').style.display = '';
+  document.getElementById('btnPause').style.display = 'none';
+  const st = document.getElementById('tStatus');
+  st.className = 'timer-status';
+  st.textContent = 'جاهز للانطلاق';
+  updateDisplay(); updateRing();
+}
+
+function tDone() {
+  if (tMode === 'study') {
+    const subId = document.getElementById('tSubjSel').value || null;
+    sessions.push({ id: Date.now(), date: today(), minutes: Math.round(tTotal / 60), subjectId: subId });
+    persist(); refreshHome();
+  }
+  spawnParticles();
+  document.getElementById('btnStart').style.display = '';
+  document.getElementById('btnPause').style.display = 'none';
+  const st = document.getElementById('tStatus');
+  st.className = 'timer-status ' + (tMode === 'study' ? 'on' : 'br');
+  st.textContent = tMode === 'study'
+    ? '✅ أحسنت! جلسة مكتملة — خذ استراحة!'
+    : '⚡ انتهت الاستراحة — عودة للدراسة!';
+  setTimeout(() => setMode(tMode === 'study' ? 'break' : 'study'), 3200);
+}
+
+function updateDisplay() {
+  const m = String(Math.floor(tSecs / 60)).padStart(2, '0');
+  const s = String(tSecs % 60).padStart(2, '0');
+  document.getElementById('tDisplay').textContent = m + ':' + s;
+}
+
+function updateRing() {
+  const pct = tSecs / tTotal;
+  const offset = CIRC * (1 - pct);
+  document.getElementById('tProg').style.strokeDashoffset = offset;
+  document.getElementById('tGlow').style.strokeDashoffset = offset;
+}
+
+// 3D mouse tilt
+function tMouseMove(e) {
+  const card = document.getElementById('tCard');
+  const r = card.getBoundingClientRect();
+  const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  const dx = (e.clientX - cx) / (r.width / 2);
+  const dy = (e.clientY - cy) / (r.height / 2);
+  card.style.transform = `rotateX(${-dy * 22}deg) rotateY(${dx * 22}deg) scale(1.04)`;
+  card.style.animationPlayState = 'paused';
+}
+function tMouseLeave() {
+  const card = document.getElementById('tCard');
+  card.style.transform = '';
+  card.style.animationPlayState = 'running';
+}
+
+// Init SVG dasharray
+['tProg', 'tGlow'].forEach(id => {
+  document.getElementById(id).style.strokeDasharray = CIRC;
+  document.getElementById(id).style.strokeDashoffset = '0';
+});
+
+// Particles
+function spawnParticles() {
+  const c = document.getElementById('ptcls');
+  const colors = ['#1236D8', '#00C6FF', '#E10600', '#ffffff', '#80DFFF'];
+  const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+  for (let i = 0; i < 50; i++) {
+    const p = document.createElement('div');
+    p.className = 'ptcl';
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 100 + Math.random() * 300;
+    const tx = `translate(${Math.cos(angle) * dist}px, ${Math.sin(angle) * dist - Math.random() * 200}px)`;
+    const sz = 4 + Math.random() * 8;
+    p.style.cssText = `
+      left:${cx + (Math.random() - .5) * 160}px;
+      top:${cy + (Math.random() - .5) * 160}px;
+      width:${sz}px;height:${sz}px;
+      background:${colors[Math.floor(Math.random() * colors.length)]};
+      --pt:${tx};
+      animation-duration:${1.2 + Math.random() * .8}s;
+      animation-delay:${Math.random() * .3}s;
+      border-radius:${Math.random() > .4 ? '50%' : '2px'};
+      box-shadow:0 0 8px currentColor;
+    `;
+    c.appendChild(p);
+    setTimeout(() => p.remove(), 2200);
+  }
+}
+
+/* ================================================================
+   SUBJECTS
+   ================================================================ */
+function fillSubjSelect(selId) {
+  const sel = document.getElementById(selId);
+  if (!sel) return;
+  const prev = sel.value;
+  const isTimer = selId === 'tSubjSel';
+  sel.innerHTML = `<option value="">${isTimer ? 'المادة (اختياري)' : '— اختر مادة —'}</option>`;
+  subjects.forEach(s => {
+    const o = document.createElement('option');
+    o.value = s.id; o.textContent = s.name;
+    sel.appendChild(o);
+  });
+  if (subjects.find(s => s.id === prev)) sel.value = prev;
+}
+
+function addSubj() {
+  const inp = document.getElementById('subjInp');
+  const name = inp.value.trim();
+  if (!name) return;
+  if (subjects.length >= 8) { alert('الحد الأقصى 8 مواد'); return; }
+  const id = 's_' + Date.now();
+  subjects.push({ id, name, at: new Date().toISOString() });
+  tasks[id] = [];
+  persist(); inp.value = '';
+  renderSubjects(); refreshHome();
+  fillSubjSelect('tSubjSel'); fillSubjSelect('taskSel');
+}
+
+function delSubj(id) {
+  if (!confirm('حذف المادة وكل مهامها؟')) return;
+  subjects = subjects.filter(s => s.id !== id);
+  delete tasks[id];
+  persist(); renderSubjects(); refreshHome();
+  fillSubjSelect('tSubjSel'); fillSubjSelect('taskSel');
+  renderTasks();
+}
+
+function renderSubjects() {
+  const c = document.getElementById('subjList');
+  if (!subjects.length) {
+    c.innerHTML = `<div class="empty"><span class="empty-ico">📦</span><div class="empty-t">لا توجد مواد بعد</div><div class="empty-s">ابدأ بإضافة أول مادة دراسية من الحقل أعلاه</div></div>`;
+    return;
+  }
+  c.innerHTML = `<div class="subj-grid">${subjects.map(s => {
+    const ts = tasks[s.id] || [];
+    const done = ts.filter(t => t.done).length;
+    const mins = sessions.filter(ss => ss.subjectId === s.id).reduce((a, ss) => a + ss.minutes, 0);
+    return `<div class="subj-card">
+      <div class="subj-name">${esc(s.name)}</div>
+      <div class="subj-meta">
+        <span class="subj-stat">مهام: <strong>${done}/${ts.length}</strong></span>
+        <span class="subj-stat">دقائق: <strong>${mins}</strong></span>
+      </div>
+      <div class="subj-acts">
+        <button class="btn btn-ghost btn-sm" onclick="goto('tasks');setTimeout(()=>{const s=document.getElementById('taskSel');s.value='${s.id}';renderTasks();},120)">المهام</button>
+        <button class="btn btn-red btn-sm" onclick="delSubj('${s.id}')">حذف</button>
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+/* ================================================================
+   TASKS
+   ================================================================ */
+function addTask() {
+  const subId = document.getElementById('taskSel').value;
+  const inp = document.getElementById('taskInp');
+  const text = inp.value.trim();
+  if (!subId) { alert('اختر مادة أولًا'); return; }
+  if (!text) return;
+  if (!tasks[subId]) tasks[subId] = [];
+  tasks[subId].push({ id: 't_' + Date.now(), text, done: false, at: new Date().toISOString() });
+  persist(); inp.value = '';
+  renderTasks(); refreshHome();
+}
+
+function toggleTask(subId, taskId) {
+  const t = (tasks[subId] || []).find(t => t.id === taskId);
+  if (t) { t.done = !t.done; persist(); renderTasks(); refreshHome(); }
+}
+
+function delTask(subId, taskId) {
+  tasks[subId] = (tasks[subId] || []).filter(t => t.id !== taskId);
+  persist(); renderTasks(); refreshHome();
+}
+
+function renderTasks() {
+  const subId = document.getElementById('taskSel').value;
+  const c = document.getElementById('taskList');
+  if (!subId) {
+    c.innerHTML = `<div class="empty"><span class="empty-ico">📋</span><div class="empty-t">اختر مادة أولًا</div><div class="empty-s">اختر مادة من القائمة أعلاه لعرض مهامها</div></div>`;
+    return;
+  }
+  const items = tasks[subId] || [];
+  if (!items.length) {
+    c.innerHTML = `<div class="empty"><span class="empty-ico">✅</span><div class="empty-t">لا توجد مهام بعد</div><div class="empty-s">أضف أول مهمة لهذه المادة</div></div>`;
+    return;
+  }
+  c.innerHTML = items.map(t => `
+    <div class="task-item${t.done ? ' done' : ''}">
+      <div class="t-check" onclick="toggleTask('${subId}','${t.id}')">${t.done ? '✓' : ''}</div>
+      <span class="task-txt">${esc(t.text)}</span>
+      <button class="task-del" onclick="delTask('${subId}','${t.id}')">✕</button>
+    </div>`).join('');
+}
+
+/* ================================================================
+   STATISTICS
+   ================================================================ */
+function renderStats() {
+  const total = sessions.reduce((a, s) => a + s.minutes, 0);
+  const wAgo = new Date(); wAgo.setDate(wAgo.getDate() - 7);
+  const mAgo = new Date(); mAgo.setMonth(mAgo.getMonth() - 1);
+  const weekMins  = sessions.filter(s => new Date(s.date) >= wAgo).reduce((a, s) => a + s.minutes, 0);
+  const monthMins = sessions.filter(s => new Date(s.date) >= mAgo).reduce((a, s) => a + s.minutes, 0);
+  document.getElementById('st-total').textContent = total;
+  document.getElementById('st-week').textContent  = weekMins;
+  document.getElementById('st-month').textContent = monthMins;
+  drawWeekChart();
+  drawSubjChart();
+}
+
+function drawWeekChart() {
+  const canvas = document.getElementById('cWeek');
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.parentElement.offsetWidth - 56;
+  canvas.height = 200;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const days = [], labels = [];
+  const dayNames = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    days.push(d.toISOString().slice(0, 10));
+    labels.push(dayNames[d.getDay()]);
+  }
+
+  const data = days.map(d => sessions.filter(s => s.date === d).reduce((a, s) => a + s.minutes, 0));
+  const maxV = Math.max(...data, 1);
+  const pad = 36, bW = (canvas.width - pad * 2) / 7;
+
+  // Grid
+  for (let i = 0; i <= 4; i++) {
+    const y = pad + (canvas.height - pad * 2) * (1 - i / 4);
+    ctx.strokeStyle = 'rgba(18,54,216,.12)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(canvas.width - pad, y); ctx.stroke();
+    ctx.setLineDash([]);
+    if (i > 0) {
+      ctx.fillStyle = 'rgba(96,104,144,.55)';
+      ctx.font = '11px Zain,sans-serif';
+      ctx.textAlign = 'end';
+      ctx.fillText(Math.round(maxV * i / 4), pad - 4, y + 4);
+    }
+  }
+
+  data.forEach((v, i) => {
+    const x = pad + i * bW + bW * .12;
+    const w = bW * .76;
+    const h = (v / maxV) * (canvas.height - pad * 2);
+    const y = canvas.height - pad - h;
+    const r = 5;
+
+    const g = ctx.createLinearGradient(0, y, 0, y + h);
+    g.addColorStop(0, '#00C6FF');
+    g.addColorStop(1, '#1236D8');
+    ctx.fillStyle = g;
+
+    if (h > 0) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h); ctx.lineTo(x, y + h);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+      ctx.shadowColor = 'rgba(0,198,255,.5)'; ctx.shadowBlur = 10;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+
+    // Bar baseline
+    ctx.strokeStyle = 'rgba(18,54,216,.2)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x, canvas.height - pad); ctx.lineTo(x + w, canvas.height - pad);
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(96,104,144,.75)';
+    ctx.font = '11px Zain,sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(labels[i], x + w / 2, canvas.height - 8);
+
+    if (v > 0) {
+      ctx.fillStyle = '#00C6FF';
+      ctx.font = 'bold 11px Zain,sans-serif';
+      ctx.fillText(v, x + w / 2, y - 5);
+    }
+  });
+}
+
+function drawSubjChart() {
+  const canvas = document.getElementById('cSubj');
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.parentElement.offsetWidth - 56;
+  canvas.height = 200;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const data = subjects.map(s => ({
+    name: s.name,
+    mins: sessions.filter(ss => ss.subjectId === s.id).reduce((a, ss) => a + ss.minutes, 0)
+  })).filter(s => s.mins > 0);
+
+  if (!data.length) {
+    ctx.fillStyle = 'rgba(96,104,144,.5)';
+    ctx.font = '14px Zain,sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('لا يوجد بيانات بعد', canvas.width / 2, canvas.height / 2);
+    return;
+  }
+
+  const total = data.reduce((a, s) => a + s.mins, 0);
+  const colors = ['#1236D8','#00C6FF','#E10600','#8844CC','#FF8800','#00CC88','#FF4488','#44CCFF'];
+  const cx = canvas.width / 2, cy = canvas.height / 2;
+  const r = Math.min(cx, cy) - 24;
+  let angle = -Math.PI / 2;
+
+  data.forEach((s, i) => {
+    const sweep = (s.mins / total) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, angle, angle + sweep);
+    ctx.closePath();
+    ctx.fillStyle = colors[i % colors.length];
+    ctx.shadowColor = colors[i % colors.length];
+    ctx.shadowBlur = 10;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = 'rgba(14,14,18,.8)';
+    ctx.lineWidth = 2; ctx.stroke();
+
+    if (sweep > 0.35) {
+      const mid = angle + sweep / 2;
+      ctx.fillStyle = 'rgba(255,255,255,.92)';
+      ctx.font = 'bold 11px Zain,sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(s.name.slice(0, 5), cx + Math.cos(mid) * r * .65, cy + Math.sin(mid) * r * .65 + 4);
+    }
+    angle += sweep;
+  });
+
+  // Donut hole
+  ctx.beginPath(); ctx.arc(cx, cy, r * .42, 0, Math.PI * 2);
+  ctx.fillStyle = '#15151D'; ctx.fill();
+
+  // Center total
+  ctx.fillStyle = '#00C6FF';
+  ctx.font = 'bold 13px Zain,sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(total + ' د', cx, cy + 5);
+}
+
+/* ================================================================
+   SETTINGS
+   ================================================================ */
+function refreshSettings() {
+  document.getElementById('inf-s').textContent  = subjects.length;
+  document.getElementById('inf-t').textContent  = Object.values(tasks).flat().length;
+  document.getElementById('inf-ss').textContent = sessions.length;
+}
+
+function exportData() {
+  const blob = new Blob([JSON.stringify({ subjects, tasks, sessions, at: new Date().toISOString() }, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'serag-' + today() + '.json';
+  a.click();
+}
+
+function importData(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    try {
+      const d = JSON.parse(ev.target.result);
+      if (d.subjects) subjects = d.subjects;
+      if (d.tasks)    tasks    = d.tasks;
+      if (d.sessions) sessions = d.sessions;
+      persist(); refreshSettings(); refreshHome();
+      alert('✅ تم الاستيراد بنجاح!');
+    } catch { alert('❌ ملف غير صالح'); }
+  };
+  r.readAsText(file);
+  e.target.value = '';
+}
+
+function deleteAll() {
+  if (!confirm('⚠ سيتم حذف جميع البيانات نهائيًا. هل أنت متأكد؟')) return;
+  subjects = []; tasks = {}; sessions = [];
+  persist(); refreshSettings(); refreshHome();
+  renderSubjects(); renderTasks();
+  alert('🗑 تم حذف جميع البيانات.');
+}
+
+/* ================================================================
+   MOBILE
+   ================================================================ */
+document.getElementById('mobToggle').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('show');
+});
+document.getElementById('overlay').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+});
+
+/* ================================================================
+   INIT
+   ================================================================ */
+(function init() {
+  refreshHome();
+  fillSubjSelect('tSubjSel');
+  fillSubjSelect('taskSel');
+  updateDisplay();
+  updateRing();
+})();
+</script>
 </body>
 </html>
