@@ -176,6 +176,22 @@ button:focus-visible,input:focus-visible,select:focus-visible,.nav-link:focus-vi
 .ico.tip::before{width:20px;height:20px;border:2px solid currentColor;clip-path:polygon(50% 0,100% 36%,82% 100%,18% 100%,0 36%)}
 .ico.database::before{width:20px;height:8px;border:2px solid currentColor;border-radius:50%;top:4px}
 .ico.database::after{width:20px;height:18px;border:2px solid currentColor;border-top:0;border-radius:0 0 50% 50%;top:8px}
+.ico.exam::before{
+  width:20px;
+  height:20px;
+  border:2px solid currentColor;
+  border-radius:6px;
+  bottom:3px;
+}
+.ico.exam::after{
+  width:14px;
+  height:2px;
+  background:currentColor;
+  top:9px;
+  box-shadow:
+    0 5px 0 currentColor,
+    0 10px 0 currentColor;
+}
 
 /* ================================================================
    SIDEBAR
@@ -1259,6 +1275,106 @@ select.inp{cursor:pointer}
 .empty-s{font-size:14px;font-weight:500;color:var(--muted)}
 
 /* ================================================================
+   WAZARI EXAM PAGE
+   ================================================================ */
+.exam-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:20px;
+}
+.exam-card{
+  min-height:310px;
+  border-radius:28px;
+  padding:30px;
+  border:1px solid rgba(123,233,255,.16);
+  background:
+    radial-gradient(circle at 18% 18%,rgba(0,198,255,.13),transparent 38%),
+    radial-gradient(circle at 82% 80%,rgba(18,54,216,.18),transparent 42%),
+    linear-gradient(180deg,rgba(21,21,30,.84),rgba(10,10,15,.78));
+  position:relative;
+  overflow:hidden;
+  box-shadow:0 18px 52px rgba(0,0,0,.2);
+}
+.exam-card::before{
+  content:'';
+  position:absolute;
+  top:0;
+  right:0;
+  left:0;
+  height:3px;
+  background:linear-gradient(90deg,var(--blue),var(--cyan),var(--gold));
+}
+.exam-card.red::before{
+  background:linear-gradient(90deg,var(--red),var(--red-2),var(--gold));
+}
+.exam-year{
+  font-family:'Reem Kufi','Cairo',sans-serif;
+  font-size:52px;
+  font-weight:700;
+  line-height:1;
+  margin-bottom:10px;
+  background:linear-gradient(135deg,#fff,var(--cyan-2),var(--gold));
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.exam-card.red .exam-year{
+  background:linear-gradient(135deg,#fff,var(--red-2),var(--gold));
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.exam-date{
+  color:var(--muted);
+  font-size:15px;
+  font-weight:800;
+  margin-bottom:24px;
+}
+.exam-count{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+}
+.exam-box{
+  border-radius:18px;
+  padding:16px 10px;
+  text-align:center;
+  background:rgba(255,255,255,.035);
+  border:1px solid var(--border);
+}
+.exam-num{
+  display:block;
+  font-size:34px;
+  font-weight:1000;
+  line-height:1;
+  color:var(--cyan);
+}
+.exam-card.red .exam-num{
+  color:var(--red-2);
+}
+.exam-lab{
+  display:block;
+  margin-top:8px;
+  font-size:12px;
+  font-weight:800;
+  color:var(--muted);
+}
+.exam-status{
+  margin-top:22px;
+  padding:13px 16px;
+  border-radius:16px;
+  background:rgba(0,198,255,.06);
+  border:1px solid rgba(123,233,255,.14);
+  color:var(--text-2);
+  font-size:14px;
+  font-weight:800;
+}
+.exam-card.red .exam-status{
+  background:rgba(225,6,0,.07);
+  border-color:rgba(225,6,0,.18);
+}
+
+/* ================================================================
    PARTICLES / MOBILE
    ================================================================ */
 #ptcls{position:fixed;inset:0;pointer-events:none;z-index:9999}
@@ -1337,6 +1453,9 @@ select.inp{cursor:pointer}
   .timer-svg{viewBox:0 0 380 380}
   .hero-panel{padding:28px}
 }
+@media(max-width:860px){
+  .exam-grid{grid-template-columns:1fr}
+}
 @media(max-width:620px){
   html{font-size:15px}
   .main-wrap{padding:76px 16px 22px}
@@ -1357,6 +1476,10 @@ select.inp{cursor:pointer}
   .serag-core span{font-size:40px}
   .sec-title{font-size:34px}
   .card,.kpi,.action-card{padding:22px}
+}
+@media(max-width:480px){
+  .exam-count{grid-template-columns:repeat(2,1fr)}
+  .exam-year{font-size:44px}
 }
 @media(max-width:390px){
   .main-wrap{padding-inline:12px}
@@ -1456,6 +1579,16 @@ select.inp{cursor:pointer}
       <span class="nav-texts">
         <span class="nav-main">الإحصائيات</span>
         <span class="nav-sub">رسوم Canvas</span>
+      </span>
+      <span class="nav-dot"></span>
+    </div>
+
+    <div class="nav-link" data-s="exam" tabindex="0">
+      <div class="nav-link-bg"></div>
+      <span class="nav-icon"><span class="ico exam"></span></span>
+      <span class="nav-texts">
+        <span class="nav-main">الامتحان الوزاري</span>
+        <span class="nav-sub">عدّاد 2008 / 2009</span>
       </span>
       <span class="nav-dot"></span>
     </div>
@@ -1740,6 +1873,78 @@ select.inp{cursor:pointer}
     </div>
   </section>
 
+  <section class="sec" id="sec-exam">
+    <div class="sec-header">
+      <span class="sec-tag">Wazari Exam</span>
+      <h1 class="sec-title">الامتحان الوزاري</h1>
+      <p class="sec-sub">عدّادات تنازلية دقيقة لمواعيد الامتحان الوزاري.</p>
+    </div>
+
+    <div class="exam-grid">
+      <div class="exam-card">
+        <div class="card-head">
+          <span class="card-icon"><span class="ico exam"></span></span>
+          عدّاد جيل 2008
+        </div>
+
+        <div class="exam-year">2008</div>
+        <div class="exam-date">موعد الامتحان: 25 / 6 / 2026</div>
+
+        <div class="exam-count">
+          <div class="exam-box">
+            <span class="exam-num" id="ex2008-d">0</span>
+            <span class="exam-lab">يوم</span>
+          </div>
+          <div class="exam-box">
+            <span class="exam-num" id="ex2008-h">0</span>
+            <span class="exam-lab">ساعة</span>
+          </div>
+          <div class="exam-box">
+            <span class="exam-num" id="ex2008-m">0</span>
+            <span class="exam-lab">دقيقة</span>
+          </div>
+          <div class="exam-box">
+            <span class="exam-num" id="ex2008-s">0</span>
+            <span class="exam-lab">ثانية</span>
+          </div>
+        </div>
+
+        <div class="exam-status" id="ex2008-status">جاري الحساب...</div>
+      </div>
+
+      <div class="exam-card red">
+        <div class="card-head">
+          <span class="card-icon"><span class="ico exam"></span></span>
+          عدّاد جيل 2009
+        </div>
+
+        <div class="exam-year">2009</div>
+        <div class="exam-date">موعد الامتحان: 23 / 7 / 2026</div>
+
+        <div class="exam-count">
+          <div class="exam-box">
+            <span class="exam-num" id="ex2009-d">0</span>
+            <span class="exam-lab">يوم</span>
+          </div>
+          <div class="exam-box">
+            <span class="exam-num" id="ex2009-h">0</span>
+            <span class="exam-lab">ساعة</span>
+          </div>
+          <div class="exam-box">
+            <span class="exam-num" id="ex2009-m">0</span>
+            <span class="exam-lab">دقيقة</span>
+          </div>
+          <div class="exam-box">
+            <span class="exam-num" id="ex2009-s">0</span>
+            <span class="exam-lab">ثانية</span>
+          </div>
+        </div>
+
+        <div class="exam-status" id="ex2009-status">جاري الحساب...</div>
+      </div>
+    </div>
+  </section>
+
   <section class="sec" id="sec-settings">
     <div class="sec-header">
       <span class="sec-tag">Config</span>
@@ -1850,6 +2055,7 @@ function goto(id){
       renderTasks();
     },
     stats: renderStats,
+    exam: renderExamCountdowns,
     settings: refreshSettings
   };
 
@@ -2538,6 +2744,71 @@ function drawSubjChart(){
 }
 
 /* ================================================================
+   WAZARI EXAM COUNTDOWNS
+   ================================================================ */
+const examTargets = {
+  ex2008: {
+    label: '2008',
+    target: new Date(2026, 5, 25, 0, 0, 0)
+  },
+  ex2009: {
+    label: '2009',
+    target: new Date(2026, 6, 23, 0, 0, 0)
+  }
+};
+
+function setExamText(id, part, value){
+  const el = document.getElementById(`${id}-${part}`);
+  if(el) el.textContent = value;
+}
+
+function renderOneExamCountdown(id, cfg){
+  const now = new Date();
+  let diff = cfg.target.getTime() - now.getTime();
+
+  const status = document.getElementById(`${id}-status`);
+
+  if(diff <= 0){
+    setExamText(id, 'd', 0);
+    setExamText(id, 'h', 0);
+    setExamText(id, 'm', 0);
+    setExamText(id, 's', 0);
+
+    if(status) status.textContent = `انتهى موعد امتحان ${cfg.label}`;
+    return;
+  }
+
+  const dayMs = 1000 * 60 * 60 * 24;
+  const hourMs = 1000 * 60 * 60;
+  const minMs = 1000 * 60;
+
+  const days = Math.floor(diff / dayMs);
+  diff %= dayMs;
+
+  const hours = Math.floor(diff / hourMs);
+  diff %= hourMs;
+
+  const mins = Math.floor(diff / minMs);
+  diff %= minMs;
+
+  const secs = Math.floor(diff / 1000);
+
+  setExamText(id, 'd', days);
+  setExamText(id, 'h', String(hours).padStart(2,'0'));
+  setExamText(id, 'm', String(mins).padStart(2,'0'));
+  setExamText(id, 's', String(secs).padStart(2,'0'));
+
+  if(status){
+    status.textContent = `متبقي على امتحان ${cfg.label}: ${days} يوم و ${hours} ساعة`;
+  }
+}
+
+function renderExamCountdowns(){
+  renderOneExamCountdown('ex2008', examTargets.ex2008);
+  renderOneExamCountdown('ex2009', examTargets.ex2009);
+}
+
+/* ================================================================
    SETTINGS
    ================================================================ */
 function refreshSettings(){
@@ -2639,7 +2910,8 @@ fillSubjSelect('taskSel');
 setMode('study');
 updateDisplay();
 updateRing();
+renderExamCountdowns();
+setInterval(renderExamCountdowns, 1000);
 </script>
 </body>
 </html>
-```
